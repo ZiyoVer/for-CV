@@ -1,0 +1,109 @@
+# 🤝 API Integration Agreement: UzDataLab Platform & STT Bot (v2)
+
+**Date:** 2026-01-14  
+**Parties:** UzDataLab Platform Agent (Antigravity) & STT Bot Agent (ChatGPT)  
+**Infrastructure:** Railway.app (Shared Environment)
+
+---
+
+## 1. Storage Architecture (Dual-Bucket Strategy)
+
+To ensure data safety and separation of concerns, we will use two distinct buckets.
+
+### A. Source Bucket (Read-Only for Bot)
+Bot reads unchecked audio/metadata from this bucket.
+*   **Bucket Name:** `voice` (or as configured in Bot's env)
+*   **Purpose:** Contains raw, unchecked STT files.
+*   **Safety Rule:** **NEVER DELETE** files from this bucket immediately. Data must be preserved.
+
+### B. Destination Bucket (Write for Bot)
+Bot copies *accepted* files to this bucket, which belongs to the Platform.
+*   **Bucket Name:** Defined in Platform's `WASABI_BUCKET` (e.g., `datalab-platform`).
+*   **Folder:** `saralangan/` (Means "Sorted/Selected")
+*   **Purpose:** Stores high-quality, verified audio datasets.
+
+---
+
+## 2. Bot Workflow
+
+1.  **Fetch:** Bot retrieves a random/next audio file + JSON metadata from Source Bucket (`voice`).
+2.  **Verify:** Bot sends audio + text to Telegram Annotator.
+3.  **Action:**
+    *   **If User ACCEPTS:**
+        1.  Bot **copies** (uploads) the audio file and its JSON metadata to Destination Bucket (`WASABI_BUCKET`) into the `saralangan/` folder.
+        2.  *Crucial:* Ensure the upload is successful before acknowledging the user.
+        3.  Bot calls Platform Webhook (`POST /api/stt/webhook`).
+    *   **If User REJECTS:**
+        1.  Bot logs the rejection (locally or marks in DB).
+        2.  *Optionally:* Move to a `rejected/` folder in Source Bucket, but do NOT delete.
+        3.  Bot calls Platform Webhook (optional, for stats).
+
+---
+
+## 3. Webhook Integration (Platform Notification)
+
+*   **Endpoint:** `https://[RAILWAY_PLATFORM_URL]/api/stt/webhook`
+*   **Method:** `POST`
+*   **Headers:**
+    *   `Authorization: Bearer <STT_BOT_API_KEY>`
+    *   `Content-Type: application/json`
+
+### Payload: Accepted Audio (Success)
+
+```json
+{
+  "event": "annotation.accepted",
+  "data": {
+    "utt_id": "20251128T050146_ba5b69e9",
+    "annotator": {
+      "telegram_id": 123456789,
+      "username": "user_telegram_handle",
+      "full_name": "Valijon G'aniyev"
+    },
+    "original_source": {
+      "bucket": "voice",
+      "key": "pending/20251128T050146_ba5b69e9.wav"
+    },
+    "new_dest": {
+      "bucket": "datalab-platform",
+      "key": "saralangan/20251128T050146_ba5b69e9.wav"
+    },
+    "metadata": {
+      "duration_ms": 15414,
+      "text": "Ilovalar juda sekin ochilayapti...",
+      "quality": "good"
+    },
+    "timestamp": "2026-01-14T12:00:00Z"
+  }
+}
+```
+
+---
+
+## 4. Environment Variables
+
+**Bot (.env)**
+```bash
+# Source
+SOURCE_BUCKET_NAME="voice"
+SOURCE_ACCESS_KEY="..."
+SOURCE_SECRET_KEY="..."
+
+# Destination (Platform's Bucket)
+DEST_BUCKET_NAME="datalab-platform" 
+DEST_BUCKET_REGION="us-east-1"
+DEST_ACCESS_KEY="..."  # Must have WRITE access to DEST_BUCKET
+DEST_SECRET_KEY="..."
+
+# Platform API
+PLATFORM_WEBHOOK_URL="https://[PROJECT_NAME].up.railway.app/api/stt/webhook"
+PLATFORM_API_KEY="secret-generated-key"
+```
+
+---
+
+## 5. Security & Data Integrity Rules
+
+1.  **Duplicate Check:** Platform should handle duplicate webhook events gracefully (idempotency based on `utt_id`).
+2.  **No Data Loss:** The `voice` bucket is the single source of truth for raw data. The Platform's bucket is for the curated dataset.
+3.  **Logs:** Both Bot and Platform must log the transaction IDs.
