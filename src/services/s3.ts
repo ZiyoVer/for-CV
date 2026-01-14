@@ -31,8 +31,9 @@ export const s3Service = {
 
             for (const file of files) {
                 if (file.Key && file.Key.endsWith('.wav')) {
-                    // Skip if currently in 'stt/saralangan/' or other subfolders we don't want
-                    if (file.Key.includes('/saralangan/')) continue;
+                    // Skip if currently in 'saralangan/' or 'stt/saralangan/'
+                    // Since we want saralangan at root, we check if key starts with that
+                    if (file.Key.startsWith('saralangan/')) continue;
 
                     dbService.addFile(file.Key);
                     count++;
@@ -56,7 +57,6 @@ export const s3Service = {
             return str ? JSON.parse(str) : null;
         } catch (error) {
             console.error(`Error fetching JSON for ${audioKey}:`, error);
-            // Return dummy if missing
             return { text: "[JSON fayli topilmadi]" };
         }
     },
@@ -71,16 +71,15 @@ export const s3Service = {
 
     async copyToSorted(key: string) {
         // key is something like "stt/file.wav"
-        // We want to move it to "stt/saralangan/file.wav"
-        // So we insert "saralangan/" after "stt/"
+        // We want to move it to "saralangan/file.wav" (OUTSIDE stt)
 
-        // Handle if key doesn't start with stt/ for safety
         let destinationKey = '';
         if (key.startsWith('stt/')) {
-            destinationKey = key.replace('stt/', 'stt/saralangan/');
+            // Remove "stt/" prefix and prepend "saralangan/"
+            destinationKey = key.replace('stt/', 'saralangan/');
         } else {
-            // Fallback if key is just "file.wav"
-            destinationKey = `stt/saralangan/${key}`;
+            // Fallback: just put it in saralangan/
+            destinationKey = `saralangan/${key}`;
         }
 
         await s3.send(new CopyObjectCommand({
@@ -93,9 +92,9 @@ export const s3Service = {
         const jsonKey = key.replace('.wav', '.json');
         let jsonDest = '';
         if (jsonKey.startsWith('stt/')) {
-            jsonDest = jsonKey.replace('stt/', 'stt/saralangan/');
+            jsonDest = jsonKey.replace('stt/', 'saralangan/');
         } else {
-            jsonDest = `stt/saralangan/${jsonKey}`;
+            jsonDest = `saralangan/${jsonKey}`;
         }
 
         try {
