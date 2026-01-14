@@ -11,14 +11,14 @@ async function authMiddleware(ctx: Context, next: NextFunction) {
     if (!ctx.from) return;
 
     // Auto-update user info/activity if they exist
-    const user = dbService.getUser(ctx.from.id);
+    const user = await dbService.getUser(ctx.from.id);
     if (user && user.is_active) {
         // Continue
     } else {
         // If it's your first time, check if you are in config ADMIN_IDS
         // If so, add yourself
         if (config.ADMIN_IDS.includes(ctx.from.id)) {
-            dbService.addUser(ctx.from.id, ctx.from.first_name, 1);
+            await dbService.addUser(ctx.from.id, ctx.from.first_name, 1);
         } else {
             // Not authorized
             await ctx.reply("⛔️ <b>Sizga botdan foydalanishga ruxsat berilmagan.</b>\nIltimos administratorga murojaat qiling.", {
@@ -43,7 +43,7 @@ bot.command('start', async (ctx) => {
 });
 
 bot.command('admin', async (ctx) => {
-    const user = dbService.getUser(ctx.from?.id!);
+    const user = await dbService.getUser(ctx.from?.id!);
     if (!user?.is_admin) return ctx.reply("Siz admin emassiz.");
 
     await ctx.reply("Admin Paneli:", {
@@ -56,7 +56,7 @@ bot.command('admin', async (ctx) => {
 
 // /add_user 12345 Name
 bot.command('add_user', async (ctx) => {
-    const user = dbService.getUser(ctx.from?.id!);
+    const user = await dbService.getUser(ctx.from?.id!);
     if (!user?.is_admin) return;
 
     const parts = ctx.match.toString().split(' ');
@@ -65,7 +65,7 @@ bot.command('add_user', async (ctx) => {
 
     if (!id || !name) return ctx.reply("Format: /add_user [id] [name]");
 
-    dbService.addUser(id, name, 0);
+    await dbService.addUser(id, name, 0);
     await ctx.reply(`Foydalanuvchi qo'shildi: ${name} (${id})`);
 });
 
@@ -77,7 +77,7 @@ bot.callbackQuery("check_next", async (ctx) => {
 });
 
 bot.callbackQuery("my_stats", async (ctx) => {
-    const stats = dbService.getUserStats(ctx.from.id);
+    const stats = await dbService.getUserStats(ctx.from.id);
     await ctx.reply(`📊 <b>Sizning Statistikangiz:</b>\n\n✅ Qabul qilindi: ${stats.accepted}\n❌ Rad etildi: ${stats.rejected}`, {
         parse_mode: "HTML"
     });
@@ -86,7 +86,7 @@ bot.callbackQuery("my_stats", async (ctx) => {
 
 // Admin Stats
 bot.callbackQuery("admin_stats", async (ctx) => {
-    const user = dbService.getUser(ctx.from.id);
+    const user = await dbService.getUser(ctx.from.id);
     if (!user?.is_admin) return ctx.answerCallbackQuery("Admin emassiz");
 
     await ctx.answerCallbackQuery("Grafik chizilmoqda...");
@@ -95,16 +95,17 @@ bot.callbackQuery("admin_stats", async (ctx) => {
 });
 
 bot.callbackQuery("admin_sync", async (ctx) => {
-    const user = dbService.getUser(ctx.from.id);
+    const user = await dbService.getUser(ctx.from.id);
     if (!user?.is_admin) return;
 
     await ctx.answerCallbackQuery("Sync boshlandi...");
     await ctx.reply("S3 Sync boshlandi. Bu biroz vaqt olishi mumkin...");
 
     // Run async, don't block
-    s3Service.syncFiles().then(() => {
-        ctx.reply("Sync tugadi! ✅");
-        ctx.reply(`Jami pending fayllar: ${dbService.getPendingCount()}`);
+    s3Service.syncFiles().then(async () => {
+        await ctx.reply("Sync tugadi! ✅");
+        const pendingCount = await dbService.getPendingCount();
+        await ctx.reply(`Jami pending fayllar: ${pendingCount}`);
     });
 });
 
@@ -119,7 +120,7 @@ bot.callbackQuery(/^accept:(.+)$/, async (ctx) => {
         // 1. Copy S3
         await s3Service.copyToSorted(key);
         // 2. DB Update
-        dbService.updateFileStatus(ctx.from.id, key, 'ACCEPTED');
+        await dbService.updateFileStatus(ctx.from.id, key, 'ACCEPTED');
 
         // 3. Edit Msg
         await ctx.editMessageCaption({
@@ -141,7 +142,7 @@ bot.callbackQuery(/^reject:(.+)$/, async (ctx) => {
     const key = ctx.match[1];
     try {
         await ctx.answerCallbackQuery("Rad etildi ❌");
-        dbService.updateFileStatus(ctx.from.id, key, 'REJECTED');
+        await dbService.updateFileStatus(ctx.from.id, key, 'REJECTED');
 
         await ctx.editMessageCaption({
             caption: `${ctx.callbackQuery.message?.caption}\n\n❌ **Rad etildi**`
@@ -158,11 +159,11 @@ bot.callbackQuery(/^reject:(.+)$/, async (ctx) => {
 async function sendNextFile(ctx: any) {
     const userId = ctx.from.id;
     try {
-        const fileKey = dbService.lockNextFile(userId);
+        const fileKey = await dbService.lockNextFile(userId);
 
         if (!fileKey) {
             // Check if DB is empty, maybe need sync
-            const pending = dbService.getPendingCount();
+            const pending = await dbService.getPendingCount();
             if (pending === 0) {
                 await ctx.reply("Hozircha vazifalar yo'q. (Yoki admin sync qilishi kerak).");
             } else {
@@ -197,12 +198,25 @@ async function sendNextFile(ctx: any) {
 
 // Start
 bot.catch((err) => console.error(err));
-console.log("Bot ishga tushmoqda...");
 
-// Periodically release locks (every 5 mins)
-setInterval(() => {
-    const released = dbService.releaseTimedOutFiles(config.LOCK_TIMEOUT_MS);
-    if (released > 0) console.log(`Released ${released} timed out files.`);
-}, 5 * 60 * 1000);
+async function startBot() {
+    await dbService.init();
+    console.log("Bot ishga tushmoqda...");
 
-bot.start();
+    // Periodically release locks (every 5 mins)
+    setInterval(() => {
+        dbService.releaseTimedOutFiles(config.LOCK_TIMEOUT_MS)
+            .then((released) => {
+                const count = released ?? 0;
+                if (count > 0) console.log(`Released ${count} timed out files.`);
+            })
+            .catch((err) => console.error('Error releasing locks', err));
+    }, 5 * 60 * 1000);
+
+    await bot.start();
+}
+
+startBot().catch((err) => {
+    console.error('Failed to start bot', err);
+    process.exit(1);
+});

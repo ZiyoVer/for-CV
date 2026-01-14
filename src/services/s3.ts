@@ -35,7 +35,7 @@ export const s3Service = {
                     // Since we want saralangan at root, we check if key starts with that
                     if (file.Key.startsWith('saralangan/')) continue;
 
-                    dbService.addFile(file.Key);
+                    await dbService.addFile(file.Key);
                     count++;
                 }
             }

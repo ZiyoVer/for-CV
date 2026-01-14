@@ -12,7 +12,7 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, chartCallback }
 
 export const statsService = {
     async generateAdminStatsChart(): Promise<Buffer> {
-        const stats = dbService.getAllUserStats();
+        const stats = await dbService.getAllUserStats();
 
         // Prepare data
         const labels = stats.map((s: any) => s.full_name || 'Noma\'lum');

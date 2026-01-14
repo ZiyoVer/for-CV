@@ -12,10 +12,32 @@ export const config = {
     // Admins who can add other users (comma separated)
     ADMIN_IDS: (process.env.ADMIN_IDS || '').split(',').map(id => Number(id.trim())).filter(id => !isNaN(id)),
 
-    DB_PATH: process.env.DB_PATH || 'stt_bot.db',
+    // PostgreSQL connection
+    DATABASE_URL: process.env.DATABASE_URL,
+    PGHOST: process.env.PGHOST || 'localhost',
+    PGPORT: Number(process.env.PGPORT) || 5432,
+    PGUSER: process.env.PGUSER || '',
+    PGPASSWORD: process.env.PGPASSWORD || '',
+    PGDATABASE: process.env.PGDATABASE || '',
+    PGSSL: ['true', '1'].includes((process.env.PGSSL || '').toLowerCase()),
 
     // Timeout for locked files (e.g. 30 mins)
     LOCK_TIMEOUT_MS: 30 * 60 * 1000
 };
 
+export const pgConfig = config.DATABASE_URL
+    ? {
+        connectionString: config.DATABASE_URL,
+        ssl: config.PGSSL ? { rejectUnauthorized: false } : undefined
+    }
+    : {
+        host: config.PGHOST,
+        port: config.PGPORT,
+        user: config.PGUSER,
+        password: config.PGPASSWORD,
+        database: config.PGDATABASE,
+        ssl: config.PGSSL ? { rejectUnauthorized: false } : undefined
+    };
+
 if (!config.TELEGRAM_BOT_TOKEN) console.warn('Warning: TELEGRAM_BOT_TOKEN is missing');
+if (!config.DATABASE_URL && (!config.PGUSER || !config.PGDATABASE)) console.warn('Warning: PostgreSQL connection details are missing');
