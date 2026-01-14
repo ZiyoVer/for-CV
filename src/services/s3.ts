@@ -13,16 +13,16 @@ const s3 = new S3Client({
 });
 
 export const s3Service = {
-    // Populate DB with files from S3
-    // This is "Sync" logic.
+    // Populate DB with files from S3 ("stt/" folder)
     async syncFiles() {
-        console.log("Starting S3 Sync...");
+        console.log("Starting S3 Sync for 'stt/' folder...");
         let continuationToken: string | undefined;
         let count = 0;
 
         do {
             const command = new ListObjectsV2Command({
                 Bucket: config.WASABI_BUCKET,
+                Prefix: 'stt/', // Only look in 'stt/' folder
                 ContinuationToken: continuationToken
             });
 
@@ -31,8 +31,8 @@ export const s3Service = {
 
             for (const file of files) {
                 if (file.Key && file.Key.endsWith('.wav')) {
-                    // Skip if currently in 'saralangan/' or 'trash/' or 'rejected/' if separated
-                    if (file.Key.startsWith('saralangan/')) continue;
+                    // Skip if currently in 'stt/saralangan/' or other subfolders we don't want
+                    if (file.Key.includes('/saralangan/')) continue;
 
                     dbService.addFile(file.Key);
                     count++;
@@ -41,7 +41,7 @@ export const s3Service = {
 
             continuationToken = response.NextContinuationToken;
         } while (continuationToken);
-        console.log(`Synced ${count} files.`);
+        console.log(`Synced ${count} files from stt/ folder.`);
     },
 
     async getJsonContent(audioKey: string): Promise<any> {
@@ -70,16 +70,34 @@ export const s3Service = {
     },
 
     async copyToSorted(key: string) {
-        const destinationKey = `saralangan/${key}`;
+        // key is something like "stt/file.wav"
+        // We want to move it to "stt/saralangan/file.wav"
+        // So we insert "saralangan/" after "stt/"
+
+        // Handle if key doesn't start with stt/ for safety
+        let destinationKey = '';
+        if (key.startsWith('stt/')) {
+            destinationKey = key.replace('stt/', 'stt/saralangan/');
+        } else {
+            // Fallback if key is just "file.wav"
+            destinationKey = `stt/saralangan/${key}`;
+        }
+
         await s3.send(new CopyObjectCommand({
             Bucket: config.WASABI_BUCKET,
-            CopySource: `${config.WASABI_BUCKET}/${key}`, // Must include bucket name
+            CopySource: `${config.WASABI_BUCKET}/${key}`,
             Key: destinationKey
         }));
 
         // Also copy JSON
         const jsonKey = key.replace('.wav', '.json');
-        const jsonDest = `saralangan/${jsonKey}`;
+        let jsonDest = '';
+        if (jsonKey.startsWith('stt/')) {
+            jsonDest = jsonKey.replace('stt/', 'stt/saralangan/');
+        } else {
+            jsonDest = `stt/saralangan/${jsonKey}`;
+        }
+
         try {
             await s3.send(new CopyObjectCommand({
                 Bucket: config.WASABI_BUCKET,
