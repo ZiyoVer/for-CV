@@ -168,66 +168,65 @@ async function sendNextFile(ctx: any) {
             // Check if DB is empty, maybe need sync
             const pending = await dbService.getPendingCount();
             if (pending === 0) {
-                if (pending === 0) {
-                    const user = await dbService.getUser(userId);
-                    let msg = "Hozircha vazifalar yo'q.";
-                    if (user?.is_admin) {
-                        msg += " (Admin panel orqali 'S3 Sync' qiling).";
-                    }
-                    await ctx.reply(msg);
-                } else {
-                    await ctx.reply("Hozircha barcha fayllar band. Birozdan so'ng urinib ko'ring.");
+                const user = await dbService.getUser(userId);
+                let msg = "Hozircha vazifalar yo'q.";
+                if (user?.is_admin) {
+                    msg += " (Admin panel orqali 'S3 Sync' qiling).";
                 }
-                return;
+                await ctx.reply(msg);
+            } else {
+                await ctx.reply("Hozircha barcha fayllar band. Birozdan so'ng urinib ko'ring.");
             }
-
-            const json = await s3Service.getJsonContent(fileKey);
-            const audioUrl = await s3Service.getAudioUrl(fileKey);
-
-            // Truncate text if too long
-            let text = json.text || 'Noma\'lum';
-            if (text.length > 800) text = text.substring(0, 800) + "...";
-
-            const caption = `🆔 <code>${json.utt_id || fileKey}</code>\n\n📝 ${text}`;
-
-            await ctx.replyWithAudio(audioUrl, {
-                caption: caption,
-                parse_mode: "HTML",
-                reply_markup: new InlineKeyboard()
-                    .text("✅ To'g'ri", `accept:${fileKey}`)
-                    .text("❌ Xato", `reject:${fileKey}`)
-            });
-
-        } catch (e: any) {
-            console.error("Error in sendNextFile:", e);
-            let msg = "Faylni olishda xatolik.";
-            if (e.message) msg += `\n(${e.message})`;
-            await ctx.reply(msg);
+            return;
         }
+
+        const json = await s3Service.getJsonContent(fileKey);
+        const audioUrl = await s3Service.getAudioUrl(fileKey);
+
+        // Truncate text if too long
+        let text = json.text || 'Noma\'lum';
+        if (text.length > 800) text = text.substring(0, 800) + "...";
+
+        const caption = `🆔 <code>${json.utt_id || fileKey}</code>\n\n📝 ${text}`;
+
+        await ctx.replyWithAudio(audioUrl, {
+            caption: caption,
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard()
+                .text("✅ To'g'ri", `accept:${fileKey}`)
+                .text("❌ Xato", `reject:${fileKey}`)
+        });
+
+    } catch (e: any) {
+        console.error("Error in sendNextFile:", e);
+        let msg = "Faylni olishda xatolik.";
+        if (e.message) msg += `\n(${e.message})`;
+        await ctx.reply(msg);
     }
+}
 
 
 // Start
 bot.catch((err) => console.error(err));
 
-    async function startBot() {
-        await dbService.init();
-        console.log("Bot ishga tushmoqda...");
+async function startBot() {
+    await dbService.init();
+    console.log("Bot ishga tushmoqda...");
 
-        // Periodically release locks (every 5 mins)
-        setInterval(() => {
-            dbService.releaseTimedOutFiles(config.LOCK_TIMEOUT_MS)
-                .then((released) => {
-                    const count = released ?? 0;
-                    if (count > 0) console.log(`Released ${count} timed out files.`);
-                })
-                .catch((err) => console.error('Error releasing locks', err));
-        }, 5 * 60 * 1000);
+    // Periodically release locks (every 5 mins)
+    setInterval(() => {
+        dbService.releaseTimedOutFiles(config.LOCK_TIMEOUT_MS)
+            .then((released) => {
+                const count = released ?? 0;
+                if (count > 0) console.log(`Released ${count} timed out files.`);
+            })
+            .catch((err) => console.error('Error releasing locks', err));
+    }, 5 * 60 * 1000);
 
-        await bot.start();
-    }
+    await bot.start();
+}
 
-    startBot().catch((err) => {
-        console.error('Failed to start bot', err);
-        process.exit(1);
-    });
+startBot().catch((err) => {
+    console.error('Failed to start bot', err);
+    process.exit(1);
+});
