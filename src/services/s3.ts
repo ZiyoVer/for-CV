@@ -9,7 +9,8 @@ const s3 = new S3Client({
     credentials: {
         accessKeyId: config.WASABI_ACCESS_KEY,
         secretAccessKey: config.WASABI_SECRET_KEY
-    }
+    },
+    forcePathStyle: true // Recommended for Wasabi/MinIO to avoid virtual-host style issues
 });
 
 export const s3Service = {

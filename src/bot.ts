@@ -189,9 +189,11 @@ async function sendNextFile(ctx: any) {
                 .text("❌ Xato", `reject:${fileKey}`)
         });
 
-    } catch (e) {
-        console.error(e);
-        await ctx.reply("Faylni olishda xatolik.");
+    } catch (e: any) {
+        console.error("Error in sendNextFile:", e);
+        let msg = "Faylni olishda xatolik.";
+        if (e.message) msg += `\n(${e.message})`;
+        await ctx.reply(msg);
     }
 }
 
