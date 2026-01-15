@@ -201,6 +201,19 @@ async function sendNextFile(ctx: any) {
         console.error("Error in sendNextFile:", e);
         let msg = "Faylni olishda xatolik.";
         if (e.message) msg += `\n(${e.message})`;
+
+        // Debug: show the URL that failed
+        try {
+            if (fileKey) { // Only try to get URL if fileKey was successfully obtained
+                const url = await s3Service.getAudioUrl(fileKey);
+                msg += `\n\nDebug URL: ${url}`;
+            } else {
+                msg += "\n(Fayl kaliti topilmadi)";
+            }
+        } catch (inner) {
+            msg += "\n(URLni olish imkonsiz)";
+        }
+
         await ctx.reply(msg);
     }
 }
