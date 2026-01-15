@@ -3,8 +3,8 @@ dotenv.config();
 
 export const config = {
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '',
-    WASABI_ENDPOINT: 'https://s3.wasabisys.com',
-    WASABI_REGION: 'us-east-1',
+    WASABI_ENDPOINT: 'https://s3.eu-central-2.wasabisys.com',
+    WASABI_REGION: 'eu-central-2',
     WASABI_ACCESS_KEY: process.env.WASABI_ACCESS_KEY || '',
     WASABI_SECRET_KEY: process.env.WASABI_SECRET_KEY || '',
     WASABI_BUCKET: process.env.WASABI_BUCKET || '',
