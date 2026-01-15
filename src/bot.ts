@@ -161,8 +161,10 @@ bot.callbackQuery(/^reject:(.+)$/, async (ctx) => {
 // Helper
 async function sendNextFile(ctx: any) {
     const userId = ctx.from.id;
+    let fileKey: string | null = null;
+
     try {
-        const fileKey = await dbService.lockNextFile(userId);
+        fileKey = await dbService.lockNextFile(userId);
 
         if (!fileKey) {
             // Check if DB is empty, maybe need sync
