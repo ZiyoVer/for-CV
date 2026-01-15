@@ -183,7 +183,13 @@ async function sendNextFile(ctx: any) {
         }
 
         const json = await s3Service.getJsonContent(fileKey);
-        const audioUrl = await s3Service.getAudioUrl(fileKey);
+        // Instead of URL, download the file
+        const audioBuffer = await s3Service.getFileBuffer(fileKey);
+
+        if (!audioBuffer) {
+            await ctx.reply("Audio faylni yuklab bo'lmadi (S3 error).");
+            return;
+        }
 
         // Truncate text if too long
         let text = json.text || 'Noma\'lum';
@@ -191,7 +197,7 @@ async function sendNextFile(ctx: any) {
 
         const caption = `🆔 <code>${json.utt_id || fileKey}</code>\n\n📝 ${text}`;
 
-        await ctx.replyWithAudio(audioUrl, {
+        await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
             parse_mode: "HTML",
             reply_markup: new InlineKeyboard()
@@ -203,19 +209,6 @@ async function sendNextFile(ctx: any) {
         console.error("Error in sendNextFile:", e);
         let msg = "Faylni olishda xatolik.";
         if (e.message) msg += `\n(${e.message})`;
-
-        // Debug: show the URL that failed
-        try {
-            if (fileKey) { // Only try to get URL if fileKey was successfully obtained
-                const url = await s3Service.getAudioUrl(fileKey);
-                msg += `\n\nDebug URL: ${url}`;
-            } else {
-                msg += "\n(Fayl kaliti topilmadi)";
-            }
-        } catch (inner) {
-            msg += "\n(URLni olish imkonsiz)";
-        }
-
         await ctx.reply(msg);
     }
 }

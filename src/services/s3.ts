@@ -70,6 +70,20 @@ export const s3Service = {
         return getSignedUrl(s3, command, { expiresIn: 3600 });
     },
 
+    async getFileBuffer(key: string): Promise<Uint8Array | undefined> {
+        try {
+            const command = new GetObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: key
+            });
+            const response = await s3.send(command);
+            return await response.Body?.transformToByteArray();
+        } catch (e) {
+            console.error("Error downloading file buffer:", e);
+            return undefined;
+        }
+    },
+
     async copyToSorted(key: string) {
         // key is something like "stt/file.wav"
         // We want to move it to "saralangan/file.wav" (OUTSIDE stt)
