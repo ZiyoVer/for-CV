@@ -11,8 +11,8 @@ const chartCallback = (ChartJS: any) => {
 const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, chartCallback });
 
 export const statsService = {
-    async generateAdminStatsChart(): Promise<Buffer> {
-        const stats = await dbService.getAllUserStats();
+    async generateAdminStatsChart(stats: any[]): Promise<Buffer> {
+        // const stats = await dbService.getAllUserStats(); // Removed, passed as arg
 
         // Prepare data
         const labels = stats.map((s: any) => s.full_name || 'Noma\'lum');

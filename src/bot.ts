@@ -90,8 +90,21 @@ bot.callbackQuery("admin_stats", async (ctx) => {
     if (!user?.is_admin) return ctx.answerCallbackQuery("Admin emassiz");
 
     await ctx.answerCallbackQuery("Grafik chizilmoqda...");
-    const imageBuffer = await statsService.generateAdminStatsChart();
-    await ctx.replyWithPhoto(new InputFile(imageBuffer), { caption: "Umumiy Statistika" });
+
+    const stats = await dbService.getAllUserStats();
+
+    // Generate Text Summary
+    let caption = "<b>📊 Umumiy Statistika:</b>\n\n";
+    for (const s of stats) {
+        const name = s.full_name || "Noma'lum";
+        caption += `👤 <b>${name}</b>\n   ✅ ${s.accepted_count}   ❌ ${s.rejected_count}\n\n`;
+    }
+
+    const imageBuffer = await statsService.generateAdminStatsChart(stats);
+    await ctx.replyWithPhoto(new InputFile(imageBuffer), {
+        caption: caption,
+        parse_mode: "HTML"
+    });
 });
 
 bot.callbackQuery("admin_sync", async (ctx) => {
