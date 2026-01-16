@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/bot.js",
-    "dev": "ts-node src/bot.ts",
+    "build": "tsc && cp -r src/views dist/views",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,13 +16,19 @@
     "@aws-sdk/client-s3": "^3.968.0",
     "@aws-sdk/s3-request-presigner": "^3.968.0",
     "axios": "^1.13.2",
+    "body-parser": "^2.2.2",
     "chart.js": "^4.5.1",
     "chartjs-node-canvas": "^5.0.0",
     "dotenv": "^17.2.3",
+    "ejs": "^4.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
     "grammy": "^1.39.2",
     "pg": "^8.16.3"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
     "@types/node": "^25.0.8",
     "@types/pg": "^8.16.0",
     "ts-node": "^10.9.2",

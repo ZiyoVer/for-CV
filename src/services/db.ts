@@ -9,7 +9,8 @@ const initTablesQuery = `
         full_name TEXT,
         is_admin INTEGER DEFAULT 0,
         is_active INTEGER DEFAULT 1,
-        joined_at TIMESTAMPTZ DEFAULT NOW()
+        joined_at TIMESTAMPTZ DEFAULT NOW(),
+        balance INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS files (
@@ -68,6 +69,52 @@ export const dbService = {
     listAdmins: async () => {
         const { rows } = await pool.query('SELECT telegram_id FROM users WHERE is_admin = 1');
         return rows as { telegram_id: number }[];
+    },
+
+    listUsers: async () => {
+        const { rows } = await pool.query('SELECT * FROM users ORDER BY full_name');
+        return rows;
+    },
+
+    // --- FINANCIAL / STATS LOGIC ---
+    incrementBalance: async (user_id: number, amount: number) => {
+        await pool.query('UPDATE users SET balance = balance + $1 WHERE telegram_id = $2', [amount, user_id]);
+    },
+
+    resetBalance: async (user_id: number) => {
+        await pool.query('UPDATE users SET balance = 0 WHERE telegram_id = $1', [user_id]);
+    },
+
+    reduceBalanceByPercent: async (user_id: number, percent: number) => {
+        // e.g. percent=50 -> balance = balance * 0.5
+        // Use integer math carefully or cast. We'll verify it's integer result via floor logic if needed.
+        // Or simply: balance = floor(balance * (100 - percent) / 100)
+        const factor = (100 - percent) / 100;
+        await pool.query('UPDATE users SET balance = FLOOR(balance * $1) WHERE telegram_id = $2', [factor, user_id]);
+    },
+
+    get24hCheckCount: async (user_id: number) => {
+        const { rows } = await pool.query(
+            `SELECT COUNT(*)::int as count 
+             FROM files 
+             WHERE assigned_to = $1 
+               AND status IN ('ACCEPTED', 'REJECTED')
+               AND processed_at > NOW() - INTERVAL '24 hours'`,
+            [user_id]
+        );
+        return rows[0]?.count || 0;
+    },
+
+    getRandomReviewFiles: async (user_id: number, limit = 5) => {
+        const { rows } = await pool.query(
+            `SELECT * FROM files 
+             WHERE assigned_to = $1 
+               AND status = 'ACCEPTED' 
+             ORDER BY RANDOM() 
+             LIMIT $2`,
+            [user_id, limit]
+        );
+        return rows;
     },
 
     // --- FILE LOCKING LOGIC ---

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STT Admin - Tekshirish</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .user-header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info h2 {
+            margin-bottom: 4px;
+        }
+
+        .user-info p {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .balance-info {
+            text-align: right;
+        }
+
+        .balance-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .file-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .file-key {
+            font-family: monospace;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .file-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-accepted {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .file-text {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 16px;
+            border-radius: 8px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .penalty-section {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin-top: 32px;
+        }
+
+        .penalty-section h3 {
+            color: #fca5a5;
+            margin-bottom: 8px;
+        }
+
+        .penalty-section p {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">🎧 Tekshirish</div>
+        <a href="/dashboard" class="back-btn">← Orqaga</a>
+    </nav>
+
+    <div class="container">
+        <div class="user-header">
+            <div class="user-info">
+                <h2>
+                    <%= user.full_name %>
+                </h2>
+                <p>ID: <%= user.telegram_id %>
+                </p>
+            </div>
+            <div class="balance-info">
+                <div class="balance-value">
+                    <%= user.balance || 0 %> so'm
+                </div>
+                <p style="color: rgba(255,255,255,0.6);">Joriy balans</p>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 16px;">5 ta Tasodifiy Tekshirilgan Audio</h3>
+
+        <% if (files.length===0) { %>
+            <div class="empty-state">
+                <p>Bu foydalanuvchi hali hech narsa tekshirmagan.</p>
+            </div>
+            <% } else { %>
+                <% files.forEach((file, index)=> { %>
+                    <div class="file-card">
+                        <div class="file-header">
+                            <span class="file-key">
+                                <%= file.file_key %>
+                            </span>
+                            <span class="file-status status-accepted">✅ Qabul qilingan</span>
+                        </div>
+                        <div class="file-text">
+                            📝 <%= file.text %>
+                        </div>
+                    </div>
+                    <% }); %>
+
+                        <div class="penalty-section">
+                            <h3>⚠️ Xato topdingizmi?</h3>
+                            <p>Agar yuqoridagi tekshiruvlarda xatolar bo'lsa, foydalanuvchi balansini 50% ga
+                                kamaytiring.</p>
+                            <form method="POST" action="/review/penalty/<%= user.telegram_id %>">
+                                <button type="submit" class="btn btn-danger"
+                                    onclick="return confirm('Balansni 50% ga kamaytirishni tasdiqlaysizmi?')">
+                                    🔻 50% Jarima Qo'llash
+                                </button>
+                            </form>
+                        </div>
+                        <% } %>
+    </div>
+</body>
+
+</html>

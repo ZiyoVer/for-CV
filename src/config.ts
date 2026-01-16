@@ -22,7 +22,11 @@ export const config = {
     PGSSL: ['true', '1'].includes((process.env.PGSSL || '').toLowerCase()),
 
     // Timeout for locked files (e.g. 30 mins)
-    LOCK_TIMEOUT_MS: 30 * 60 * 1000
+    LOCK_TIMEOUT_MS: 30 * 60 * 1000,
+
+    // Web UI
+    PORT: Number(process.env.PORT) || 3000,
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin'
 };
 
 export const pgConfig = config.DATABASE_URL

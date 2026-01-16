@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STT Admin - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .logout-btn {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 4px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #fff;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 16px;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:not(:last-child) td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .balance {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #1e1e2e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .modal h3 {
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">🎧 STT Admin</div>
+        <a href="/logout" class="logout-btn">Chiqish</a>
+    </nav>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">
+                    <%= stats.totalChecked %>
+                </div>
+                <div class="stat-label">Jami Tekshirilgan</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #10b981;">
+                    <%= stats.totalAccepted %>
+                </div>
+                <div class="stat-label">Qabul Qilingan</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #ef4444;">
+                    <%= stats.totalRejected %>
+                </div>
+                <div class="stat-label">Rad Etilgan</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #f59e0b;">
+                    <%= stats.pending %>
+                </div>
+                <div class="stat-label">Kutilmoqda</div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2>Foydalanuvchilar</h2>
+            <button class="btn btn-primary" onclick="openModal()">+ Yangi Qo'shish</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ism</th>
+                        <th>Bugun</th>
+                        <th>Jami ✅</th>
+                        <th>Jami ❌</th>
+                        <th>Balans</th>
+                        <th>Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(user=> { %>
+                        <tr>
+                            <td><code><%= user.telegram_id %></code></td>
+                            <td>
+                                <%= user.full_name %>
+                                    <%= user.is_admin ? '👑' : '' %>
+                            </td>
+                            <td>
+                                <%= user.checks_today %>
+                            </td>
+                            <td>
+                                <%= user.total_accepted %>
+                            </td>
+                            <td>
+                                <%= user.total_rejected %>
+                            </td>
+                            <td class="balance">
+                                <%= user.balance || 0 %> so'm
+                            </td>
+                            <td class="actions">
+                                <a href="/review/<%= user.telegram_id %>" class="btn btn-warning btn-sm">Tekshirish</a>
+                                <form method="POST" action="/users/payout/<%= user.telegram_id %>"
+                                    style="display:inline;">
+                                    <button type="submit" class="btn btn-success btn-sm"
+                                        onclick="return confirm('Pul to\'lashni tasdiqlaysizmi?')">To'lash</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div class="modal-overlay" id="addUserModal">
+        <div class="modal">
+            <h3>Yangi Foydalanuvchi</h3>
+            <form method="POST" action="/users/add">
+                <div class="form-group">
+                    <label>Telegram ID</label>
+                    <input type="number" name="telegram_id" placeholder="123456789" required>
+                </div>
+                <div class="form-group">
+                    <label>To'liq Ism</label>
+                    <input type="text" name="full_name" placeholder="Ism Familiya" required>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" name="is_admin" id="is_admin">
+                        <label for="is_admin" style="margin: 0;">Admin qilish</label>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn" style="background: rgba(255,255,255,0.1);"
+                        onclick="closeModal()">Bekor</button>
+                    <button type="submit" class="btn btn-primary">Qo'shish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('addUserModal').classList.add('active');
+        }
+        function closeModal() {
+            document.getElementById('addUserModal').classList.remove('active');
+        }
+        document.getElementById('addUserModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) closeModal();
+        });
+    </script>
+</body>
+
+</html>

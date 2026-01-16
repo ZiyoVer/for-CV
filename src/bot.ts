@@ -4,7 +4,7 @@ import { s3Service } from './services/s3';
 import { dbService } from './services/db';
 import { statsService } from './services/stats';
 
-const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
+export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
 // --- MIDDLEWARE: AUTH CHECK ---
 async function authMiddleware(ctx: Context, next: NextFunction) {
@@ -56,17 +56,7 @@ bot.command('admin', async (ctx) => {
 
 // /add_user 12345 Name
 bot.command('add_user', async (ctx) => {
-    const user = await dbService.getUser(ctx.from?.id!);
-    if (!user?.is_admin) return;
-
-    const parts = ctx.match.toString().split(' ');
-    const id = Number(parts[0]);
-    const name = parts.slice(1).join(' ');
-
-    if (!id || !name) return ctx.reply("Format: /add_user [id] [name]");
-
-    await dbService.addUser(id, name, 0);
-    await ctx.reply(`Foydalanuvchi qo'shildi: ${name} (${id})`);
+    await ctx.reply("Bu funksiya endi Web panel orqali ishlaydi.");
 });
 
 // --- ACTIONS ---
@@ -142,6 +132,18 @@ bot.callbackQuery(/^accept:(.+)$/, async (ctx) => {
         await ctx.editMessageCaption({
             caption: `${ctx.callbackQuery.message?.caption}\n\n✅ **Qabul qilindi**`
         });
+
+        // PAYMENT LOGIC
+        // 20 free checks per 24 hours. After that 50 som per check.
+        const checksToday = await dbService.get24hCheckCount(ctx.from.id);
+        // We just added one (Wait, dbService.updateFileStatus marks it processed NOW).
+        // Since we verify AFTER update, checksToday includes the current one.
+        // So if checksToday > 20, we pay.
+        // Example: 20th check -> checksToday=20. No pay.
+        // 21st check -> checksToday=21. Pay.
+        if (checksToday > 20) {
+            await dbService.incrementBalance(ctx.from.id, 50);
+        }
 
         // 4. Offer Next
         await ctx.reply("Davom etamizmi?", {
@@ -230,7 +232,9 @@ async function sendNextFile(ctx: any) {
 // Start
 bot.catch((err) => console.error(err));
 
-async function startBot() {
+// Old startBot function removed - now using launchBot() below
+
+export async function launchBot() {
     await dbService.init();
     console.log("Bot ishga tushmoqda...");
 
@@ -244,10 +248,18 @@ async function startBot() {
             .catch((err) => console.error('Error releasing locks', err));
     }, 5 * 60 * 1000);
 
-    await bot.start();
-}
+    // Bot start will be handled by runner, but bot.start() blocks...
+    // We should use bot.start() or bot.run() (runner). 
+    // Since we want to run express alongside, we shouldn't await bot.start() infinitely if we were in the same process loop without async.
+    // actually bot.start() runs concurrently if node.js is async. 
+    // However, bot.start() manages the polling loop.
 
-startBot().catch((err) => {
-    console.error('Failed to start bot', err);
-    process.exit(1);
-});
+    // We will just call it and not await it to block? No, await is fine as long as express listens too.
+    // Better: use runner. 
+    // For simple polling:
+    bot.start({
+        onStart: (botInfo) => {
+            console.log(`Bot @${botInfo.username} started!`);
+        }
+    });
+}

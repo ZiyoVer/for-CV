@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STT Admin - Kirish</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            color: #fff;
+            font-size: 24px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .form-group { margin-bottom: 20px; }
+        label {
+            display: block;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #4f46e5;
+            background: rgba(79,70,229,0.1);
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79,70,229,0.3);
+        }
+        .error {
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>🎧 STT Admin</h1>
+        <p class="subtitle">Boshqaruv paneliga kirish</p>
+        
+        <% if (error) { %>
+            <div class="error"><%= error %></div>
+        <% } %>
+        
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label>Admin Parol</label>
+                <input type="password" name="password" placeholder="••••••••" required autofocus>
+            </div>
+            <button type="submit">Kirish</button>
+        </form>
+    </div>
+</body>
+</html>
