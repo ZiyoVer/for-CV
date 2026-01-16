@@ -1,104 +1,163 @@
 <!DOCTYPE html>
 <html lang="uz">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STT Admin - Kirish</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'JetBrains Mono', monospace;
+            background: #0a0a0a;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: #e5e5e5;
         }
+
         .login-card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 40px;
+            background: #111;
+            border: 1px solid #222;
+            padding: 48px;
             width: 100%;
-            max-width: 400px;
+            max-width: 480px;
         }
+
         h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
             color: #fff;
-            font-size: 24px;
-            margin-bottom: 8px;
-            text-align: center;
         }
+
         .subtitle {
-            color: rgba(255,255,255,0.6);
-            text-align: center;
+            color: #666;
             margin-bottom: 32px;
-        }
-        .form-group { margin-bottom: 20px; }
-        label {
-            display: block;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 8px;
             font-size: 14px;
         }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            color: #888;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
         input[type="password"] {
             width: 100%;
             padding: 14px 16px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 8px;
+            background: #0a0a0a;
+            border: 1px solid #333;
             color: #fff;
-            font-size: 16px;
-            transition: all 0.2s;
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: border-color 0.2s;
         }
+
         input[type="password"]:focus {
             outline: none;
-            border-color: #4f46e5;
-            background: rgba(79,70,229,0.1);
+            border-color: #fff;
         }
+
         button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: #fff;
+            color: #000;
             border: none;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
             cursor: pointer;
-            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.2s;
         }
+
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(79,70,229,0.3);
+            opacity: 0.8;
         }
+
         .error {
-            background: rgba(239,68,68,0.15);
-            border: 1px solid rgba(239,68,68,0.3);
-            color: #fca5a5;
+            background: rgba(255, 50, 50, 0.1);
+            border: 1px solid #ff3232;
+            color: #ff6b6b;
             padding: 12px;
-            border-radius: 8px;
             margin-bottom: 20px;
-            text-align: center;
+            font-size: 13px;
+        }
+
+        .feature-list {
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 1px solid #222;
+        }
+
+        .feature-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .feature-item span:first-child {
+            color: #555;
+        }
+
+        .feature-item strong {
+            color: #e5e5e5;
         }
     </style>
 </head>
+
 <body>
     <div class="login-card">
-        <h1>🎧 STT Admin</h1>
-        <p class="subtitle">Boshqaruv paneliga kirish</p>
-        
+        <h1>STT Admin Panel</h1>
+        <p class="subtitle">Speech-to-Text tekshiruv tizimi boshqaruvi</p>
+
         <% if (error) { %>
-            <div class="error"><%= error %></div>
-        <% } %>
-        
-        <form method="POST" action="/login">
-            <div class="form-group">
-                <label>Admin Parol</label>
-                <input type="password" name="password" placeholder="••••••••" required autofocus>
+            <div class="error">
+                <%= error %>
             </div>
-            <button type="submit">Kirish</button>
-        </form>
+            <% } %>
+
+                <form method="POST" action="/login">
+                    <div class="form-group">
+                        <label>Admin Parol</label>
+                        <input type="password" name="password" placeholder="••••••••" required autofocus>
+                    </div>
+                    <button type="submit">Kirish →</button>
+                </form>
+
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span>[*]</span>
+                        <span><strong>Dashboard</strong> Umumiy statistika va foydalanuvchilar</span>
+                    </div>
+                    <div class="feature-item">
+                        <span>[*]</span>
+                        <span><strong>Review</strong> Annotatorlar ishini tekshirish</span>
+                    </div>
+                    <div class="feature-item">
+                        <span>[*]</span>
+                        <span><strong>Payments</strong> Balans va to'lovlarni boshqarish</span>
+                    </div>
+                </div>
     </div>
 </body>
+
 </html>

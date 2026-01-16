@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STT Admin - Tekshirish</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,16 +15,15 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'JetBrains Mono', monospace;
+            background: #0a0a0a;
             min-height: 100vh;
-            color: #fff;
+            color: #e5e5e5;
         }
 
         .navbar {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: #111;
+            border-bottom: 1px solid #222;
             padding: 16px 32px;
             display: flex;
             justify-content: space-between;
@@ -30,46 +31,48 @@
         }
 
         .logo {
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
         }
 
         .back-btn {
-            color: rgba(255, 255, 255, 0.7);
+            color: #666;
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: all 0.2s;
+            font-size: 13px;
+            transition: color 0.2s;
         }
 
         .back-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
         }
 
         .container {
             max-width: 900px;
             margin: 0 auto;
-            padding: 32px;
+            padding: 48px 32px;
         }
 
         .user-header {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border: 1px solid #222;
+            background: #111;
             padding: 24px;
-            margin-bottom: 24px;
+            margin-bottom: 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .user-info h2 {
+            font-size: 16px;
+            font-weight: 600;
             margin-bottom: 4px;
+            color: #fff;
         }
 
         .user-info p {
-            color: rgba(255, 255, 255, 0.6);
+            color: #666;
+            font-size: 13px;
         }
 
         .balance-info {
@@ -77,17 +80,26 @@
         }
 
         .balance-value {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
-            color: #10b981;
+            color: #22c55e;
+        }
+
+        .balance-label {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 16px;
         }
 
         .file-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 20px;
+            border: 1px solid #222;
+            background: #111;
             margin-bottom: 16px;
         }
 
@@ -95,67 +107,85 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            padding: 16px;
+            border-bottom: 1px solid #222;
         }
 
         .file-key {
-            font-family: monospace;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-            background: rgba(255, 255, 255, 0.08);
+            font-size: 11px;
+            color: #666;
+            background: #0a0a0a;
             padding: 4px 8px;
-            border-radius: 4px;
         }
 
         .file-status {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
+            color: #22c55e;
         }
 
-        .status-accepted {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
+        .audio-player {
+            padding: 16px;
+            background: #0a0a0a;
+            border-bottom: 1px solid #222;
+        }
+
+        audio {
+            width: 100%;
+            height: 40px;
+            filter: invert(1);
         }
 
         .file-text {
-            background: rgba(0, 0, 0, 0.2);
             padding: 16px;
-            border-radius: 8px;
+            font-size: 13px;
             line-height: 1.6;
-            font-size: 14px;
+            color: #ccc;
+        }
+
+        .file-text::before {
+            content: "[*] ";
+            color: #555;
         }
 
         .penalty-section {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 12px;
+            border: 1px solid #ef4444;
+            background: rgba(239, 68, 68, 0.05);
             padding: 24px;
             text-align: center;
             margin-top: 32px;
         }
 
         .penalty-section h3 {
-            color: #fca5a5;
+            font-size: 14px;
+            color: #ef4444;
             margin-bottom: 8px;
         }
 
         .penalty-section p {
-            color: rgba(255, 255, 255, 0.6);
+            color: #666;
+            font-size: 13px;
             margin-bottom: 16px;
         }
 
         .btn {
-            padding: 12px 24px;
+            background: #fff;
+            color: #000;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
+            padding: 12px 24px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             text-decoration: none;
-            display: inline-block;
-            transition: all 0.2s;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
         }
 
         .btn-danger {
@@ -163,22 +193,19 @@
             color: #fff;
         }
 
-        .btn-danger:hover {
-            background: #dc2626;
-            transform: translateY(-2px);
-        }
-
         .empty-state {
             text-align: center;
             padding: 60px;
-            color: rgba(255, 255, 255, 0.5);
+            color: #666;
+            border: 1px solid #222;
+            background: #111;
         }
     </style>
 </head>
 
 <body>
     <nav class="navbar">
-        <div class="logo">🎧 Tekshirish</div>
+        <div class="logo">STT Admin / Tekshirish</div>
         <a href="/dashboard" class="back-btn">← Orqaga</a>
     </nav>
 
@@ -195,11 +222,11 @@
                 <div class="balance-value">
                     <%= user.balance || 0 %> so'm
                 </div>
-                <p style="color: rgba(255,255,255,0.6);">Joriy balans</p>
+                <div class="balance-label">Joriy balans</div>
             </div>
         </div>
 
-        <h3 style="margin-bottom: 16px;">5 ta Tasodifiy Tekshirilgan Audio</h3>
+        <h3 class="section-title">5 ta Tasodifiy Tekshirilgan Audio</h3>
 
         <% if (files.length===0) { %>
             <div class="empty-state">
@@ -212,30 +239,30 @@
                             <span class="file-key">
                                 <%= file.file_key %>
                             </span>
-                            <span class="file-status status-accepted">✅ Qabul qilingan</span>
+                            <span class="file-status">✓ ACCEPTED</span>
                         </div>
                         <% if (file.audioUrl) { %>
                             <div class="audio-player">
-                                <audio controls preload="none" style="width: 100%; margin: 12px 0;">
+                                <audio controls preload="none">
                                     <source src="<%= file.audioUrl %>" type="audio/wav">
                                     Brauzeringiz audio'ni qo'llab-quvvatlamaydi.
                                 </audio>
                             </div>
                             <% } %>
                                 <div class="file-text">
-                                    📝 <%= file.text %>
+                                    <%= file.text %>
                                 </div>
                     </div>
                     <% }); %>
 
                         <div class="penalty-section">
-                            <h3>⚠️ Xato topdingizmi?</h3>
+                            <h3>Xato topdingizmi?</h3>
                             <p>Agar yuqoridagi tekshiruvlarda xatolar bo'lsa, foydalanuvchi balansini 50% ga
                                 kamaytiring.</p>
                             <form method="POST" action="/review/penalty/<%= user.telegram_id %>">
                                 <button type="submit" class="btn btn-danger"
                                     onclick="return confirm('Balansni 50% ga kamaytirishni tasdiqlaysizmi?')">
-                                    🔻 50% Jarima Qo'llash
+                                    50% Jarima Qo'llash
                                 </button>
                             </form>
                         </div>
