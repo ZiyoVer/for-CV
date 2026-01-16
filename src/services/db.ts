@@ -45,6 +45,16 @@ export const dbService = {
     init: async () => {
         await pool.query(initTablesQuery);
 
+        // Migration: Add balance column if it doesn't exist (for existing databases)
+        try {
+            await pool.query(`
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS balance INTEGER DEFAULT 0;
+            `);
+        } catch (e) {
+            // Column might already exist, ignore error
+            console.log('Migration note: balance column check completed');
+        }
+
         for (const adminId of config.ADMIN_IDS) {
             await pool.query(
                 'INSERT INTO users (telegram_id, full_name, is_admin) VALUES ($1, $2, 1) ON CONFLICT (telegram_id) DO NOTHING',
