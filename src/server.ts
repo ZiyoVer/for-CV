@@ -110,6 +110,19 @@ app.post('/users/payout/:id', requireAuth, async (req, res) => {
     }
 });
 
+// Add balance manually (for missed payments)
+app.post('/users/add-balance/:id', requireAuth, async (req, res) => {
+    const userId = Number(req.params.id);
+    const amount = Number(req.body.amount) || 0;
+    try {
+        await dbService.incrementBalance(userId, amount);
+        res.redirect('/dashboard');
+    } catch (err) {
+        console.error('Add balance error:', err);
+        res.redirect('/dashboard?error=add_balance_failed');
+    }
+});
+
 app.get('/review/:id', requireAuth, async (req, res) => {
     const userId = Number(req.params.id);
     try {
