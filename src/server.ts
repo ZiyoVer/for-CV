@@ -116,13 +116,14 @@ app.get('/review/:id', requireAuth, async (req, res) => {
         const user = await dbService.getUser(userId);
         const files = await dbService.getRandomReviewFiles(userId, 5);
 
-        // Get JSON content for each file
+        // Get JSON content and audio URL for each file
         const filesWithContent = await Promise.all(files.map(async (file: any) => {
             try {
                 const json = await s3Service.getJsonContent(file.file_key);
-                return { ...file, text: json.text || 'Noma\'lum' };
+                const audioUrl = await s3Service.getAudioUrl(file.file_key);
+                return { ...file, text: json.text || 'Noma\'lum', audioUrl };
             } catch {
-                return { ...file, text: 'Yuklab bo\'lmadi' };
+                return { ...file, text: 'Yuklab bo\'lmadi', audioUrl: null };
             }
         }));
 

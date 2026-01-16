@@ -214,9 +214,17 @@
                             </span>
                             <span class="file-status status-accepted">✅ Qabul qilingan</span>
                         </div>
-                        <div class="file-text">
-                            📝 <%= file.text %>
-                        </div>
+                        <% if (file.audioUrl) { %>
+                            <div class="audio-player">
+                                <audio controls preload="none" style="width: 100%; margin: 12px 0;">
+                                    <source src="<%= file.audioUrl %>" type="audio/wav">
+                                    Brauzeringiz audio'ni qo'llab-quvvatlamaydi.
+                                </audio>
+                            </div>
+                            <% } %>
+                                <div class="file-text">
+                                    📝 <%= file.text %>
+                                </div>
                     </div>
                     <% }); %>
 
