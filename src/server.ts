@@ -158,6 +158,58 @@ app.post('/review/penalty/:id', requireAuth, async (req, res) => {
     }
 });
 
+// ========== PUBLIC LEADERBOARD (For Team Members) ==========
+
+// Public leaderboard page - no login required
+app.get('/leaderboard', async (req, res) => {
+    try {
+        const allStats = await dbService.getAllUserStats();
+
+        // Sort by accepted count (highest first)
+        const leaderboard = allStats
+            .filter((s: any) => s.accepted_count > 0 || s.rejected_count > 0)
+            .sort((a: any, b: any) => (b.accepted_count || 0) - (a.accepted_count || 0))
+            .map((s: any, index: number) => ({
+                rank: index + 1,
+                name: s.full_name || 'Noma\'lum',
+                accepted: s.accepted_count || 0,
+                rejected: s.rejected_count || 0,
+                total: (s.accepted_count || 0) + (s.rejected_count || 0)
+            }));
+
+        res.render('leaderboard', { leaderboard });
+    } catch (err) {
+        console.error('Leaderboard error:', err);
+        res.status(500).send('Server xatosi');
+    }
+});
+
+// JSON API for live updates (polling every 5 seconds)
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const allStats = await dbService.getAllUserStats();
+
+        const leaderboard = allStats
+            .filter((s: any) => s.accepted_count > 0 || s.rejected_count > 0)
+            .sort((a: any, b: any) => (b.accepted_count || 0) - (a.accepted_count || 0))
+            .map((s: any, index: number) => ({
+                rank: index + 1,
+                name: s.full_name || 'Noma\'lum',
+                accepted: s.accepted_count || 0,
+                rejected: s.rejected_count || 0,
+                total: (s.accepted_count || 0) + (s.rejected_count || 0)
+            }));
+
+        res.json({
+            success: true,
+            leaderboard,
+            updatedAt: new Date().toISOString()
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
 export function startServer() {
     const port = config.PORT;
     app.listen(port, () => {

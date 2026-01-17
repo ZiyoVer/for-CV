@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STT Leaderboard - Live Reyting</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: #0a0a0a;
+            min-height: 100vh;
+            color: #e5e5e5;
+        }
+
+        .navbar {
+            background: #111;
+            border-bottom: 1px solid #222;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #22c55e;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 48px 32px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .update-time {
+            color: #555;
+            font-size: 11px;
+            margin-top: 12px;
+        }
+
+        .leaderboard {
+            border: 1px solid #222;
+        }
+
+        .leaderboard-header {
+            display: grid;
+            grid-template-columns: 60px 1fr 100px 100px 100px;
+            background: #111;
+            padding: 14px 20px;
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #222;
+        }
+
+        .leaderboard-row {
+            display: grid;
+            grid-template-columns: 60px 1fr 100px 100px 100px;
+            padding: 16px 20px;
+            font-size: 13px;
+            border-bottom: 1px solid #1a1a1a;
+            transition: background 0.2s;
+        }
+
+        .leaderboard-row:hover {
+            background: #111;
+        }
+
+        .leaderboard-row:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            font-weight: 700;
+            color: #888;
+        }
+
+        .rank-1 {
+            color: #ffd700;
+        }
+
+        .rank-2 {
+            color: #c0c0c0;
+        }
+
+        .rank-3 {
+            color: #cd7f32;
+        }
+
+        .name {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat.accepted {
+            color: #22c55e;
+        }
+
+        .stat.rejected {
+            color: #ef4444;
+        }
+
+        .stat.total {
+            color: #eab308;
+        }
+
+        .trophy {
+            font-size: 16px;
+            margin-right: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .feature-list {
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid #222;
+        }
+
+        .feature-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .feature-item span:first-child {
+            color: #555;
+        }
+
+        .feature-item strong {
+            color: #e5e5e5;
+        }
+
+        @media (max-width: 600px) {
+
+            .leaderboard-header,
+            .leaderboard-row {
+                grid-template-columns: 50px 1fr 60px 60px 60px;
+                font-size: 11px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">🏆 STT Leaderboard</div>
+        <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span>LIVE</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Annotatorlar Reytingi</h1>
+            <p>Eng ko'p audio tekshirgan annotatorlar</p>
+            <div class="update-time" id="updateTime">Yuklanmoqda...</div>
+        </div>
+
+        <div class="leaderboard">
+            <div class="leaderboard-header">
+                <div>#</div>
+                <div>Ism</div>
+                <div style="text-align:center">✓ Qabul</div>
+                <div style="text-align:center">✗ Rad</div>
+                <div style="text-align:center">Jami</div>
+            </div>
+            <div id="leaderboardBody">
+                <% if (leaderboard.length===0) { %>
+                    <div class="empty-state">Hali hech kim tekshirmagan.</div>
+                    <% } else { %>
+                        <% leaderboard.forEach(user=> { %>
+                            <div class="leaderboard-row">
+                                <div class="rank <%= user.rank <= 3 ? 'rank-' + user.rank : '' %>">
+                                    <% if (user.rank===1) { %><span class="trophy">🥇</span>
+                                        <% } %>
+                                            <% else if (user.rank===2) { %><span class="trophy">🥈</span>
+                                                <% } %>
+                                                    <% else if (user.rank===3) { %><span class="trophy">🥉</span>
+                                                        <% } %>
+                                                            <% else { %>#<%= user.rank %>
+                                                                    <% } %>
+                                </div>
+                                <div class="name">
+                                    <%= user.name %>
+                                </div>
+                                <div class="stat accepted">
+                                    <%= user.accepted %>
+                                </div>
+                                <div class="stat rejected">
+                                    <%= user.rejected %>
+                                </div>
+                                <div class="stat total">
+                                    <%= user.total %>
+                                </div>
+                            </div>
+                            <% }); %>
+                                <% } %>
+            </div>
+        </div>
+
+        <div class="feature-list">
+            <div class="feature-item">
+                <span>[*]</span>
+                <span><strong>Auto-refresh</strong> Har 5 sekundda yangilanadi</span>
+            </div>
+            <div class="feature-item">
+                <span>[*]</span>
+                <span><strong>Real-time</strong> Natijalar darhol ko'rinadi</span>
+            </div>
+            <div class="feature-item">
+                <span>[*]</span>
+                <span><strong>Reyting</strong> Qabul qilinganlar soni bo'yicha</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateLeaderboard() {
+            fetch('/api/leaderboard')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    const body = document.getElementById('leaderboardBody');
+
+                    if (data.leaderboard.length === 0) {
+                        body.innerHTML = '<div class="empty-state">Hali hech kim tekshirmagan.</div>';
+                    } else {
+                        body.innerHTML = data.leaderboard.map(user => `
+                            <div class="leaderboard-row">
+                                <div class="rank ${user.rank <= 3 ? 'rank-' + user.rank : ''}">
+                                    ${user.rank === 1 ? '<span class="trophy">🥇</span>' : ''}
+                                    ${user.rank === 2 ? '<span class="trophy">🥈</span>' : ''}
+                                    ${user.rank === 3 ? '<span class="trophy">🥉</span>' : ''}
+                                    ${user.rank > 3 ? '#' + user.rank : ''}
+                                </div>
+                                <div class="name">${user.name}</div>
+                                <div class="stat accepted">${user.accepted}</div>
+                                <div class="stat rejected">${user.rejected}</div>
+                                <div class="stat total">${user.total}</div>
+                            </div>
+                        `).join('');
+                    }
+
+                    // Update time
+                    const time = new Date(data.updatedAt).toLocaleTimeString('uz-UZ');
+                    document.getElementById('updateTime').textContent = 'Oxirgi yangilanish: ' + time;
+                })
+                .catch(err => console.error('Update error:', err));
+        }
+
+        // Auto-refresh every 5 seconds
+        setInterval(updateLeaderboard, 5000);
+
+        // Initial time display
+        document.getElementById('updateTime').textContent = 'Oxirgi yangilanish: ' + new Date().toLocaleTimeString('uz-UZ');
+    </script>
+</body>
+
+</html>
