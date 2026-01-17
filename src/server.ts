@@ -174,7 +174,8 @@ app.get('/leaderboard', async (req, res) => {
                 name: s.full_name || 'Noma\'lum',
                 accepted: s.accepted_count || 0,
                 rejected: s.rejected_count || 0,
-                total: (s.accepted_count || 0) + (s.rejected_count || 0)
+                total: (s.accepted_count || 0) + (s.rejected_count || 0),
+                balance: s.balance || 0
             }));
 
         res.render('leaderboard', { leaderboard });
@@ -197,7 +198,8 @@ app.get('/api/leaderboard', async (req, res) => {
                 name: s.full_name || 'Noma\'lum',
                 accepted: s.accepted_count || 0,
                 rejected: s.rejected_count || 0,
-                total: (s.accepted_count || 0) + (s.rejected_count || 0)
+                total: (s.accepted_count || 0) + (s.rejected_count || 0),
+                balance: s.balance || 0
             }));
 
         res.json({

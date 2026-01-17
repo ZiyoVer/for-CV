@@ -99,7 +99,7 @@
 
         .leaderboard-header {
             display: grid;
-            grid-template-columns: 60px 1fr 100px 100px 100px;
+            grid-template-columns: 60px 1fr 80px 80px 80px 100px;
             background: #111;
             padding: 14px 20px;
             font-size: 11px;
@@ -111,7 +111,7 @@
 
         .leaderboard-row {
             display: grid;
-            grid-template-columns: 60px 1fr 100px 100px 100px;
+            grid-template-columns: 60px 1fr 80px 80px 80px 100px;
             padding: 16px 20px;
             font-size: 13px;
             border-bottom: 1px solid #1a1a1a;
@@ -162,6 +162,11 @@
 
         .stat.total {
             color: #eab308;
+        }
+
+        .stat.balance {
+            color: #22c55e;
+            font-weight: 600;
         }
 
         .trophy {
@@ -232,6 +237,7 @@
                 <div style="text-align:center">✓ Qabul</div>
                 <div style="text-align:center">✗ Rad</div>
                 <div style="text-align:center">Jami</div>
+                <div style="text-align:center">💰 Balans</div>
             </div>
             <div id="leaderboardBody">
                 <% if (leaderboard.length===0) { %>
@@ -262,26 +268,32 @@
                                 <div class="stat total">
                                     <%= user.total %>
                                 </div>
+                                <div class="stat balance">
+                                    <%= user.balance %> so'm
+                                </div>
                             </div>
                             <% }); %>
                                 <% } %>
             </div>
+            <% }); %>
+                <% } %>
         </div>
+    </div>
 
-        <div class="feature-list">
-            <div class="feature-item">
-                <span>[*]</span>
-                <span><strong>Auto-refresh</strong> Har 5 sekundda yangilanadi</span>
-            </div>
-            <div class="feature-item">
-                <span>[*]</span>
-                <span><strong>Real-time</strong> Natijalar darhol ko'rinadi</span>
-            </div>
-            <div class="feature-item">
-                <span>[*]</span>
-                <span><strong>Reyting</strong> Qabul qilinganlar soni bo'yicha</span>
-            </div>
+    <div class="feature-list">
+        <div class="feature-item">
+            <span>[*]</span>
+            <span><strong>Auto-refresh</strong> Har 5 sekundda yangilanadi</span>
         </div>
+        <div class="feature-item">
+            <span>[*]</span>
+            <span><strong>Real-time</strong> Natijalar darhol ko'rinadi</span>
+        </div>
+        <div class="feature-item">
+            <span>[*]</span>
+            <span><strong>Reyting</strong> Qabul qilinganlar soni bo'yicha</span>
+        </div>
+    </div>
     </div>
 
     <script>
@@ -308,6 +320,7 @@
                                 <div class="stat accepted">${user.accepted}</div>
                                 <div class="stat rejected">${user.rejected}</div>
                                 <div class="stat total">${user.total}</div>
+                                <div class="stat balance">${user.balance} so'm</div>
                             </div>
                         `).join('');
                     }
