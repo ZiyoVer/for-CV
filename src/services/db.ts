@@ -186,15 +186,15 @@ export const dbService = {
     getAllUserStats: async () => {
         const { rows } = await pool.query(
             `SELECT 
+                u.telegram_id,
                 u.full_name,
                 u.balance,
                 COUNT(f.file_key)::int as total_processed,
-                SUM(CASE WHEN f.status = 'ACCEPTED' THEN 1 ELSE 0 END)::int as accepted_count,
-                SUM(CASE WHEN f.status = 'REJECTED' THEN 1 ELSE 0 END)::int as rejected_count
+                COALESCE(SUM(CASE WHEN f.status = 'ACCEPTED' THEN 1 ELSE 0 END), 0)::int as accepted_count,
+                COALESCE(SUM(CASE WHEN f.status = 'REJECTED' THEN 1 ELSE 0 END), 0)::int as rejected_count
              FROM users u
-             LEFT JOIN files f ON u.telegram_id = f.assigned_to
-             WHERE f.status IN ('ACCEPTED', 'REJECTED')
-             GROUP BY u.telegram_id, u.balance
+             LEFT JOIN files f ON u.telegram_id = f.assigned_to AND f.status IN ('ACCEPTED', 'REJECTED')
+             GROUP BY u.telegram_id, u.full_name, u.balance
              ORDER BY accepted_count DESC`
         );
         return rows;
