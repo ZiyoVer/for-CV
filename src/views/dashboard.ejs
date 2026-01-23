@@ -427,6 +427,14 @@
                                     <button type="submit" class="btn btn-success btn-sm"
                                         onclick="return confirm('Pul to\'lashni tasdiqlaysizmi?')">To'lash</button>
                                 </form>
+                                <button class="btn btn-outline btn-sm"
+                                    onclick="openEditModal(<%= user.telegram_id %>, '<%= user.full_name %>', <%= user.is_admin ? 'true' : 'false' %>)">✏️
+                                    Tahrirlash</button>
+                                <form method="POST" action="/users/delete/<%= user.telegram_id %>"
+                                    style="display:inline;">
+                                    <button type="submit" class="btn btn-sm" style="background: #ef4444; color: #fff;"
+                                        onclick="return confirm('Foydalanuvchini o\'chirishni tasdiqlaysizmi?')">🗑️</button>
+                                </form>
                             </td>
                         </tr>
                         <% }); %>
@@ -481,6 +489,33 @@
         </div>
     </div>
 
+    <!-- Edit User Modal -->
+    <div class="modal-overlay" id="editUserModal">
+        <div class="modal">
+            <h3>Foydalanuvchini Tahrirlash</h3>
+            <form method="POST" id="editUserForm">
+                <div class="form-group">
+                    <label>Telegram ID</label>
+                    <input type="number" name="telegram_id" id="editTelegramId" placeholder="123456789" required>
+                </div>
+                <div class="form-group">
+                    <label>To'liq Ism</label>
+                    <input type="text" name="full_name" id="editFullName" placeholder="Ism Familiya" required>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" name="is_admin" id="editIsAdmin">
+                        <label for="editIsAdmin" style="margin: 0;">Admin qilish</label>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeEditModal()">Bekor</button>
+                    <button type="submit" class="btn">Saqlash →</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         function openModal() {
             document.getElementById('addUserModal').classList.add('active');
@@ -502,6 +537,20 @@
         }
         document.getElementById('balanceModal').addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) closeBalanceModal();
+        });
+
+        function openEditModal(telegramId, fullName, isAdmin) {
+            document.getElementById('editTelegramId').value = telegramId;
+            document.getElementById('editFullName').value = fullName;
+            document.getElementById('editIsAdmin').checked = isAdmin;
+            document.getElementById('editUserForm').action = '/users/update/' + telegramId;
+            document.getElementById('editUserModal').classList.add('active');
+        }
+        function closeEditModal() {
+            document.getElementById('editUserModal').classList.remove('active');
+        }
+        document.getElementById('editUserModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) closeEditModal();
         });
     </script>
 </body>

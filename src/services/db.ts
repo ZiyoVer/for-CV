@@ -86,6 +86,30 @@ export const dbService = {
         return rows;
     },
 
+    updateUser: async (oldTelegramId: number, newTelegramId: number, fullName: string, isAdmin: number) => {
+        // If telegram_id is changing, we need to update related files too
+        if (oldTelegramId !== newTelegramId) {
+            await pool.query(
+                'UPDATE files SET assigned_to = $1 WHERE assigned_to = $2',
+                [newTelegramId, oldTelegramId]
+            );
+        }
+        await pool.query(
+            'UPDATE users SET telegram_id = $1, full_name = $2, is_admin = $3 WHERE telegram_id = $4',
+            [newTelegramId, fullName, isAdmin, oldTelegramId]
+        );
+    },
+
+    deleteUser: async (telegramId: number) => {
+        // First release any locked files
+        await pool.query(
+            'UPDATE files SET status = $1, assigned_to = NULL, locked_at = NULL WHERE assigned_to = $2 AND status = $3',
+            ['PENDING', telegramId, 'LOCKED']
+        );
+        // Then delete user
+        await pool.query('DELETE FROM users WHERE telegram_id = $1', [telegramId]);
+    },
+
     // --- FINANCIAL / STATS LOGIC ---
     incrementBalance: async (user_id: number, amount: number) => {
         await pool.query('UPDATE users SET balance = balance + $1 WHERE telegram_id = $2', [amount, user_id]);

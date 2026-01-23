@@ -123,6 +123,36 @@ app.post('/users/add-balance/:id', requireAuth, async (req, res) => {
     }
 });
 
+// Update user (change telegram_id, name, admin status)
+app.post('/users/update/:id', requireAuth, async (req, res) => {
+    const oldId = Number(req.params.id);
+    const { telegram_id, full_name, is_admin } = req.body;
+    try {
+        await dbService.updateUser(
+            oldId,
+            Number(telegram_id),
+            full_name,
+            is_admin ? 1 : 0
+        );
+        res.redirect('/dashboard');
+    } catch (err) {
+        console.error('Update user error:', err);
+        res.redirect('/dashboard?error=update_failed');
+    }
+});
+
+// Delete user
+app.post('/users/delete/:id', requireAuth, async (req, res) => {
+    const userId = Number(req.params.id);
+    try {
+        await dbService.deleteUser(userId);
+        res.redirect('/dashboard');
+    } catch (err) {
+        console.error('Delete user error:', err);
+        res.redirect('/dashboard?error=delete_failed');
+    }
+});
+
 app.get('/review/:id', requireAuth, async (req, res) => {
     const userId = Number(req.params.id);
     try {
