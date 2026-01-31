@@ -186,6 +186,16 @@ export const dbService = {
         );
     },
 
+    // Release a file back to PENDING (for skip functionality)
+    releaseFile: async (user_id: number, file_key: string) => {
+        await pool.query(
+            `UPDATE files
+             SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
+             WHERE file_key = $1 AND assigned_to = $2`,
+            [file_key, user_id]
+        );
+    },
+
     addFile: async (key: string) => {
         await pool.query('INSERT INTO files (file_key) VALUES ($1) ON CONFLICT (file_key) DO NOTHING', [key]);
     },

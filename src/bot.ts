@@ -35,12 +35,36 @@ bot.use(authMiddleware);
 // --- COMMANDS ---
 
 bot.command('start', async (ctx) => {
-    await ctx.reply(`Assalomu alaykum, ${ctx.from?.first_name}!\nSTT Checking botiga xush kelibsiz.`, {
+    await showMainMenu(ctx);
+});
+
+bot.command('menu', async (ctx) => {
+    await showMainMenu(ctx);
+});
+
+// Helper function to show main menu
+async function showMainMenu(ctx: any) {
+    const user = await dbService.getUser(ctx.from.id);
+    const stats = await dbService.getUserStats(ctx.from.id);
+
+    let text = `🏠 <b>Asosiy Menyu</b>\n\n`;
+    text += `Assalomu alaykum, <b>${ctx.from?.first_name}</b>!\n\n`;
+    text += `📊 <b>Sizning statistikangiz:</b>\n`;
+    text += `   ✅ Qabul qilindi: ${stats.accepted}\n`;
+    text += `   ❌ Rad etildi: ${stats.rejected}\n`;
+    if (user?.balance) {
+        text += `   💰 Balans: ${user.balance} so'm\n`;
+    }
+
+    await ctx.reply(text, {
+        parse_mode: "HTML",
         reply_markup: new InlineKeyboard()
             .text("🎧 STT Tekshirish", "check_next")
-            .text("📊 Statistikam", "my_stats")
+            .row()
+            .text("📊 Batafsil Statistika", "my_stats")
+            .text("ℹ️ Yordam", "help_info")
     });
-});
+}
 
 bot.command('admin', async (ctx) => {
     const user = await dbService.getUser(ctx.from?.id!);
@@ -66,12 +90,51 @@ bot.callbackQuery("check_next", async (ctx) => {
     await sendNextFile(ctx);
 });
 
+bot.callbackQuery("main_menu", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await showMainMenu(ctx);
+});
+
 bot.callbackQuery("my_stats", async (ctx) => {
+    const user = await dbService.getUser(ctx.from.id);
     const stats = await dbService.getUserStats(ctx.from.id);
-    await ctx.reply(`📊 <b>Sizning Statistikangiz:</b>\n\n✅ Qabul qilindi: ${stats.accepted}\n❌ Rad etildi: ${stats.rejected}`, {
-        parse_mode: "HTML"
+    const checksToday = await dbService.get24hCheckCount(ctx.from.id);
+
+    let text = `📊 <b>Sizning Statistikangiz:</b>\n\n`;
+    text += `✅ Jami qabul qilindi: ${stats.accepted}\n`;
+    text += `❌ Jami rad etildi: ${stats.rejected}\n`;
+    text += `📅 Bugun tekshirildi: ${checksToday}\n`;
+    if (user?.balance) {
+        text += `💰 Balans: ${user.balance} so'm\n`;
+    }
+    text += `\n<i>20 ta bepul tekshirish, keyin har biri 50 so'm</i>`;
+
+    await ctx.reply(text, {
+        parse_mode: "HTML",
+        reply_markup: new InlineKeyboard().text("🏠 Asosiy menyu", "main_menu")
     });
     await ctx.answerCallbackQuery();
+});
+
+bot.callbackQuery("help_info", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await ctx.reply(
+        `ℹ️ <b>Yordam</b>\n\n` +
+        `<b>Tugmalar:</b>\n` +
+        `✅ <b>To'g'ri</b> - Audio va matn to'g'ri\n` +
+        `❌ <b>Xato</b> - Audio yoki matnda xato bor\n` +
+        `✏️ <b>Tahrirlash</b> - Matnni to'g'rilash\n` +
+        `⏭️ <b>O'tkazish</b> - Faylni o'tkazib yuborish\n\n` +
+        `<b>Qoidalar:</b>\n` +
+        `• Audiodagi matnni diqqat bilan tinglang\n` +
+        `• Agar matn to'g'ri bo'lsa "To'g'ri" bosing\n` +
+        `• Agar xato bo'lsa "Xato" yoki "Tahrirlash" bosing\n` +
+        `• Har kuni 20 ta bepul, keyin 50 so'm`,
+        {
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard().text("🏠 Asosiy menyu", "main_menu")
+        }
+    );
 });
 
 // Admin Stats
@@ -147,7 +210,9 @@ bot.callbackQuery(/^accept:(.+)$/, async (ctx) => {
 
         // 4. Offer Next
         await ctx.reply("Davom etamizmi?", {
-            reply_markup: new InlineKeyboard().text("Keyingisi ➡️", "check_next")
+            reply_markup: new InlineKeyboard()
+                .text("Keyingisi ➡️", "check_next")
+                .text("🏠 Menyu", "main_menu")
         });
 
     } catch (e) {
@@ -167,9 +232,125 @@ bot.callbackQuery(/^reject:(.+)$/, async (ctx) => {
         });
 
         await ctx.reply("Davom etamizmi?", {
-            reply_markup: new InlineKeyboard().text("Keyingisi ➡️", "check_next")
+            reply_markup: new InlineKeyboard()
+                .text("Keyingisi ➡️", "check_next")
+                .text("🏠 Menyu", "main_menu")
         });
     } catch (e) { console.error(e); }
+});
+
+// --- EDIT TEXT HANDLER ---
+// Store edit state per user
+const editState: Map<number, { fileKey: string; originalText: string }> = new Map();
+
+bot.callbackQuery(/^edit:(.+)$/, async (ctx) => {
+    const key = ctx.match[1];
+    await ctx.answerCallbackQuery();
+
+    try {
+        const json = await s3Service.getJsonContent(key);
+        const originalText = json.text || '';
+
+        // Store the edit state
+        editState.set(ctx.from.id, { fileKey: key, originalText });
+
+        await ctx.reply(
+            `✏️ <b>Matnni tahrirlash</b>\n\n` +
+            `<b>Hozirgi matn:</b>\n<code>${originalText}</code>\n\n` +
+            `<i>To'g'ri matnni pastga yozing:</i>`,
+            {
+                parse_mode: "HTML",
+                reply_markup: new InlineKeyboard().text("❌ Bekor qilish", `cancel_edit:${key}`)
+            }
+        );
+    } catch (e) {
+        console.error(e);
+        await ctx.reply("Xatolik yuz berdi.");
+    }
+});
+
+bot.callbackQuery(/^cancel_edit:(.+)$/, async (ctx) => {
+    editState.delete(ctx.from.id);
+    await ctx.answerCallbackQuery("Bekor qilindi");
+    await ctx.reply("Tahrirlash bekor qilindi.", {
+        reply_markup: new InlineKeyboard()
+            .text("Keyingisi ➡️", "check_next")
+            .text("🏠 Menyu", "main_menu")
+    });
+});
+
+// Handle text messages for editing
+bot.on("message:text", async (ctx) => {
+    const userId = ctx.from.id;
+    const state = editState.get(userId);
+
+    if (!state) {
+        // Not in edit mode, ignore or show help
+        return;
+    }
+
+    const newText = ctx.message.text.trim();
+    const { fileKey } = state;
+
+    try {
+        // Update JSON in S3
+        const success = await s3Service.updateJsonText(fileKey, newText);
+
+        if (success) {
+            // Copy to sorted folder
+            await s3Service.copyToSorted(fileKey);
+            // Update DB status
+            await dbService.updateFileStatus(userId, fileKey, 'ACCEPTED');
+
+            // Payment logic
+            const checksToday = await dbService.get24hCheckCount(userId);
+            if (checksToday > 20) {
+                await dbService.incrementBalance(userId, 50);
+            }
+
+            editState.delete(userId);
+
+            await ctx.reply(
+                `✅ <b>Matn tahrirlandi va saqlandi!</b>\n\n` +
+                `<b>Yangi matn:</b>\n<code>${newText}</code>`,
+                {
+                    parse_mode: "HTML",
+                    reply_markup: new InlineKeyboard()
+                        .text("Keyingisi ➡️", "check_next")
+                        .text("🏠 Menyu", "main_menu")
+                }
+            );
+        } else {
+            await ctx.reply("❌ Matnni saqlashda xatolik. Qaytadan urinib ko'ring.");
+        }
+    } catch (e) {
+        console.error(e);
+        await ctx.reply("Xatolik yuz berdi.");
+    }
+});
+
+// --- SKIP FILE HANDLER ---
+bot.callbackQuery(/^skip:(.+)$/, async (ctx) => {
+    const key = ctx.match[1];
+    await ctx.answerCallbackQuery("O'tkazildi ⏭️");
+
+    try {
+        // Release the file back to pending
+        await dbService.releaseFile(ctx.from.id, key);
+
+        await ctx.editMessageCaption({
+            caption: `${ctx.callbackQuery.message?.caption}\n\n⏭️ **O'tkazildi**`
+        });
+
+        await ctx.reply("Fayl o'tkazildi. Keyingisiga o'tamizmi?", {
+            reply_markup: new InlineKeyboard()
+                .text("Keyingisi ➡️", "check_next")
+                .text("🏠 Menyu", "main_menu")
+        });
+    } catch (e) {
+        console.error(e);
+        await ctx.reply("Xatolik yuz berdi.");
+    }
 });
 
 
@@ -218,6 +399,11 @@ async function sendNextFile(ctx: any) {
             reply_markup: new InlineKeyboard()
                 .text("✅ To'g'ri", `accept:${fileKey}`)
                 .text("❌ Xato", `reject:${fileKey}`)
+                .row()
+                .text("✏️ Tahrirlash", `edit:${fileKey}`)
+                .text("⏭️ O'tkazish", `skip:${fileKey}`)
+                .row()
+                .text("🏠 Asosiy menyu", "main_menu")
         });
 
     } catch (e: any) {

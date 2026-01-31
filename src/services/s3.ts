@@ -1,4 +1,4 @@
-import { S3Client, ListObjectsV2Command, GetObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, ListObjectsV2Command, GetObjectCommand, CopyObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from '../config';
 import { dbService } from './db';
@@ -120,6 +120,39 @@ export const s3Service = {
             }));
         } catch (e) {
             console.warn(`Could not copy JSON for ${key}`, e);
+        }
+    },
+
+    // Update text in JSON file
+    async updateJsonText(audioKey: string, newText: string): Promise<boolean> {
+        const jsonKey = audioKey.replace('.wav', '.json');
+        try {
+            // First, get the existing JSON
+            const command = new GetObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: jsonKey
+            });
+            const response = await s3.send(command);
+            const str = await response.Body?.transformToString();
+            const json = str ? JSON.parse(str) : {};
+
+            // Update the text field
+            json.text = newText;
+
+            // Save back to S3
+            const putCommand = new PutObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: jsonKey,
+                Body: JSON.stringify(json, null, 2),
+                ContentType: 'application/json'
+            });
+            await s3.send(putCommand);
+
+            console.log(`Updated JSON text for ${jsonKey}`);
+            return true;
+        } catch (error) {
+            console.error(`Error updating JSON for ${audioKey}:`, error);
+            return false;
         }
     }
 };
