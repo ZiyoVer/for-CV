@@ -1,10 +1,25 @@
 import express from 'express';
 import session from 'express-session';
 import bodyParser from 'body-parser';
+import multer from 'multer';
 import path from 'path';
 import { config } from './config';
 import { dbService } from './services/db';
 import { s3Service } from './services/s3';
+
+// Configure multer for memory storage (for S3 upload)
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+    fileFilter: (req, file, cb) => {
+        // Only allow audio files
+        if (file.mimetype.startsWith('audio/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Faqat audio fayllar qabul qilinadi'));
+        }
+    }
+});
 
 const app = express();
 
@@ -69,6 +84,7 @@ app.get('/dashboard', requireAuth, async (req, res) => {
 
         // Get total stats
         const pendingCount = await dbService.getPendingCount();
+        const transcriptionPendingCount = await dbService.getTranscriptionPendingCount();
         const allStats = await dbService.getAllUserStats();
         const totalAccepted = allStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
         const totalRejected = allStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
@@ -77,6 +93,7 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             users: usersWithStats,
             stats: {
                 pending: pendingCount,
+                transcriptionPending: transcriptionPendingCount,
                 totalAccepted,
                 totalRejected,
                 totalChecked: totalAccepted + totalRejected
@@ -185,6 +202,53 @@ app.post('/review/penalty/:id', requireAuth, async (req, res) => {
     } catch (err) {
         console.error('Penalty error:', err);
         res.redirect('/dashboard?error=penalty_failed');
+    }
+});
+
+// ========== TRANSCRIPTION AUDIO UPLOAD ==========
+
+// Upload transcription audio files
+app.post('/transcription/upload', requireAuth, upload.array('audioFiles', 100), async (req, res) => {
+    try {
+        const files = req.files as Express.Multer.File[];
+        if (!files || files.length === 0) {
+            return res.redirect('/dashboard?error=no_files');
+        }
+
+        let uploadedCount = 0;
+        for (const file of files) {
+            // Generate unique filename
+            const timestamp = Date.now();
+            const cleanName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+            const filename = `${timestamp}_${cleanName}`;
+
+            await s3Service.uploadTranscriptionAudio(file.buffer, filename);
+            uploadedCount++;
+        }
+
+        console.log(`Uploaded ${uploadedCount} transcription audio files`);
+        res.redirect(`/dashboard?success=uploaded_${uploadedCount}`);
+    } catch (err) {
+        console.error('Transcription upload error:', err);
+        res.redirect('/dashboard?error=upload_failed');
+    }
+});
+
+// API: Get transcription stats
+app.get('/api/transcription-stats', requireAuth, async (req, res) => {
+    try {
+        const pendingCount = await dbService.getTranscriptionPendingCount();
+        const allStats = await dbService.getAllTranscriptionStats();
+        const totalAccepted = allStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+
+        res.json({
+            success: true,
+            pending: pendingCount,
+            totalAccepted,
+            stats: allStats
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
     }
 });
 

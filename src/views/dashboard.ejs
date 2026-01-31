@@ -378,6 +378,32 @@
             </div>
         </div>
 
+        <!-- Transcription Upload Section -->
+        <div style="margin-bottom: 48px; padding: 24px; background: #111; border: 1px solid #222;">
+            <h2 class="section-title">📝 Transkripsiya</h2>
+            <p class="section-desc" style="margin-bottom: 16px;">Audio fayllarni transkripsiya uchun yuklang</p>
+
+            <form method="POST" action="/transcription/upload" enctype="multipart/form-data" id="uploadForm">
+                <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                    <input type="file" name="audioFiles" multiple accept="audio/*"
+                        style="background: #0a0a0a; border: 1px solid #333; padding: 12px; color: #fff; flex: 1; min-width: 200px;"
+                        onchange="updateFileCount(this)">
+                    <button type="submit" class="btn" id="uploadBtn">
+                        📤 Yuklash
+                    </button>
+                </div>
+                <p id="fileCount" style="color: #666; font-size: 12px; margin-top: 8px;"></p>
+            </form>
+
+            <% if (typeof stats.transcriptionPending !=='undefined' ) { %>
+                <p style="color: #888; font-size: 12px; margin-top: 16px;">
+                    ⏳ Kutilmoqda: <span style="color: #eab308;">
+                        <%= stats.transcriptionPending %>
+                    </span> ta transkripsiya
+                </p>
+                <% } %>
+        </div>
+
         <div class="users-header">
             <h2 class="section-title">Foydalanuvchilar</h2>
             <button class="btn" onclick="openModal()">+ Yangi Qo'shish</button>
@@ -551,6 +577,17 @@
         }
         document.getElementById('editUserModal').addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) closeEditModal();
+        });
+
+        // Transcription upload
+        function updateFileCount(input) {
+            const count = input.files.length;
+            document.getElementById('fileCount').textContent = count > 0 ? `${count} ta fayl tanlandi` : '';
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', function () {
+            document.getElementById('uploadBtn').textContent = '⏳ Yuklanmoqda...';
+            document.getElementById('uploadBtn').disabled = true;
         });
     </script>
 </body>

@@ -15,6 +15,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.968.0",
     "@aws-sdk/s3-request-presigner": "^3.968.0",
+    "@types/multer": "^2.0.0",
     "axios": "^1.13.2",
     "body-parser": "^2.2.2",
     "chart.js": "^4.5.1",
@@ -24,6 +25,7 @@
     "express": "^5.2.1",
     "express-session": "^1.18.2",
     "grammy": "^1.39.2",
+    "multer": "^2.0.2",
     "pg": "^8.16.3"
   },
   "devDependencies": {

@@ -46,11 +46,16 @@ bot.command('menu', async (ctx) => {
 async function showMainMenu(ctx: any) {
     const user = await dbService.getUser(ctx.from.id);
     const stats = await dbService.getUserStats(ctx.from.id);
+    const transStats = await dbService.getUserTranscriptionStats(ctx.from.id);
     const checksToday = await dbService.get24hCheckCount(ctx.from.id);
+    const transToday = await dbService.get24hTranscriptionCount(ctx.from.id);
     const freeLeft = Math.max(0, 20 - checksToday);
 
     let text = `🏠 <b>Asosiy Menyu</b>\n\n`;
     text += `Salom, <b>${ctx.from?.first_name}</b>! 👋\n\n`;
+
+    // STT Stats
+    text += `<b>🎧 STT Tekshiruv:</b>\n`;
     text += `<code>┌─────────────────────────┐</code>\n`;
     text += `<code>│</code> ✅ Qabul:    <code>${String(stats.accepted).padStart(6)}</code>  <code>│</code>\n`;
     text += `<code>│</code> ❌ Rad:      <code>${String(stats.rejected).padStart(6)}</code>  <code>│</code>\n`;
@@ -59,13 +64,21 @@ async function showMainMenu(ctx: any) {
         text += `<code>├─────────────────────────┤</code>\n`;
         text += `<code>│</code> 💰 Balans: <code>${String(user.balance).padStart(6)}</code> so'm<code>│</code>\n`;
     }
-    text += `<code>└─────────────────────────┘</code>\n\n`;
-    text += `🎁 Bepul qoldi: <b>${freeLeft}</b>/20`;
+    text += `<code>└─────────────────────────┘</code>\n`;
+    text += `🎁 Bepul qoldi: <b>${freeLeft}</b>/20\n\n`;
+
+    // Transcription Stats
+    text += `<b>📝 Transkripsiya:</b>\n`;
+    text += `<code>┌─────────────────────────┐</code>\n`;
+    text += `<code>│</code> ✅ Bajarildi: <code>${String(transStats.accepted).padStart(5)}</code>  <code>│</code>\n`;
+    text += `<code>│</code> 📅 Bugun:     <code>${String(transToday).padStart(5)}</code>  <code>│</code>\n`;
+    text += `<code>└─────────────────────────┘</code>\n`;
 
     await ctx.reply(text, {
         parse_mode: "HTML",
         reply_markup: new InlineKeyboard()
             .text("🎧 STT Tekshirish", "check_next")
+            .text("📝 Transkripsiya", "transcription_next")
             .row()
             .text("📊 Batafsil Statistika", "my_stats")
             .text("ℹ️ Yordam", "help_info")
@@ -80,7 +93,8 @@ bot.command('admin', async (ctx) => {
         reply_markup: new InlineKeyboard()
             .text("📈 Umumiy Statistika", "admin_stats")
             .row()
-            .text("🔄 S3 Sync", "admin_sync")
+            .text("🔄 STT Sync", "admin_sync")
+            .text("📝 Trans. Sync", "admin_transcription_sync")
     });
 });
 
@@ -104,30 +118,39 @@ bot.callbackQuery("main_menu", async (ctx) => {
 bot.callbackQuery("my_stats", async (ctx) => {
     const user = await dbService.getUser(ctx.from.id);
     const stats = await dbService.getUserStats(ctx.from.id);
+    const transStats = await dbService.getUserTranscriptionStats(ctx.from.id);
     const checksToday = await dbService.get24hCheckCount(ctx.from.id);
+    const transToday = await dbService.get24hTranscriptionCount(ctx.from.id);
     const totalChecked = stats.accepted + stats.rejected;
     const accuracy = totalChecked > 0 ? Math.round((stats.accepted / totalChecked) * 100) : 0;
     const freeLeft = Math.max(0, 20 - checksToday);
 
     let text = `📊 <b>Batafsil Statistika</b>\n\n`;
+
+    // STT Section
+    text += `<b>🎧 STT TEKSHIRUV</b>\n`;
     text += `<code>╔═══════════════════════════╗</code>\n`;
-    text += `<code>║</code>   📈 <b>UMUMIY NATIJALAR</b>    <code>║</code>\n`;
-    text += `<code>╠═══════════════════════════╣</code>\n`;
     text += `<code>║</code> ✅ Qabul qilindi: <code>${String(stats.accepted).padStart(6)}</code> <code>║</code>\n`;
     text += `<code>║</code> ❌ Rad etildi:    <code>${String(stats.rejected).padStart(6)}</code> <code>║</code>\n`;
     text += `<code>║</code> 📝 Jami:          <code>${String(totalChecked).padStart(6)}</code> <code>║</code>\n`;
     text += `<code>║</code> 🎯 Aniqlik:       <code>${String(accuracy).padStart(5)}%</code> <code>║</code>\n`;
     text += `<code>╠═══════════════════════════╣</code>\n`;
-    text += `<code>║</code>   📅 <b>BUGUNGI KUN</b>        <code>║</code>\n`;
-    text += `<code>╠═══════════════════════════╣</code>\n`;
-    text += `<code>║</code> 🔄 Tekshirildi:   <code>${String(checksToday).padStart(6)}</code> <code>║</code>\n`;
+    text += `<code>║</code> 📅 Bugun:         <code>${String(checksToday).padStart(6)}</code> <code>║</code>\n`;
     text += `<code>║</code> 🎁 Bepul qoldi:   <code>${String(freeLeft).padStart(6)}</code> <code>║</code>\n`;
     if (user?.balance !== undefined) {
         text += `<code>╠═══════════════════════════╣</code>\n`;
         text += `<code>║</code> 💰 Balans:    <code>${String(user.balance).padStart(6)}</code> so'm<code>║</code>\n`;
     }
-    text += `<code>╚═══════════════════════════╝</code>\n\n`;
-    text += `<i>💡 20 ta bepul, keyin 50 so'm</i>`;
+    text += `<code>╚═══════════════════════════╝</code>\n`;
+    text += `<i>💡 20 ta bepul, keyin 50 so'm</i>\n\n`;
+
+    // Transcription Section
+    text += `<b>📝 TRANSKRIPSIYA</b>\n`;
+    text += `<code>╔═══════════════════════════╗</code>\n`;
+    text += `<code>║</code> ✅ Bajarildi:     <code>${String(transStats.accepted).padStart(6)}</code> <code>║</code>\n`;
+    text += `<code>║</code> 📅 Bugun:         <code>${String(transToday).padStart(6)}</code> <code>║</code>\n`;
+    text += `<code>╚═══════════════════════════╝</code>\n`;
+    text += `<i>💡 Transkripsiya bepul</i>`;
 
     await ctx.reply(text, {
         parse_mode: "HTML",
@@ -278,6 +301,8 @@ bot.callbackQuery(/^reject:(.+)$/, async (ctx) => {
 // --- EDIT TEXT HANDLER ---
 // Store edit state per user
 const editState: Map<number, { fileKey: string; originalText: string }> = new Map();
+// Store transcription state per user
+const transcriptionState: Map<number, { fileKey: string }> = new Map();
 
 bot.callbackQuery(/^edit:(.+)$/, async (ctx) => {
     const key = ctx.match[1];
@@ -315,53 +340,85 @@ bot.callbackQuery(/^cancel_edit:(.+)$/, async (ctx) => {
     });
 });
 
-// Handle text messages for editing
+// Handle text messages for editing AND transcription
 bot.on("message:text", async (ctx) => {
     const userId = ctx.from.id;
-    const state = editState.get(userId);
+    const editS = editState.get(userId);
+    const transS = transcriptionState.get(userId);
 
-    if (!state) {
-        // Not in edit mode, ignore or show help
+    // If neither state, ignore
+    if (!editS && !transS) {
         return;
     }
 
     const newText = ctx.message.text.trim();
-    const { fileKey } = state;
 
-    try {
-        // Update JSON in S3
-        const success = await s3Service.updateJsonText(fileKey, newText);
-
-        if (success) {
-            // Copy to sorted folder
-            await s3Service.copyToSorted(fileKey);
+    // Handle TRANSCRIPTION text input
+    if (transS) {
+        const { fileKey } = transS;
+        try {
+            // Copy to sorted folder with transcribed text
+            await s3Service.copyTranscriptionToSorted(fileKey, newText);
             // Update DB status
-            await dbService.updateFileStatus(userId, fileKey, 'ACCEPTED');
+            await dbService.updateTranscriptionFileStatus(userId, fileKey, 'ACCEPTED', newText);
 
-            // Payment logic
-            const checksToday = await dbService.get24hCheckCount(userId);
-            if (checksToday > 20) {
-                await dbService.incrementBalance(userId, 50);
-            }
-
-            editState.delete(userId);
+            transcriptionState.delete(userId);
 
             await ctx.reply(
-                `✅ <b>Matn tahrirlandi va saqlandi!</b>\n\n` +
-                `<b>Yangi matn:</b>\n<code>${newText}</code>`,
+                `✅ <b>Transkripsiya saqlandi!</b>\n\n` +
+                `<b>Matn:</b>\n<code>${newText}</code>`,
                 {
                     parse_mode: "HTML",
                     reply_markup: new InlineKeyboard()
-                        .text("Keyingisi ➡️", "check_next")
+                        .text("Keyingisi ➡️", "transcription_next")
                         .text("🏠 Menyu", "main_menu")
                 }
             );
-        } else {
-            await ctx.reply("❌ Matnni saqlashda xatolik. Qaytadan urinib ko'ring.");
+        } catch (e) {
+            console.error(e);
+            await ctx.reply("Xatolik yuz berdi.");
         }
-    } catch (e) {
-        console.error(e);
-        await ctx.reply("Xatolik yuz berdi.");
+        return;
+    }
+
+    // Handle EDIT (STT) text input
+    if (editS) {
+        const { fileKey } = editS;
+        try {
+            // Update JSON in S3
+            const success = await s3Service.updateJsonText(fileKey, newText);
+
+            if (success) {
+                // Copy to sorted folder
+                await s3Service.copyToSorted(fileKey);
+                // Update DB status
+                await dbService.updateFileStatus(userId, fileKey, 'ACCEPTED');
+
+                // Payment logic
+                const checksToday = await dbService.get24hCheckCount(userId);
+                if (checksToday > 20) {
+                    await dbService.incrementBalance(userId, 50);
+                }
+
+                editState.delete(userId);
+
+                await ctx.reply(
+                    `✅ <b>Matn tahrirlandi va saqlandi!</b>\n\n` +
+                    `<b>Yangi matn:</b>\n<code>${newText}</code>`,
+                    {
+                        parse_mode: "HTML",
+                        reply_markup: new InlineKeyboard()
+                            .text("Keyingisi ➡️", "check_next")
+                            .text("🏠 Menyu", "main_menu")
+                    }
+                );
+            } else {
+                await ctx.reply("❌ Matnni saqlashda xatolik. Qaytadan urinib ko'ring.");
+            }
+        } catch (e) {
+            console.error(e);
+            await ctx.reply("Xatolik yuz berdi.");
+        }
     }
 });
 
@@ -388,6 +445,113 @@ bot.callbackQuery(/^skip:(.+)$/, async (ctx) => {
         await ctx.reply("Xatolik yuz berdi.");
     }
 });
+
+
+// --- TRANSCRIPTION HANDLERS ---
+
+bot.callbackQuery("transcription_next", async (ctx) => {
+    await ctx.answerCallbackQuery("Yuklanmoqda...");
+    await sendNextTranscriptionFile(ctx);
+});
+
+bot.callbackQuery(/^transcription_skip:(.+)$/, async (ctx) => {
+    const key = ctx.match[1];
+    await ctx.answerCallbackQuery("O'tkazildi ⏭️");
+
+    try {
+        // Clear transcription state
+        transcriptionState.delete(ctx.from.id);
+
+        // Release the file back to pending
+        await dbService.releaseTranscriptionFile(ctx.from.id, key);
+
+        await ctx.editMessageCaption({
+            caption: `${ctx.callbackQuery.message?.caption}\n\n⏭️ **O'tkazildi**`
+        });
+
+        await ctx.reply("Fayl o'tkazildi. Keyingisiga o'tamizmi?", {
+            reply_markup: new InlineKeyboard()
+                .text("Keyingisi ➡️", "transcription_next")
+                .text("🏠 Menyu", "main_menu")
+        });
+    } catch (e) {
+        console.error(e);
+        await ctx.reply("Xatolik yuz berdi.");
+    }
+});
+
+// Admin Transcription Sync
+bot.callbackQuery("admin_transcription_sync", async (ctx) => {
+    const user = await dbService.getUser(ctx.from.id);
+    if (!user?.is_admin) return;
+
+    await ctx.answerCallbackQuery("Transkripsiya Sync boshlandi...");
+    await ctx.reply("Transkripsiya S3 Sync boshlandi. Bu biroz vaqt olishi mumkin...");
+
+    s3Service.syncTranscriptionFiles().then(async () => {
+        await ctx.reply("Transkripsiya Sync tugadi! ✅");
+        const pendingCount = await dbService.getTranscriptionPendingCount();
+        await ctx.reply(`Jami transkripsiya fayllar: ${pendingCount}`);
+    }).catch(async (err) => {
+        console.error("Transcription Sync error:", err);
+        await ctx.reply(`⚠️ Sync xatolik bilan tugadi:\n${err.message}`);
+    });
+});
+
+// Helper function for transcription
+async function sendNextTranscriptionFile(ctx: any) {
+    const userId = ctx.from.id;
+    let fileKey: string | null = null;
+
+    try {
+        fileKey = await dbService.lockNextTranscriptionFile(userId);
+
+        if (!fileKey) {
+            const pending = await dbService.getTranscriptionPendingCount();
+            if (pending === 0) {
+                const user = await dbService.getUser(userId);
+                let msg = "Hozircha transkripsiya vazifalari yo'q.";
+                if (user?.is_admin) {
+                    msg += " (Admin panel orqali 'Transkripsiya Sync' qiling).";
+                }
+                await ctx.reply(msg);
+            } else {
+                await ctx.reply("Hozircha barcha transkripsiya fayllar band. Birozdan so'ng urinib ko'ring.");
+            }
+            return;
+        }
+
+        // Get audio buffer (no text - this is transcription mode)
+        const audioBuffer = await s3Service.getTranscriptionAudioBuffer(fileKey);
+
+        if (!audioBuffer) {
+            await ctx.reply("Audio faylni yuklab bo'lmadi (S3 error).");
+            return;
+        }
+
+        // Store state for text input
+        transcriptionState.set(userId, { fileKey });
+        // Clear any edit state
+        editState.delete(userId);
+
+        const fileName = fileKey.split('/').pop()?.replace('.wav', '') || fileKey;
+        const caption = `📝 <b>TRANSKRIPSIYA</b>\n\n🆔 <code>${fileName}</code>\n\n<i>⬇️ Audioni tinglang va matnni yozing:</i>`;
+
+        await ctx.replyWithAudio(new InputFile(audioBuffer), {
+            caption: caption,
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard()
+                .text("⏭️ O'tkazish", `transcription_skip:${fileKey}`)
+                .text("🏠 Menyu", "main_menu")
+        });
+
+    } catch (e: any) {
+        console.error("Error in sendNextTranscriptionFile:", e);
+        let msg = "Faylni olishda xatolik.";
+        if (e.message) msg += `\n(${e.message})`;
+        await ctx.reply(msg);
+    }
+}
 
 
 // Helper
@@ -462,12 +626,21 @@ export async function launchBot() {
 
     // Periodically release locks (every 5 mins)
     setInterval(() => {
+        // Release STT files
         dbService.releaseTimedOutFiles(config.LOCK_TIMEOUT_MS)
             .then((released) => {
                 const count = released ?? 0;
-                if (count > 0) console.log(`Released ${count} timed out files.`);
+                if (count > 0) console.log(`Released ${count} timed out STT files.`);
             })
-            .catch((err) => console.error('Error releasing locks', err));
+            .catch((err) => console.error('Error releasing STT locks', err));
+
+        // Release Transcription files
+        dbService.releaseTimedOutTranscriptionFiles(config.LOCK_TIMEOUT_MS)
+            .then((released) => {
+                const count = released ?? 0;
+                if (count > 0) console.log(`Released ${count} timed out transcription files.`);
+            })
+            .catch((err) => console.error('Error releasing transcription locks', err));
     }, 5 * 60 * 1000);
 
     // Bot start will be handled by runner, but bot.start() blocks...

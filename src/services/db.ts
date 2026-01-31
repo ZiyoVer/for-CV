@@ -24,6 +24,18 @@ const initTablesQuery = `
 
     CREATE INDEX IF NOT EXISTS idx_files_status ON files(status);
     CREATE INDEX IF NOT EXISTS idx_files_assigned ON files(assigned_to) WHERE assigned_to IS NOT NULL;
+
+    CREATE TABLE IF NOT EXISTS transcription_files (
+        file_key TEXT PRIMARY KEY,
+        status TEXT DEFAULT 'PENDING',
+        assigned_to BIGINT,
+        locked_at TIMESTAMPTZ,
+        processed_at TIMESTAMPTZ,
+        transcribed_text TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_transcription_status ON transcription_files(status);
+    CREATE INDEX IF NOT EXISTS idx_transcription_assigned ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL;
 `;
 
 const withTransaction = async <T>(fn: (client: PoolClient) => Promise<T>): Promise<T> => {
@@ -238,6 +250,111 @@ export const dbService = {
         const cutoff = new Date(Date.now() - timeoutMs);
         const result = await pool.query(
             `UPDATE files 
+             SET status = 'PENDING', assigned_to = NULL, locked_at = NULL 
+             WHERE status = 'LOCKED' AND locked_at < $1`,
+            [cutoff]
+        );
+        return result.rowCount;
+    },
+
+    // --- TRANSCRIPTION FUNCTIONS ---
+    addTranscriptionFile: async (key: string) => {
+        await pool.query('INSERT INTO transcription_files (file_key) VALUES ($1) ON CONFLICT (file_key) DO NOTHING', [key]);
+    },
+
+    getTranscriptionPendingCount: async () => {
+        const { rows } = await pool.query('SELECT COUNT(*)::int as count FROM transcription_files WHERE status = $1', ['PENDING']);
+        return rows[0]?.count || 0;
+    },
+
+    lockNextTranscriptionFile: async (user_id: number): Promise<string | null> => {
+        return withTransaction<string | null>(async (client) => {
+            // Check if user already has a locked file
+            const existing = await client.query(
+                'SELECT file_key FROM transcription_files WHERE status = $1 AND assigned_to = $2 LIMIT 1 FOR UPDATE',
+                ['LOCKED', user_id]
+            );
+            if (existing.rowCount) return existing.rows[0].file_key;
+
+            // Get next pending file
+            const pending = await client.query(
+                'SELECT file_key FROM transcription_files WHERE status = $1 ORDER BY file_key LIMIT 1 FOR UPDATE SKIP LOCKED',
+                ['PENDING']
+            );
+            if (!pending.rowCount) return null;
+
+            const fileKey = pending.rows[0].file_key as string;
+            await client.query(
+                'UPDATE transcription_files SET status = $1, assigned_to = $2, locked_at = NOW() WHERE file_key = $3',
+                ['LOCKED', user_id, fileKey]
+            );
+            return fileKey;
+        });
+    },
+
+    updateTranscriptionFileStatus: async (user_id: number, file_key: string, status: 'ACCEPTED' | 'REJECTED', transcribedText?: string) => {
+        await pool.query(
+            `UPDATE transcription_files
+             SET status = $1,
+                 processed_at = NOW(),
+                 transcribed_text = $4
+             WHERE file_key = $2 AND assigned_to = $3`,
+            [status, file_key, user_id, transcribedText || null]
+        );
+    },
+
+    releaseTranscriptionFile: async (user_id: number, file_key: string) => {
+        await pool.query(
+            `UPDATE transcription_files
+             SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
+             WHERE file_key = $1 AND assigned_to = $2`,
+            [file_key, user_id]
+        );
+    },
+
+    getUserTranscriptionStats: async (user_id: number) => {
+        const { rows } = await pool.query(
+            `SELECT 
+                COUNT(*) FILTER (WHERE status = 'ACCEPTED')::int AS accepted,
+                COUNT(*) FILTER (WHERE status = 'REJECTED')::int AS rejected
+             FROM transcription_files WHERE assigned_to = $1 AND status IN ('ACCEPTED', 'REJECTED')`,
+            [user_id]
+        );
+        return rows[0] || { accepted: 0, rejected: 0 };
+    },
+
+    get24hTranscriptionCount: async (user_id: number) => {
+        const { rows } = await pool.query(
+            `SELECT COUNT(*)::int as count 
+             FROM transcription_files 
+             WHERE assigned_to = $1 
+               AND status IN ('ACCEPTED', 'REJECTED')
+               AND processed_at > NOW() - INTERVAL '24 hours'`,
+            [user_id]
+        );
+        return rows[0]?.count || 0;
+    },
+
+    getAllTranscriptionStats: async () => {
+        const { rows } = await pool.query(
+            `SELECT 
+                u.telegram_id,
+                u.full_name,
+                COUNT(tf.file_key)::int as total_processed,
+                COALESCE(SUM(CASE WHEN tf.status = 'ACCEPTED' THEN 1 ELSE 0 END), 0)::int as accepted_count,
+                COALESCE(SUM(CASE WHEN tf.status = 'REJECTED' THEN 1 ELSE 0 END), 0)::int as rejected_count
+             FROM users u
+             LEFT JOIN transcription_files tf ON u.telegram_id = tf.assigned_to AND tf.status IN ('ACCEPTED', 'REJECTED')
+             GROUP BY u.telegram_id, u.full_name
+             ORDER BY accepted_count DESC`
+        );
+        return rows;
+    },
+
+    releaseTimedOutTranscriptionFiles: async (timeoutMs: number) => {
+        const cutoff = new Date(Date.now() - timeoutMs);
+        const result = await pool.query(
+            `UPDATE transcription_files 
              SET status = 'PENDING', assigned_to = NULL, locked_at = NULL 
              WHERE status = 'LOCKED' AND locked_at < $1`,
             [cutoff]
