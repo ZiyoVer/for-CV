@@ -454,8 +454,13 @@ bot.callbackQuery("transcription_next", async (ctx) => {
     await sendNextTranscriptionFile(ctx);
 });
 
-bot.callbackQuery(/^transcription_skip:(.+)$/, async (ctx) => {
-    const key = ctx.match[1];
+bot.callbackQuery("transcription_skip", async (ctx) => {
+    const state = transcriptionState.get(ctx.from.id);
+    if (!state) {
+        await ctx.answerCallbackQuery("Fayl topilmadi");
+        return;
+    }
+    const key = state.fileKey;
     await ctx.answerCallbackQuery("O'tkazildi ⏭️");
 
     try {
@@ -541,7 +546,7 @@ async function sendNextTranscriptionFile(ctx: any) {
             caption: caption,
             parse_mode: "HTML",
             reply_markup: new InlineKeyboard()
-                .text("⏭️ O'tkazish", `transcription_skip:${fileKey}`)
+                .text("⏭️ O'tkazish", "transcription_skip")
                 .text("🏠 Menyu", "main_menu")
         });
 
