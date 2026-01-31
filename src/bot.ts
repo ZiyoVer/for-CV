@@ -46,15 +46,21 @@ bot.command('menu', async (ctx) => {
 async function showMainMenu(ctx: any) {
     const user = await dbService.getUser(ctx.from.id);
     const stats = await dbService.getUserStats(ctx.from.id);
+    const checksToday = await dbService.get24hCheckCount(ctx.from.id);
+    const freeLeft = Math.max(0, 20 - checksToday);
 
     let text = `🏠 <b>Asosiy Menyu</b>\n\n`;
-    text += `Assalomu alaykum, <b>${ctx.from?.first_name}</b>!\n\n`;
-    text += `📊 <b>Sizning statistikangiz:</b>\n`;
-    text += `   ✅ Qabul qilindi: ${stats.accepted}\n`;
-    text += `   ❌ Rad etildi: ${stats.rejected}\n`;
+    text += `Salom, <b>${ctx.from?.first_name}</b>! 👋\n\n`;
+    text += `<code>┌─────────────────────────┐</code>\n`;
+    text += `<code>│</code> ✅ Qabul:    <code>${String(stats.accepted).padStart(6)}</code>  <code>│</code>\n`;
+    text += `<code>│</code> ❌ Rad:      <code>${String(stats.rejected).padStart(6)}</code>  <code>│</code>\n`;
+    text += `<code>│</code> 📅 Bugun:    <code>${String(checksToday).padStart(6)}</code>  <code>│</code>\n`;
     if (user?.balance) {
-        text += `   💰 Balans: ${user.balance} so'm\n`;
+        text += `<code>├─────────────────────────┤</code>\n`;
+        text += `<code>│</code> 💰 Balans: <code>${String(user.balance).padStart(6)}</code> so'm<code>│</code>\n`;
     }
+    text += `<code>└─────────────────────────┘</code>\n\n`;
+    text += `🎁 Bepul qoldi: <b>${freeLeft}</b>/20`;
 
     await ctx.reply(text, {
         parse_mode: "HTML",
@@ -99,15 +105,29 @@ bot.callbackQuery("my_stats", async (ctx) => {
     const user = await dbService.getUser(ctx.from.id);
     const stats = await dbService.getUserStats(ctx.from.id);
     const checksToday = await dbService.get24hCheckCount(ctx.from.id);
+    const totalChecked = stats.accepted + stats.rejected;
+    const accuracy = totalChecked > 0 ? Math.round((stats.accepted / totalChecked) * 100) : 0;
+    const freeLeft = Math.max(0, 20 - checksToday);
 
-    let text = `📊 <b>Sizning Statistikangiz:</b>\n\n`;
-    text += `✅ Jami qabul qilindi: ${stats.accepted}\n`;
-    text += `❌ Jami rad etildi: ${stats.rejected}\n`;
-    text += `📅 Bugun tekshirildi: ${checksToday}\n`;
-    if (user?.balance) {
-        text += `💰 Balans: ${user.balance} so'm\n`;
+    let text = `📊 <b>Batafsil Statistika</b>\n\n`;
+    text += `<code>╔═══════════════════════════╗</code>\n`;
+    text += `<code>║</code>   📈 <b>UMUMIY NATIJALAR</b>    <code>║</code>\n`;
+    text += `<code>╠═══════════════════════════╣</code>\n`;
+    text += `<code>║</code> ✅ Qabul qilindi: <code>${String(stats.accepted).padStart(6)}</code> <code>║</code>\n`;
+    text += `<code>║</code> ❌ Rad etildi:    <code>${String(stats.rejected).padStart(6)}</code> <code>║</code>\n`;
+    text += `<code>║</code> 📝 Jami:          <code>${String(totalChecked).padStart(6)}</code> <code>║</code>\n`;
+    text += `<code>║</code> 🎯 Aniqlik:       <code>${String(accuracy).padStart(5)}%</code> <code>║</code>\n`;
+    text += `<code>╠═══════════════════════════╣</code>\n`;
+    text += `<code>║</code>   📅 <b>BUGUNGI KUN</b>        <code>║</code>\n`;
+    text += `<code>╠═══════════════════════════╣</code>\n`;
+    text += `<code>║</code> 🔄 Tekshirildi:   <code>${String(checksToday).padStart(6)}</code> <code>║</code>\n`;
+    text += `<code>║</code> 🎁 Bepul qoldi:   <code>${String(freeLeft).padStart(6)}</code> <code>║</code>\n`;
+    if (user?.balance !== undefined) {
+        text += `<code>╠═══════════════════════════╣</code>\n`;
+        text += `<code>║</code> 💰 Balans:    <code>${String(user.balance).padStart(6)}</code> so'm<code>║</code>\n`;
     }
-    text += `\n<i>20 ta bepul tekshirish, keyin har biri 50 so'm</i>`;
+    text += `<code>╚═══════════════════════════╝</code>\n\n`;
+    text += `<i>💡 20 ta bepul, keyin 50 so'm</i>`;
 
     await ctx.reply(text, {
         parse_mode: "HTML",
@@ -145,18 +165,34 @@ bot.callbackQuery("admin_stats", async (ctx) => {
     await ctx.answerCallbackQuery("Grafik chizilmoqda...");
 
     const stats = await dbService.getAllUserStats();
+    const pending = await dbService.getPendingCount();
 
-    // Generate Text Summary
-    let caption = "<b>📊 Umumiy Statistika:</b>\n\n";
+    // Calculate totals
+    const totalAccepted = stats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+    const totalRejected = stats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
+    // Generate Text Summary with table
+    let caption = `📊 <b>ADMIN STATISTIKA</b>\n\n`;
+    caption += `<code>┌──────────────────────────────┐</code>\n`;
+    caption += `<code>│</code> ⏳ Kutilmoqda:    <code>${String(pending).padStart(8)}</code> <code>│</code>\n`;
+    caption += `<code>│</code> ✅ Jami qabul:    <code>${String(totalAccepted).padStart(8)}</code> <code>│</code>\n`;
+    caption += `<code>│</code> ❌ Jami rad:      <code>${String(totalRejected).padStart(8)}</code> <code>│</code>\n`;
+    caption += `<code>└──────────────────────────────┘</code>\n\n`;
+
+    caption += `👥 <b>Annotatorlar:</b>\n\n`;
     for (const s of stats) {
-        const name = s.full_name || "Noma'lum";
-        caption += `👤 <b>${name}</b>\n   ✅ ${s.accepted_count}   ❌ ${s.rejected_count}\n\n`;
+        const name = (s.full_name || "Noma'lum").substring(0, 12).padEnd(12);
+        const acc = String(s.accepted_count || 0).padStart(4);
+        const rej = String(s.rejected_count || 0).padStart(4);
+        const balance = String(s.balance || 0).padStart(6);
+        caption += `<code>${name}</code> ✅<code>${acc}</code> ❌<code>${rej}</code> 💰<code>${balance}</code>\n`;
     }
 
     const imageBuffer = await statsService.generateAdminStatsChart(stats);
     await ctx.replyWithPhoto(new InputFile(imageBuffer), {
         caption: caption,
-        parse_mode: "HTML"
+        parse_mode: "HTML",
+        reply_markup: new InlineKeyboard().text("🏠 Asosiy menyu", "main_menu")
     });
 });
 
