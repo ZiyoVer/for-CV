@@ -389,29 +389,30 @@ bot.on("message:text", async (ctx) => {
             const success = await s3Service.updateJsonText(fileKey, newText);
 
             if (success) {
-                // Copy to sorted folder
-                await s3Service.copyToSorted(fileKey);
-                // Update DB status
-                await dbService.updateFileStatus(userId, fileKey, 'ACCEPTED');
-
-                // Payment logic
-                const checksToday = await dbService.get24hCheckCount(userId);
-                if (checksToday > 20) {
-                    await dbService.incrementBalance(userId, 50);
-                }
-
+                // NEW LOGIC: Don't auto-accept. Show the card again with new text.
                 editState.delete(userId);
 
-                await ctx.reply(
-                    `✅ <b>Matn tahrirlandi va saqlandi!</b>\n\n` +
-                    `<b>Yangi matn:</b>\n<code>${newText}</code>`,
-                    {
-                        parse_mode: "HTML",
-                        reply_markup: new InlineKeyboard()
-                            .text("Keyingisi ➡️", "check_next")
-                            .text("🏠 Menyu", "main_menu")
-                    }
-                );
+                // Fetch audio again
+                const audioBuffer = await s3Service.getFileBuffer(fileKey);
+                if (!audioBuffer) {
+                    await ctx.reply("Matn saqlandi, lekin audio faylni qayta yuklab bo'lmadi.");
+                    return;
+                }
+
+                const caption = `🆔 <code>${fileKey.split('/').pop()?.replace('.json', '') || fileKey}</code>\n\n📝 ${newText}\n\n<i>(Tahrirlangan)</i>`;
+
+                await ctx.replyWithAudio(new InputFile(audioBuffer), {
+                    caption: caption,
+                    parse_mode: "HTML",
+                    reply_markup: new InlineKeyboard()
+                        .text("✅ To'g'ri", `accept:${fileKey}`)
+                        .text("❌ Xato", `reject:${fileKey}`)
+                        .row()
+                        .text("✏️ Tahrirlash", `edit:${fileKey}`)
+                        .text("⏭️ O'tkazish", `skip:${fileKey}`)
+                        .row()
+                        .text("🏠 Asosiy menyu", "main_menu")
+                });
             } else {
                 await ctx.reply("❌ Matnni saqlashda xatolik. Qaytadan urinib ko'ring.");
             }
