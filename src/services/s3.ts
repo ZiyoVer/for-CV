@@ -204,8 +204,8 @@ export const s3Service = {
         }
     },
 
-    // Copy transcription to sorted folder with user's transcribed text
-    async copyTranscriptionToSorted(key: string, transcribedText: string) {
+    // Copy transcription to sorted folder with user's transcribed text and metadata
+    async copyTranscriptionToSorted(key: string, transcribedText: string, duration?: number, gender?: string) {
         // key is like "transkripsiya/file.wav"
         // Destination: "saralangan/transkripsiya/file.wav"
 
@@ -223,15 +223,18 @@ export const s3Service = {
             Key: destinationKey
         }));
 
-        // Create JSON with transcribed text
+        // Create JSON with transcribed text and metadata
         const jsonDest = destinationKey.replace('.wav', '.json');
-        const fileName = key.split('/').pop()?.replace('.wav', '') || 'unknown';
+        const fileName = key.split('/').pop() || 'unknown';
 
-        const jsonContent = {
-            utt_id: fileName,
+        const jsonContent: any = {
+            audio_name: fileName,
             text: transcribedText,
             transcribed_at: new Date().toISOString()
         };
+
+        if (duration) jsonContent.duration = duration;
+        if (gender) jsonContent.gender = gender;
 
         await s3.send(new PutObjectCommand({
             Bucket: config.WASABI_BUCKET,
@@ -240,7 +243,7 @@ export const s3Service = {
             ContentType: 'application/json'
         }));
 
-        console.log(`Copied transcription to ${destinationKey}`);
+        console.log(`Copied transcription to ${destinationKey} with metadata`);
     },
 
     // Upload transcription audio file to S3

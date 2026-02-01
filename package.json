@@ -26,6 +26,7 @@
     "express-session": "^1.18.2",
     "grammy": "^1.39.2",
     "multer": "^2.0.2",
+    "music-metadata": "^11.11.1",
     "pg": "^8.16.3"
   },
   "devDependencies": {

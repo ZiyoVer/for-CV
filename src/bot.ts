@@ -3,6 +3,7 @@ import { config } from './config';
 import { s3Service } from './services/s3';
 import { dbService } from './services/db';
 import { statsService } from './services/stats';
+import { parseBuffer } from 'music-metadata';
 
 export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
@@ -301,12 +302,15 @@ bot.callbackQuery(/^reject:(.+)$/, async (ctx) => {
 // --- EDIT TEXT HANDLER ---
 // Store edit state per user
 const editState: Map<number, { fileKey: string; originalText: string }> = new Map();
-// Store transcription state per user
-const transcriptionState: Map<number, { fileKey: string }> = new Map();
+// Store transcription state per user (now includes text)
+const transcriptionState: Map<number, { fileKey: string, tempText?: string }> = new Map();
 
 bot.callbackQuery(/^edit:(.+)$/, async (ctx) => {
     const key = ctx.match[1];
     await ctx.answerCallbackQuery();
+
+    // Clear conflicting transcription state to prevent mix-ups
+    transcriptionState.delete(ctx.from.id);
 
     try {
         const json = await s3Service.getJsonContent(key);
@@ -354,30 +358,35 @@ bot.on("message:text", async (ctx) => {
     const newText = ctx.message.text.trim();
 
     // Handle TRANSCRIPTION text input
+    // Handle TRANSCRIPTION text input
     if (transS) {
         const { fileKey } = transS;
-        try {
-            // Copy to sorted folder with transcribed text
-            await s3Service.copyTranscriptionToSorted(fileKey, newText);
-            // Update DB status
-            await dbService.updateTranscriptionFileStatus(userId, fileKey, 'ACCEPTED', newText);
 
-            transcriptionState.delete(userId);
+        // Save temp text in state
+        transS.tempText = newText;
+        transcriptionState.set(userId, transS);
 
-            await ctx.reply(
-                `✅ <b>Transkripsiya saqlandi!</b>\n\n` +
-                `<b>Matn:</b>\n<code>${newText}</code>`,
-                {
-                    parse_mode: "HTML",
-                    reply_markup: new InlineKeyboard()
-                        .text("Keyingisi ➡️", "transcription_next")
-                        .text("🏠 Menyu", "main_menu")
-                }
-            );
-        } catch (e) {
-            console.error(e);
-            await ctx.reply("Xatolik yuz berdi.");
+        // Fetch audio again to show with text
+        const audioBuffer = await s3Service.getTranscriptionAudioBuffer(fileKey);
+
+        if (!audioBuffer) {
+            await ctx.reply("Matn qabul qilindi, lekin audio faylni qayta yuklab bo'lmadi.");
+            return;
         }
+
+        const fileName = fileKey.split('/').pop()?.replace('.wav', '') || fileKey;
+        const caption = `📝 <b>TRANSKRIPSIYA (Tekshirish)</b>\n\n🆔 <code>${fileName}</code>\n\n<b>Siz yozgan matn:</b>\n<code>${newText}</code>\n\n<i>⬇️ Iltimos, audioni tinglab, so'zlovchi jinsini tanlang:</i>`;
+
+        await ctx.replyWithAudio(new InputFile(audioBuffer), {
+            caption: caption,
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard()
+                .text("✅ Erkak", "approve_trans:male")
+                .text("✅ Ayol", "approve_trans:female")
+                .row()
+                .text("✏️ Tahrirlash", "transcription_edit_retry") // Keeps state, allowing re-entry
+        });
+
         return;
     }
 
@@ -480,6 +489,80 @@ bot.callbackQuery("transcription_skip", async (ctx) => {
                 .text("Keyingisi ➡️", "transcription_next")
                 .text("🏠 Menyu", "main_menu")
         });
+    } catch (e) {
+        console.error(e);
+        await ctx.reply("Xatolik yuz berdi.");
+    }
+});
+
+// Retry Edit (Cancellation of current review step, ready for new text)
+bot.callbackQuery("transcription_edit_retry", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const state = transcriptionState.get(ctx.from.id);
+    if (!state) {
+        await ctx.reply("Vazifa topilmadi.");
+        return;
+    }
+
+    await ctx.reply(
+        `✏️ <b>Matnni tahrirlash</b>\n\n` +
+        `<b>Hozirgi matn:</b>\n<code>${state.tempText || ''}</code>\n\n` +
+        `<i>To'g'ri matnni pastga yozing:</i>`,
+        { parse_mode: "HTML" }
+    );
+});
+
+// Approve Transcription (Male/Female)
+bot.callbackQuery(/^approve_trans:(male|female)$/, async (ctx) => {
+    const gender = ctx.match[1]; // male or female
+    const userId = ctx.from.id;
+    const state = transcriptionState.get(userId);
+
+    if (!state || !state.tempText) {
+        await ctx.answerCallbackQuery("Vazifa muddati tugagan yoki topilmadi.");
+        return;
+    }
+
+    const { fileKey, tempText } = state;
+
+    try {
+        await ctx.answerCallbackQuery("Saqlanmoqda...");
+
+        // Extract duration
+        let duration = 0;
+        const audioBuffer = await s3Service.getTranscriptionAudioBuffer(fileKey);
+        if (audioBuffer) {
+            try {
+                // parseBuffer requires Buffer, but we might have Uint8Array. 
+                // music-metadata parseBuffer takes Uint8Array or Buffer.
+                const metadata = await parseBuffer(audioBuffer as Uint8Array);
+                duration = (metadata.format.duration || 0) * 1000; // to ms
+            } catch (err) {
+                console.error("Error parsing audio metadata:", err);
+            }
+        }
+
+        // Copy S3 with metadata
+        await s3Service.copyTranscriptionToSorted(fileKey, tempText, Math.round(duration), gender);
+
+        // Update DB
+        await dbService.updateTranscriptionFileStatus(userId, fileKey, 'ACCEPTED', tempText);
+
+        transcriptionState.delete(userId);
+
+        await ctx.reply(
+            `✅ <b>Transkripsiya saqlandi!</b>\n\n` +
+            `📂 <b>Jinsi:</b> ${gender === 'male' ? 'Erkak' : 'Ayol'}\n` +
+            `⏱ <b>Davomiyligi:</b> ${Math.round(duration)}ms\n` +
+            `<b>Matn:</b>\n<code>${tempText}</code>`,
+            {
+                parse_mode: "HTML",
+                reply_markup: new InlineKeyboard()
+                    .text("Keyingisi ➡️", "transcription_next")
+                    .text("🏠 Menyu", "main_menu")
+            }
+        );
+
     } catch (e) {
         console.error(e);
         await ctx.reply("Xatolik yuz berdi.");
