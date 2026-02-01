@@ -583,6 +583,10 @@ async function sendNextFile(ctx: any) {
             return;
         }
 
+        // Clear conflicting states
+        transcriptionState.delete(userId);
+        editState.delete(userId);
+
         const json = await s3Service.getJsonContent(fileKey);
         // Instead of URL, download the file
         const audioBuffer = await s3Service.getFileBuffer(fileKey);
