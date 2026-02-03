@@ -299,7 +299,8 @@
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(5px);
             z-index: 1000;
-            display: none;
+            display: none !important;
+            /* Forces hidden */
             align-items: center;
             justify-content: center;
         }
@@ -800,10 +801,10 @@
 
         // Modal Functions
         function openModal(id) {
-            document.getElementById(id).style.display = 'flex';
+            document.getElementById(id).style.setProperty('display', 'flex', 'important');
         }
         function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
+            document.getElementById(id).style.setProperty('display', 'none', 'important');
         }
 
         function openBalanceModal(id, name) {
@@ -841,7 +842,7 @@
         // Close modal on outside click
         window.onclick = function (event) {
             if (event.target.classList.contains('modal-overlay')) {
-                event.target.style.display = "none";
+                event.target.style.setProperty('display', 'none', 'important');
             }
         }
 
