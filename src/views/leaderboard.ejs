@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STT Leaderboard - Live Reyting</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -15,15 +14,15 @@
         }
 
         body {
-            font-family: 'JetBrains Mono', monospace;
-            background: #0a0a0a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #ffffff;
             min-height: 100vh;
-            color: #e5e5e5;
+            color: #1a1a1a;
         }
 
         .navbar {
-            background: #111;
-            border-bottom: 1px solid #222;
+            background: #fafafa;
+            border-bottom: 1px solid #e5e5e5;
             padding: 16px 32px;
             display: flex;
             justify-content: space-between;
@@ -31,23 +30,25 @@
         }
 
         .logo {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a0a;
+            letter-spacing: -0.5px;
         }
 
         .live-indicator {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 12px;
-            color: #22c55e;
+            font-size: 13px;
+            color: #16a34a;
+            font-weight: 600;
         }
 
         .live-dot {
             width: 8px;
             height: 8px;
-            background: #22c55e;
+            background: #16a34a;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
@@ -57,15 +58,17 @@
             0%,
             100% {
                 opacity: 1;
+                transform: scale(1);
             }
 
             50% {
                 opacity: 0.5;
+                transform: scale(1.2);
             }
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 48px 32px;
         }
@@ -78,48 +81,55 @@
         .header h1 {
             font-size: 24px;
             font-weight: 700;
-            color: #fff;
+            color: #0a0a0a;
             margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
 
         .header p {
-            color: #666;
-            font-size: 13px;
+            color: #737373;
+            font-size: 14px;
         }
 
         .update-time {
-            color: #555;
-            font-size: 11px;
+            color: #a3a3a3;
+            font-size: 12px;
             margin-top: 12px;
         }
 
         .leaderboard {
-            border: 1px solid #222;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .leaderboard-header {
             display: grid;
-            grid-template-columns: 60px 1fr 80px 80px 80px 100px;
-            background: #111;
-            padding: 14px 20px;
-            font-size: 11px;
-            color: #666;
+            grid-template-columns: 60px 1fr 100px 100px 100px 120px;
+            background: #fafafa;
+            padding: 16px 24px;
+            font-size: 12px;
+            color: #525252;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid #222;
+            font-weight: 600;
+            border-bottom: 1px solid #e5e5e5;
         }
 
         .leaderboard-row {
             display: grid;
-            grid-template-columns: 60px 1fr 80px 80px 80px 100px;
-            padding: 16px 20px;
-            font-size: 13px;
-            border-bottom: 1px solid #1a1a1a;
-            transition: background 0.2s;
+            grid-template-columns: 60px 1fr 100px 100px 100px 120px;
+            padding: 18px 24px;
+            font-size: 14px;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background 0.15s;
+            align-items: center;
         }
 
         .leaderboard-row:hover {
-            background: #111;
+            background: #fafafa;
         }
 
         .leaderboard-row:last-child {
@@ -128,24 +138,24 @@
 
         .rank {
             font-weight: 700;
-            color: #888;
+            color: #a3a3a3;
         }
 
         .rank-1 {
-            color: #ffd700;
+            color: #ca8a04;
         }
 
         .rank-2 {
-            color: #c0c0c0;
+            color: #64748b;
         }
 
         .rank-3 {
-            color: #cd7f32;
+            color: #92400e;
         }
 
         .name {
-            color: #fff;
-            font-weight: 500;
+            color: #0a0a0a;
+            font-weight: 600;
         }
 
         .stat {
@@ -153,127 +163,104 @@
         }
 
         .stat.accepted {
-            color: #22c55e;
-        }
-
-        .stat.rejected {
-            color: #ef4444;
-        }
-
-        .stat.total {
-            color: #eab308;
-        }
-
-        .stat.balance {
-            color: #22c55e;
+            color: #16a34a;
             font-weight: 600;
         }
 
+        .stat.rejected {
+            color: #dc2626;
+        }
+
+        .stat.total {
+            color: #525252;
+        }
+
+        .stat.balance {
+            color: #16a34a;
+            font-weight: 700;
+        }
+
         .trophy {
-            font-size: 16px;
+            font-size: 18px;
             margin-right: 8px;
         }
 
         .empty-state {
             text-align: center;
-            padding: 60px;
-            color: #666;
+            padding: 80px;
+            color: #737373;
+            font-size: 14px;
         }
 
         .feature-list {
             margin-top: 48px;
             padding-top: 32px;
-            border-top: 1px solid #222;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
         }
 
         .feature-item {
             display: flex;
-            gap: 12px;
-            margin-bottom: 10px;
+            gap: 10px;
             font-size: 13px;
-            color: #888;
+            color: #525252;
+            align-items: center;
         }
 
-        .feature-item span:first-child {
-            color: #555;
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            background: #f0fdf4;
+            color: #16a34a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
         }
 
         .feature-item strong {
-            color: #e5e5e5;
+            color: #0a0a0a;
+            font-weight: 600;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 850px) {
             .container {
                 padding: 24px 16px;
             }
 
-            .header h1 {
-                font-size: 18px;
-            }
-
             .leaderboard-header,
             .leaderboard-row {
-                grid-template-columns: 40px 1fr 50px 50px 50px 70px;
-                font-size: 10px;
-                padding: 10px 12px;
-            }
-
-            .trophy {
+                grid-template-columns: 45px 1fr 70px 70px 70px 100px;
                 font-size: 12px;
-                margin-right: 4px;
-            }
-
-            .feature-list {
-                margin-top: 32px;
-                padding-top: 24px;
-            }
-
-            .feature-item {
-                font-size: 11px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .navbar {
                 padding: 12px 16px;
             }
 
-            .logo {
-                font-size: 12px;
+            .trophy {
+                font-size: 14px;
             }
+        }
 
-            .header {
-                margin-bottom: 24px;
-            }
-
-            .header h1 {
-                font-size: 16px;
-            }
-
-            .header p {
-                font-size: 11px;
-            }
+        @media (max-width: 600px) {
 
             .leaderboard-header,
             .leaderboard-row {
-                grid-template-columns: 35px 1fr 40px 40px 40px 60px;
-                font-size: 9px;
-                padding: 8px 10px;
-                gap: 4px;
+                grid-template-columns: 40px 1fr 60px 60px 60px 80px;
+                font-size: 11px;
+                padding: 10px 12px;
             }
 
             .stat.balance {
-                font-size: 8px;
+                font-size: 10px;
             }
 
-            .trophy {
-                font-size: 10px;
-                margin-right: 2px;
-            }
-
-            .feature-item {
-                font-size: 10px;
-                gap: 8px;
+            .feature-list {
+                gap: 16px;
+                flex-direction: column;
+                align-items: center;
             }
         }
     </style>
@@ -341,22 +328,21 @@
                                 <% } %>
             </div>
         </div>
-    </div>
 
-    <div class="feature-list">
-        <div class="feature-item">
-            <span>[*]</span>
-            <span><strong>Auto-refresh</strong> Har 5 sekundda yangilanadi</span>
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="feature-icon">✓</div>
+                <span><strong>Auto-refresh</strong> Har 5 sekundda yangilanadi</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">✓</div>
+                <span><strong>Real-time</strong> Natijalar darhol ko'rinadi</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">✓</div>
+                <span><strong>Reyting</strong> Qabul qilinganlar soni bo'yicha</span>
+            </div>
         </div>
-        <div class="feature-item">
-            <span>[*]</span>
-            <span><strong>Real-time</strong> Natijalar darhol ko'rinadi</span>
-        </div>
-        <div class="feature-item">
-            <span>[*]</span>
-            <span><strong>Reyting</strong> Qabul qilinganlar soni bo'yicha</span>
-        </div>
-    </div>
     </div>
 
     <script>
