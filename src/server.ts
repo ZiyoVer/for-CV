@@ -297,6 +297,20 @@ app.get('/leaderboard', async (req, res) => {
     }
 });
 
+// API: Get Lifetime Statistics (Last 30 days)
+app.get('/api/lifetime-stats', requireAuth, async (req, res) => {
+    try {
+        const stats = await dbService.getLifetimeDailyStats();
+        res.json({
+            success: true,
+            stats
+        });
+    } catch (err) {
+        console.error('Lifetime stats error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
 // API: Get 24-hour hourly statistics for chart
 app.get('/api/hourly-stats', requireAuth, async (req, res) => {
     try {

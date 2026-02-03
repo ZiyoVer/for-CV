@@ -398,5 +398,20 @@ export const dbService = {
              GROUP BY status`
         );
         return rows;
+    },
+
+    getLifetimeDailyStats: async () => {
+        const { rows } = await pool.query(
+            `SELECT 
+                DATE_TRUNC('day', processed_at) as day,
+                COUNT(*) FILTER (WHERE status = 'ACCEPTED')::int as accepted,
+                COUNT(*) FILTER (WHERE status = 'REJECTED')::int as rejected
+             FROM files
+             WHERE status IN ('ACCEPTED', 'REJECTED')
+               AND processed_at > NOW() - INTERVAL '30 days'
+             GROUP BY DATE_TRUNC('day', processed_at)
+             ORDER BY day ASC`
+        );
+        return rows;
     }
 };

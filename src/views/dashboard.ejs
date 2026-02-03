@@ -8,7 +8,34 @@
     <title>STT Admin - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        :root {
+            --bg: #ffffff;
+            --navbar-bg: #fafafa;
+            --card-bg: #fafafa;
+            --text: #0a0a0a;
+            --text-muted: #737373;
+            --border: #e5e5e5;
+            --border-light: #f5f5f5;
+            --input-bg: #fafafa;
+            --btn-ghost: #f5f5f5;
+            --shadow: rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0a0a0a;
+            --navbar-bg: #111111;
+            --card-bg: #111111;
+            --text: #ffffff;
+            --text-muted: #a3a3a3;
+            --border: #262626;
+            --border-light: #171717;
+            --input-bg: #171717;
+            --btn-ghost: #171717;
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -17,18 +44,23 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #ffffff;
+            background: var(--bg);
             min-height: 100vh;
-            color: #1a1a1a;
+            color: var(--text);
+            transition: background 0.3s, color 0.3s;
         }
 
         .navbar {
-            background: #fafafa;
-            border-bottom: 1px solid #e5e5e5;
+            background: var(--navbar-bg);
+            border-bottom: 1px solid var(--border);
             padding: 16px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
         }
 
         .logo {
@@ -78,49 +110,51 @@
         }
 
         .stat-card {
-            background: #fafafa;
-            border: 1px solid #e5e5e5;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 24px;
-            transition: box-shadow 0.2s;
+            transition: all 0.2s;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
         .stat-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 12px var(--shadow);
+            transform: translateY(-2px);
         }
 
         .stat-label {
             font-size: 13px;
-            color: #737373;
-            margin-bottom: 8px;
+            color: var(--text-muted);
             font-weight: 500;
         }
 
         .stat-value {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: 700;
-            color: #0a0a0a;
+            color: var(--text);
         }
 
-        .stat-value.green {
-            color: #16a34a;
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
         }
 
-        .stat-value.red {
-            color: #dc2626;
-        }
-
-        .stat-value.yellow {
-            color: #ca8a04;
-        }
-
-        /* Chart Section */
         .chart-section {
-            background: #fafafa;
-            border: 1px solid #e5e5e5;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 24px;
-            margin-bottom: 48px;
+            margin-bottom: 24px;
         }
 
         .chart-header {
@@ -133,119 +167,23 @@
         .chart-title {
             font-size: 16px;
             font-weight: 600;
-            color: #0a0a0a;
+            color: var(--text);
+            display: flex;
+            align-items: center;
         }
 
         .chart-subtitle {
             font-size: 13px;
-            color: #737373;
+            color: var(--text-muted);
             margin-top: 4px;
         }
 
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-
-        .feature-list {
-            margin-bottom: 48px;
-        }
-
-        .feature-item {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 12px;
-            font-size: 14px;
-            color: #525252;
-            align-items: center;
-        }
-
-        .feature-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
-            background: #f0fdf4;
-            color: #16a34a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-        }
-
-        .feature-item strong {
-            color: #0a0a0a;
-            font-weight: 600;
-        }
-
-        .users-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            background: #0a0a0a;
-            color: #ffffff;
-            border: none;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            transition: all 0.2s;
-            border-radius: 8px;
-        }
-
-        .btn:hover {
-            background: #262626;
-            transform: translateY(-1px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: #525252;
-            border: 1px solid #d4d4d4;
-        }
-
-        .btn-outline:hover {
-            border-color: #0a0a0a;
-            color: #0a0a0a;
-            background: #fafafa;
-        }
-
-        .btn-success {
-            background: #16a34a;
-            color: #ffffff;
-        }
-
-        .btn-success:hover {
-            background: #15803d;
-        }
-
-        .btn-warning {
-            background: #ca8a04;
-            color: #ffffff;
-        }
-
-        .btn-warning:hover {
-            background: #a16207;
-        }
-
-        .btn-sm {
-            padding: 8px 14px;
-            font-size: 13px;
-            border-radius: 6px;
-        }
-
         .table-container {
-            border: 1px solid #e5e5e5;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 12px;
             overflow: hidden;
+            margin-bottom: 48px;
         }
 
         table {
@@ -253,185 +191,61 @@
             border-collapse: collapse;
         }
 
-        th,
-        td {
-            padding: 16px 20px;
-            text-align: left;
-            font-size: 14px;
-        }
-
         th {
-            background: #fafafa;
-            color: #525252;
+            background: var(--navbar-bg);
+            color: var(--text-muted);
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid #e5e5e5;
+            border-bottom: 1px solid var(--border);
         }
 
         tr {
-            background: #ffffff;
+            background: transparent;
+            border-bottom: 1px solid var(--border-light);
             transition: background 0.15s;
         }
 
         tr:hover {
-            background: #fafafa;
+            background: var(--border-light);
         }
 
-        tr:not(:last-child) td {
-            border-bottom: 1px solid #f5f5f5;
-        }
-
-        .balance {
-            color: #16a34a;
-            font-weight: 700;
-        }
-
-        .admin-badge {
-            background: #fef3c7;
-            color: #b45309;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin-left: 8px;
-        }
-
-        code {
-            background: #f5f5f5;
-            padding: 4px 8px;
-            font-size: 13px;
-            color: #525252;
-            border-radius: 4px;
-            font-family: 'SF Mono', Monaco, monospace;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        /* Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-overlay.active {
-            display: flex;
+        td {
+            color: var(--text);
         }
 
         .modal {
-            background: #ffffff;
+            background: var(--bg);
+            border: 1px solid var(--border);
             border-radius: 16px;
             padding: 32px;
             width: 100%;
             max-width: 440px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .modal h3 {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            color: #0a0a0a;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            color: #525252;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 500;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
         .form-group input {
-            width: 100%;
-            padding: 14px 16px;
-            background: #fafafa;
-            border: 1px solid #e5e5e5;
-            color: #0a0a0a;
-            font-size: 14px;
-            font-family: 'Inter', sans-serif;
-            border-radius: 8px;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
         }
 
         .form-group input:focus {
-            outline: none;
-            border-color: #0a0a0a;
-            box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
         }
 
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: #0a0a0a;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 28px;
-        }
-
-        .modal-actions .btn {
-            flex: 1;
-            justify-content: center;
-        }
-
-        /* Transcription Section */
         .upload-section {
-            background: #fafafa;
-            border: 1px solid #e5e5e5;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 24px;
+            padding: 32px;
             margin-bottom: 48px;
         }
 
-        .upload-section input[type="file"] {
-            background: #ffffff;
-            border: 1px solid #e5e5e5;
-            padding: 14px 16px;
-            color: #0a0a0a;
-            border-radius: 8px;
-            flex: 1;
-            min-width: 200px;
-        }
-
-        @media (max-width: 800px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .chart-container {
-                height: 250px;
-            }
-        }
-
-        @media (max-width: 500px) {
-            .stats-grid {
+        @media (max-width: 1000px) {
+            .charts-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -441,7 +255,15 @@
 <body>
     <nav class="navbar">
         <div class="logo">STT Admin</div>
-        <a href="/logout" class="logout-btn">Chiqish →</a>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <button onclick="toggleTheme()" class="btn-ghost" id="themeToggle"
+                style="border: none; background: none; cursor: pointer; color: var(--text-muted); padding: 8px; border-radius: 8px;">
+                <i data-lucide="sun" id="sunIcon"></i>
+                <i data-lucide="moon" id="moonIcon" style="display: none;"></i>
+            </button>
+            <a href="/logout" class="logout-btn">Chiqish <i data-lucide="log-out"
+                    style="width: 14px; height: 14px; margin-left: 4px;"></i></a>
+        </div>
     </nav>
 
     <div class="container">
@@ -450,38 +272,56 @@
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">Jami Tekshirilgan</div>
+                <div class="stat-header">
+                    <div class="stat-label">Jami Tekshirilgan</div>
+                    <i data-lucide="activity" class="text-muted"></i>
+                </div>
                 <div class="stat-value">
                     <%= stats.totalChecked %>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Qabul Qilingan</div>
+                <div class="stat-header">
+                    <div class="stat-label">Qabul Qilingan</div>
+                    <i data-lucide="check-circle" style="color: #16a34a;"></i>
+                </div>
                 <div class="stat-value green">
                     <%= stats.totalAccepted %>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Rad Etilgan</div>
+                <div class="stat-header">
+                    <div class="stat-label">Rad Etilgan</div>
+                    <i data-lucide="x-circle" style="color: #dc2626;"></i>
+                </div>
                 <div class="stat-value red">
                     <%= stats.totalRejected %>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Kutilmoqda</div>
+                <div class="stat-header">
+                    <div class="stat-label">Kutilmoqda</div>
+                    <i data-lucide="clock" style="color: #ca8a04;"></i>
+                </div>
                 <div class="stat-value yellow">
                     <%= stats.pending %>
                 </div>
             </div>
             <!-- New Duration Stats -->
             <div class="stat-card">
-                <div class="stat-label">Tekshirilgan Audio (Vaqt)</div>
+                <div class="stat-header">
+                    <div class="stat-label">Tekshirilgan Audio</div>
+                    <i data-lucide="headphones"></i>
+                </div>
                 <div class="stat-value" style="font-size: 24px;">
                     <%= stats.checkedDuration %>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Kutilayotgan Audio (Vaqt)</div>
+                <div class="stat-header">
+                    <div class="stat-label">Kutilayotgan Audio</div>
+                    <i data-lucide="timer" style="color: #ca8a04;"></i>
+                </div>
                 <div class="stat-value yellow" style="font-size: 24px;">
                     <%= stats.pendingDuration %>
                 </div>
@@ -489,15 +329,46 @@
         </div>
 
         <!-- 24-Hour Statistics Chart -->
-        <div class="chart-section">
+        <div class="charts-grid">
+            <div class="chart-section">
+                <div class="chart-header">
+                    <div>
+                        <div class="chart-title"><i data-lucide="bar-chart-3"
+                                style="width: 16px; margin-right: 8px;"></i> 24 Soatlik Statistika</div>
+                        <div class="chart-subtitle">Soatlar bo'yicha tekshiruvlar hajmi</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- New Lifetime Stats Chart -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <div>
+                        <div class="chart-title"><i data-lucide="pie-chart" style="width: 16px; margin-right: 8px;"></i>
+                            Umumiy Ulushlar</div>
+                        <div class="chart-subtitle">Qabul qilingan vs Rad etilgan</div>
+                    </div>
+                </div>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="lifetimePieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 30-Day Growth Chart -->
+        <div class="chart-section" style="margin-bottom: 48px;">
             <div class="chart-header">
                 <div>
-                    <div class="chart-title">📊 24 Soatlik Statistika</div>
-                    <div class="chart-subtitle">Har bir foydalanuvchi tomonidan topshirilgan audiolar</div>
+                    <div class="chart-title"><i data-lucide="trending-up" style="width: 16px; margin-right: 8px;"></i>
+                        30 Kunlik O'sish</div>
+                    <div class="chart-subtitle">Kunlik tasdiqlangan audiolar tarixi</div>
                 </div>
             </div>
             <div class="chart-container">
-                <canvas id="hourlyChart"></canvas>
+                <canvas id="lifetimeChart"></canvas>
             </div>
         </div>
 
@@ -525,7 +396,7 @@
                 <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
                     <input type="file" name="audioFiles" multiple accept="audio/*" onchange="updateFileCount(this)">
                     <button type="submit" class="btn" id="uploadBtn">
-                        📤 Yuklash
+                        <i data-lucide="upload" style="width: 16px; height: 16px; margin-right: 4px;"></i> Yuklash
                     </button>
                 </div>
                 <p id="fileCount" style="color: #737373; font-size: 13px; margin-top: 12px;"></p>
@@ -542,7 +413,9 @@
 
         <div class="users-header">
             <h2 class="section-title">Foydalanuvchilar</h2>
-            <button class="btn" onclick="openModal()">+ Yangi Qo'shish</button>
+            <button class="btn" onclick="openModal()">
+                <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 4px;"></i> Yangi Qo'shish
+            </button>
         </div>
 
         <div class="table-container">
@@ -580,25 +453,39 @@
                                 <%= user.balance || 0 %> so'm
                             </td>
                             <td class="actions">
-                                <a href="/review/<%= user.telegram_id %>" class="btn btn-outline btn-sm">Tekshirish</a>
+                                <a href="/review/<%= user.telegram_id %>" class="btn btn-outline btn-sm">
+                                    <i data-lucide="shield-check"
+                                        style="width: 14px; height: 14px; margin-right: 4px;"></i> Tekshirish
+                                </a>
                                 <button class="btn btn-warning btn-sm" data-id="<%= user.telegram_id %>"
-                                    data-name="<%= user.full_name %>" onclick="handleBalanceModal(this)">+
-                                    Balans</button>
+                                    data-name="<%= user.full_name %>" onclick="handleBalanceModal(this)">
+                                    <i data-lucide="plus-square"
+                                        style="width: 14px; height: 14px; margin-right: 4px;"></i> Balans
+                                </button>
 
                                 <form method="POST" action="/users/payout/<%= user.telegram_id %>"
-                                    style="display:inline;">
-                                    <button type="submit" class="btn btn-success btn-sm"
-                                        onclick="return confirm('Pul to\'lashni tasdiqlaysizmi?')">To'lash</button>
+                                    style="display:inline;"
+                                    onsubmit="return confirm('To\'lov yakunlandimi? Balans nolga tushiriladi.')">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i data-lucide="banknote"
+                                            style="width: 14px; height: 14px; margin-right: 4px;"></i> To'lash
+                                    </button>
                                 </form>
 
                                 <button class="btn btn-outline btn-sm" data-id="<%= user.telegram_id %>"
                                     data-name="<%= user.full_name %>" data-admin="<%= user.is_admin %>"
-                                    onclick="handleEditModal(this)">✏️ Tahrirlash</button>
+                                    onclick="handleEditModal(this)">
+                                    <i data-lucide="edit" style="width: 14px; height: 14px; margin-right: 4px;"></i>
+                                    Tahrirlash
+                                </button>
 
                                 <form method="POST" action="/users/delete/<%= user.telegram_id %>"
-                                    style="display:inline;">
-                                    <button type="submit" class="btn btn-sm" style="background: #dc2626; color: #fff;"
-                                        onclick="return confirm('Foydalanuvchini o\'chirishni tasdiqlaysizmi?')">🗑️</button>
+                                    style="display:inline;"
+                                    onsubmit="return confirm('Foydalanuvchini o\'chirishni tasdiqlaysizmi?')">
+                                    <button type="submit" class="btn btn-sm" style="background: #dc2626; color: #fff;">
+                                        <i data-lucide="trash-2"
+                                            style="width: 14px; height: 14px; margin-right: 4px;"></i>
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -682,6 +569,30 @@
     </div>
 
     <script>
+        // Lucide icons initialization
+        lucide.createIcons();
+
+        // Theme management
+        const theme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        updateThemeIcons(theme);
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcons(newTheme);
+
+            // Refresh charts colors if they exist
+            if (hourlyChart) loadHourlyStats();
+            if (lifetimeChart) loadLifetimeStats();
+        }
+
+        function updateThemeIcons(theme) {
+            document.getElementById('sunIcon').style.display = theme === 'light' ? 'none' : 'block';
+            document.getElementById('moonIcon').style.display = theme === 'light' ? 'block' : 'none';
+        }
         function openModal() {
             document.getElementById('addUserModal').classList.add('active');
         }
@@ -742,6 +653,16 @@
             document.getElementById('uploadBtn').disabled = true;
         });
 
+        // Chart.js Theme Helpers
+        function getChartColors() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            return {
+                grid: isDark ? '#262626' : '#f5f5f5',
+                text: isDark ? '#a3a3a3' : '#737373',
+                bg: isDark ? '#111111' : '#ffffff'
+            };
+        }
+
         // 24-Hour Statistics Chart
         let hourlyChart = null;
 
@@ -752,6 +673,7 @@
 
                 if (data.success) {
                     const ctx = document.getElementById('hourlyChart').getContext('2d');
+                    const colors = getChartColors();
 
                     // Format labels to show hours
                     const formattedLabels = data.labels.map(label => {
@@ -759,18 +681,7 @@
                         return date.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
                     });
 
-                    // Update datasets with formatted data
-                    const datasets = data.datasets.map((ds, index) => ({
-                        ...ds,
-                        data: data.labels.map(label => {
-                            const idx = ds.data.findIndex((_, i) => data.labels[i] === label);
-                            return idx !== -1 ? ds.data[idx] : 0;
-                        })
-                    }));
-
-                    if (hourlyChart) {
-                        hourlyChart.destroy();
-                    }
+                    if (hourlyChart) hourlyChart.destroy();
 
                     hourlyChart = new Chart(ctx, {
                         type: 'line',
@@ -785,43 +696,27 @@
                                 legend: {
                                     position: 'top',
                                     labels: {
-                                        font: {
-                                            family: 'Inter',
-                                            size: 12
-                                        },
-                                        color: '#525252',
+                                        font: { family: 'Inter', size: 12 },
+                                        color: colors.text,
                                         usePointStyle: true,
                                         padding: 20
                                     }
                                 },
                                 tooltip: {
                                     backgroundColor: '#0a0a0a',
-                                    titleFont: { family: 'Inter', size: 13 },
-                                    bodyFont: { family: 'Inter', size: 12 },
                                     padding: 12,
                                     cornerRadius: 8
                                 }
                             },
                             scales: {
                                 x: {
-                                    grid: {
-                                        color: '#f5f5f5'
-                                    },
-                                    ticks: {
-                                        font: { family: 'Inter', size: 11 },
-                                        color: '#737373'
-                                    }
+                                    grid: { color: colors.grid },
+                                    ticks: { font: { family: 'Inter', size: 11 }, color: colors.text }
                                 },
                                 y: {
                                     beginAtZero: true,
-                                    grid: {
-                                        color: '#f5f5f5'
-                                    },
-                                    ticks: {
-                                        font: { family: 'Inter', size: 11 },
-                                        color: '#737373',
-                                        stepSize: 1
-                                    }
+                                    grid: { color: colors.grid },
+                                    ticks: { font: { family: 'Inter', size: 11 }, color: colors.text }
                                 }
                             },
                             interaction: {
@@ -831,16 +726,109 @@
                         }
                     });
                 }
-            } catch (error) {
-                console.error('Failed to load hourly stats:', error);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // Load chart on page load
-        loadHourlyStats();
+        // Lifetime Statistics Chart
+        let lifetimeChart = null;
+        let lifetimePieChart = null;
 
-        // Refresh chart every 30 seconds
-        setInterval(loadHourlyStats, 30000);
+        async function loadLifetimeStats() {
+            try {
+                const response = await fetch('/api/lifetime-stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    const colors = getChartColors();
+
+                    // 1. Growth Area Chart
+                    const ctxArea = document.getElementById('lifetimeChart').getContext('2d');
+                    const labels = data.stats.map(s => {
+                        const d = new Date(s.day);
+                        return d.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' });
+                    });
+
+                    if (lifetimeChart) lifetimeChart.destroy();
+
+                    lifetimeChart = new Chart(ctxArea, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Qabul qilindi',
+                                    data: data.stats.map(s => s.accepted),
+                                    borderColor: '#16a34a',
+                                    backgroundColor: '#16a34a20',
+                                    fill: true,
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'Rad etildi',
+                                    data: data.stats.map(s => s.rejected),
+                                    borderColor: '#dc2626',
+                                    backgroundColor: '#dc262620',
+                                    fill: true,
+                                    tension: 0.4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { labels: { color: colors.text, font: { family: 'Inter' } } }
+                            },
+                            scales: {
+                                x: { grid: { color: colors.grid }, ticks: { color: colors.text } },
+                                y: { grid: { color: colors.grid }, ticks: { color: colors.text } }
+                            }
+                        }
+                    });
+
+                    // 2. Pie Chart (Distribution)
+                    const ctxPie = document.getElementById('lifetimePieChart').getContext('2d');
+                    const totalAccepted = data.stats.reduce((a, b) => a + b.accepted, 0);
+                    const totalRejected = data.stats.reduce((a, b) => a + b.rejected, 0);
+
+                    if (lifetimePieChart) lifetimePieChart.destroy();
+
+                    lifetimePieChart = new Chart(ctxPie, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Qabul', 'Rad'],
+                            datasets: [{
+                                data: [totalAccepted, totalRejected],
+                                backgroundColor: ['#16a34a', '#dc2626'],
+                                borderWidth: 0,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '70%',
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { color: colors.text, font: { family: 'Inter' }, padding: 20 }
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // Initialize all stats
+        loadHourlyStats();
+        loadLifetimeStats();
+
+        // Refresh periodically (every 1 min)
+        setInterval(() => {
+            loadHourlyStats();
+            loadLifetimeStats();
+        }, 60000);
     </script>
 </body>
 
