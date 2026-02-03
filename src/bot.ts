@@ -143,7 +143,7 @@ bot.callbackQuery("my_stats", async (ctx) => {
         text += `<code>║</code> 💰 Balans:    <code>${String(user.balance).padStart(6)}</code> so'm<code>║</code>\n`;
     }
     text += `<code>╚═══════════════════════════╝</code>\n`;
-    text += `<i>💡 20 ta bepul, keyin 50 so'm</i>\n\n`;
+    text += `<i>💡 20 ta bepul, keyin 30 so'm</i>\n\n`;
 
     // Transcription Section
     text += `<b>📝 TRANSKRIPSIYA</b>\n`;
@@ -173,7 +173,7 @@ bot.callbackQuery("help_info", async (ctx) => {
         `• Audiodagi matnni diqqat bilan tinglang\n` +
         `• Agar matn to'g'ri bo'lsa "To'g'ri" bosing\n` +
         `• Agar xato bo'lsa "Xato" yoki "Tahrirlash" bosing\n` +
-        `• Har kuni 20 ta bepul, keyin 50 so'm`,
+        `• Har kuni 20 ta bepul, keyin 30 so'm`,
         {
             parse_mode: "HTML",
             reply_markup: new InlineKeyboard().text("🏠 Asosiy menyu", "main_menu")
@@ -257,7 +257,7 @@ bot.callbackQuery(/^accept:(.+)$/, async (ctx) => {
         });
 
         // PAYMENT LOGIC
-        // 20 free checks per 24 hours. After that 50 som per check.
+        // 20 free checks per 24 hours. After that 30 som per check.
         const checksToday = await dbService.get24hCheckCount(ctx.from.id);
         // We just added one (Wait, dbService.updateFileStatus marks it processed NOW).
         // Since we verify AFTER update, checksToday includes the current one.
@@ -265,7 +265,7 @@ bot.callbackQuery(/^accept:(.+)$/, async (ctx) => {
         // Example: 20th check -> checksToday=20. No pay.
         // 21st check -> checksToday=21. Pay.
         if (checksToday > 20) {
-            await dbService.incrementBalance(ctx.from.id, 50);
+            await dbService.incrementBalance(ctx.from.id, 30);
         }
 
         // 4. Offer Next

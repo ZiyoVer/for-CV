@@ -279,6 +279,52 @@ app.get('/leaderboard', async (req, res) => {
     }
 });
 
+// API: Get 24-hour hourly statistics for chart
+app.get('/api/hourly-stats', requireAuth, async (req, res) => {
+    try {
+        const hourlyStats = await dbService.get24hHourlyStats();
+
+        // Group data by user for multi-series chart
+        const userMap = new Map<string, { hours: string[], counts: number[] }>();
+        const allHours = new Set<string>();
+
+        hourlyStats.forEach((stat: any) => {
+            const hourStr = new Date(stat.hour).toISOString();
+            allHours.add(hourStr);
+
+            if (!userMap.has(stat.full_name)) {
+                userMap.set(stat.full_name, { hours: [], counts: [] });
+            }
+            const userData = userMap.get(stat.full_name)!;
+            userData.hours.push(hourStr);
+            userData.counts.push(stat.count);
+        });
+
+        // Convert to chart.js format
+        const datasets = Array.from(userMap.entries()).map(([name, data], index) => {
+            const colors = ['#3b82f6', '#22c55e', '#ef4444', '#eab308', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+            return {
+                label: name,
+                data: data.counts,
+                borderColor: colors[index % colors.length],
+                backgroundColor: colors[index % colors.length] + '20',
+                tension: 0.4,
+                fill: true
+            };
+        });
+
+        res.json({
+            success: true,
+            labels: Array.from(allHours).sort(),
+            datasets,
+            updatedAt: new Date().toISOString()
+        });
+    } catch (err) {
+        console.error('Hourly stats error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
 // JSON API for live updates (polling every 5 seconds)
 app.get('/api/leaderboard', async (req, res) => {
     try {

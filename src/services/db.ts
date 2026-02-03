@@ -360,5 +360,23 @@ export const dbService = {
             [cutoff]
         );
         return result.rowCount;
+    },
+
+    // Get hourly statistics for the last 24 hours grouped by user
+    get24hHourlyStats: async () => {
+        const { rows } = await pool.query(
+            `SELECT 
+                u.full_name,
+                u.telegram_id,
+                DATE_TRUNC('hour', f.processed_at) as hour,
+                COUNT(*)::int as count
+             FROM files f
+             JOIN users u ON f.assigned_to = u.telegram_id
+             WHERE f.status IN ('ACCEPTED', 'REJECTED')
+               AND f.processed_at > NOW() - INTERVAL '24 hours'
+             GROUP BY u.full_name, u.telegram_id, DATE_TRUNC('hour', f.processed_at)
+             ORDER BY hour ASC`
+        );
+        return rows;
     }
 };
