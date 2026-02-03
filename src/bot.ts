@@ -736,6 +736,41 @@ export async function launchBot() {
             .catch((err) => console.error('Error releasing transcription locks', err));
     }, 5 * 60 * 1000);
 
+    // Auto-sync S3 files every 30 minutes (1800000 ms)
+    const AUTO_SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
+    // Initial sync on startup
+    console.log("Running initial STT sync...");
+    s3Service.syncFiles()
+        .then(() => console.log("Initial STT sync completed."))
+        .catch((err) => console.error("Initial STT sync error:", err));
+
+    console.log("Running initial Transcription sync...");
+    s3Service.syncTranscriptionFiles()
+        .then(() => console.log("Initial Transcription sync completed."))
+        .catch((err) => console.error("Initial Transcription sync error:", err));
+
+    // Periodic auto-sync
+    setInterval(() => {
+        console.log("Auto-syncing STT files from S3...");
+        s3Service.syncFiles()
+            .then(async () => {
+                const pendingCount = await dbService.getPendingCount();
+                console.log(`STT auto-sync completed. Pending files: ${pendingCount}`);
+            })
+            .catch((err) => console.error('STT auto-sync error:', err));
+
+        console.log("Auto-syncing Transcription files from S3...");
+        s3Service.syncTranscriptionFiles()
+            .then(async () => {
+                const pendingCount = await dbService.getTranscriptionPendingCount();
+                console.log(`Transcription auto-sync completed. Pending files: ${pendingCount}`);
+            })
+            .catch((err) => console.error('Transcription auto-sync error:', err));
+    }, AUTO_SYNC_INTERVAL_MS);
+
+    console.log(`Auto-sync enabled: every ${AUTO_SYNC_INTERVAL_MS / 60000} minutes`);
+
     // Bot start will be handled by runner, but bot.start() blocks...
     // We should use bot.start() or bot.run() (runner). 
     // Since we want to run express alongside, we shouldn't await bot.start() infinitely if we were in the same process loop without async.
