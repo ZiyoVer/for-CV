@@ -2,38 +2,35 @@
 <html lang="uz">
 
 <head>
-    <!-- Premium UI v2.0 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STT Admin - Dashboard</title>
+    <title>STT Admin - Premium Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             --bg: #ffffff;
-            --navbar-bg: #fafafa;
-            --card-bg: #fafafa;
-            --text: #0a0a0a;
-            --text-muted: #737373;
+            --text: #000000;
+            --text-muted: #666666;
             --border: #e5e5e5;
-            --border-light: #f5f5f5;
-            --input-bg: #fafafa;
-            --btn-ghost: #f5f5f5;
-            --shadow: rgba(0, 0, 0, 0.05);
+            --card-bg: #ffffff;
+            --hover-bg: #f5f5f5;
+            --primary: #000000;
+            --primary-text: #ffffff;
+            --chart-grid: #f0f0f0;
         }
 
         [data-theme="dark"] {
-            --bg: #0a0a0a;
-            --navbar-bg: #111111;
-            --card-bg: #111111;
+            --bg: #000000;
             --text: #ffffff;
             --text-muted: #a3a3a3;
-            --border: #262626;
-            --border-light: #171717;
-            --input-bg: #171717;
-            --btn-ghost: #171717;
-            --shadow: rgba(0, 0, 0, 0.4);
+            --border: #333333;
+            --card-bg: #0a0a0a;
+            --hover-bg: #1a1a1a;
+            --primary: #ffffff;
+            --primary-text: #000000;
+            --chart-grid: #222222;
         }
 
         * {
@@ -43,147 +40,163 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: var(--bg);
-            min-height: 100vh;
             color: var(--text);
-            transition: background 0.3s, color 0.3s;
+            min-height: 100vh;
+            transition: background 0.2s ease, color 0.2s ease;
         }
 
+        /* Navbar */
         .navbar {
-            background: var(--navbar-bg);
-            border-bottom: 1px solid var(--border);
-            padding: 16px 32px;
+            padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid var(--border);
             position: sticky;
             top: 0;
+            background: var(--bg);
             z-index: 100;
-            backdrop-filter: blur(10px);
         }
 
-        .logo {
-            font-size: 16px;
+        .brand {
             font-weight: 700;
-            color: #0a0a0a;
+            font-size: 18px;
             letter-spacing: -0.5px;
         }
 
-        .logout-btn {
-            color: #737373;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.2s;
+        .nav-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
         }
 
-        .logout-btn:hover {
-            color: #0a0a0a;
+        .icon-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
 
+        .icon-btn:hover {
+            background: var(--hover-bg);
+            border-color: var(--text);
+        }
+
+        /* Main Layout */
         .container {
             max-width: 1200px;
-            margin: 0 auto;
-            padding: 48px 32px;
+            margin: 40px auto;
+            padding: 0 20px;
         }
 
-        .section-title {
-            font-size: 18px;
+        .header-section {
+            margin-bottom: 40px;
+        }
+
+        .page-title {
+            font-size: 24px;
             font-weight: 700;
-            color: #0a0a0a;
             margin-bottom: 8px;
-            letter-spacing: -0.3px;
         }
 
-        .section-desc {
+        .page-subtitle {
+            color: var(--text-muted);
             font-size: 14px;
-            color: #737373;
-            margin-bottom: 32px;
         }
 
+        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 48px;
+            gap: 20px;
+            margin-bottom: 40px;
         }
 
         .stat-card {
             background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 12px;
             padding: 24px;
-            transition: all 0.2s;
-        }
-
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+            border-radius: 12px;
+            transition: transform 0.2s;
         }
 
         .stat-card:hover {
-            box-shadow: 0 4px 12px var(--shadow);
-            transform: translateY(-2px);
+            border-color: var(--text);
         }
 
         .stat-label {
-            font-size: 13px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
             color: var(--text-muted);
-            font-weight: 500;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .stat-value {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: 700;
-            color: var(--text);
+            letter-spacing: -1px;
         }
 
-        /* Charts Grid */
-        .charts-grid {
+        .stat-subtext {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Charts Section */
+        .charts-row {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
+            gap: 20px;
+            margin-bottom: 40px;
         }
 
-        .chart-section {
-            background: var(--card-bg);
+        .chart-box {
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 24px;
-            margin-bottom: 24px;
+            background: var(--card-bg);
+            height: 350px;
         }
 
         .chart-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .chart-title {
-            font-size: 16px;
             font-weight: 600;
-            color: var(--text);
-            display: flex;
-            align-items: center;
+            font-size: 16px;
         }
 
-        .chart-subtitle {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        .table-container {
-            background: var(--card-bg);
+        /* Table */
+        .table-section {
             border: 1px solid var(--border);
             border-radius: 12px;
             overflow: hidden;
-            margin-bottom: 48px;
+            margin-bottom: 40px;
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         table {
@@ -192,643 +205,646 @@
         }
 
         th {
-            background: var(--navbar-bg);
-            color: var(--text-muted);
+            text-align: left;
+            padding: 16px 24px;
+            font-size: 12px;
             font-weight: 600;
-            font-size: 11px;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
-        }
-
-        tr {
-            background: transparent;
-            border-bottom: 1px solid var(--border-light);
-            transition: background 0.15s;
-        }
-
-        tr:hover {
-            background: var(--border-light);
+            background: var(--hover-bg);
         }
 
         td {
+            padding: 16px 24px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
             color: var(--text);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: var(--hover-bg);
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--primary);
+            color: var(--primary-text);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .action-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            background: transparent;
+            cursor: pointer;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--primary);
+            color: var(--primary-text);
+            border-color: var(--primary);
+        }
+
+        /* Upload Section */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 40px;
+            transition: border-color 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--text-muted);
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
 
         .modal {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
+            background: var(--card-bg);
             padding: 32px;
-            width: 100%;
-            max-width: 440px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 450px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         }
 
-        .form-group input {
-            background: var(--input-bg);
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--text);
+        }
+
+        .modal-actions {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-outline {
+            background: transparent;
             border: 1px solid var(--border);
             color: var(--text);
         }
 
-        .form-group input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        .btn-outline:hover {
+            background: var(--hover-bg);
+            opacity: 1;
         }
 
-        .upload-section {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 32px;
-            margin-bottom: 48px;
-        }
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
 
-        @media (max-width: 1000px) {
-            .charts-grid {
+            .charts-row {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                padding: 16px 20px;
+            }
+
+            .container {
+                margin: 24px auto;
             }
         }
     </style>
 </head>
 
 <body>
+
     <nav class="navbar">
-        <div class="logo">STT Admin</div>
-        <div style="display: flex; gap: 20px; align-items: center;">
-            <button onclick="toggleTheme()" class="btn-ghost" id="themeToggle"
-                style="border: none; background: none; cursor: pointer; color: var(--text-muted); padding: 8px; border-radius: 8px;">
-                <i data-lucide="sun" id="sunIcon"></i>
-                <i data-lucide="moon" id="moonIcon" style="display: none;"></i>
+        <div class="brand">STT ADMIN</div>
+        <div class="nav-actions">
+            <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+                <i data-lucide="moon" id="theme-icon"></i>
             </button>
-            <a href="/logout" class="logout-btn">Chiqish <i data-lucide="log-out"
-                    style="width: 14px; height: 14px; margin-left: 4px;"></i></a>
+            <a href="/logout" class="icon-btn" title="Chiqish">
+                <i data-lucide="log-out"></i>
+            </a>
         </div>
     </nav>
 
     <div class="container">
-        <h2 class="section-title">Dashboard</h2>
-        <p class="section-desc">STT Tekshiruv tizimi umumiy statistikasi</p>
 
+        <div class="header-section">
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Platforma statistikasi va foydalanuvchilar boshqaruvi</p>
+        </div>
+
+        <!-- 1. Stats Cards Grid -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-label">Jami Tekshirilgan</div>
-                    <i data-lucide="activity" class="text-muted"></i>
+                <div class="stat-label">
+                    Total Checked <i data-lucide="activity" size="16"></i>
                 </div>
                 <div class="stat-value">
                     <%= stats.totalChecked %>
                 </div>
+                <div class="stat-subtext">ta fayl tekshirildi</div>
             </div>
             <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-label">Qabul Qilingan</div>
-                    <i data-lucide="check-circle" style="color: #16a34a;"></i>
+                <div class="stat-label">
+                    Accepted <i data-lucide="check-circle" size="16"></i>
                 </div>
-                <div class="stat-value green">
+                <div class="stat-value">
                     <%= stats.totalAccepted %>
                 </div>
+                <div class="stat-subtext">
+                    <%= stats.checkedDuration %> (Audio)
+                </div>
             </div>
             <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-label">Rad Etilgan</div>
-                    <i data-lucide="x-circle" style="color: #dc2626;"></i>
+                <div class="stat-label">
+                    Rejected <i data-lucide="x-circle" size="16"></i>
                 </div>
-                <div class="stat-value red">
+                <div class="stat-value">
                     <%= stats.totalRejected %>
                 </div>
+                <div class="stat-subtext">ta fayl rad etildi</div>
             </div>
             <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-label">Kutilmoqda</div>
-                    <i data-lucide="clock" style="color: #ca8a04;"></i>
+                <div class="stat-label">
+                    Pending <i data-lucide="clock" size="16"></i>
                 </div>
-                <div class="stat-value yellow">
+                <div class="stat-value">
                     <%= stats.pending %>
                 </div>
-            </div>
-            <!-- New Duration Stats -->
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-label">Tekshirilgan Audio</div>
-                    <i data-lucide="headphones"></i>
-                </div>
-                <div class="stat-value" style="font-size: 24px;">
-                    <%= stats.checkedDuration %>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-label">Kutilayotgan Audio</div>
-                    <i data-lucide="timer" style="color: #ca8a04;"></i>
-                </div>
-                <div class="stat-value yellow" style="font-size: 24px;">
-                    <%= stats.pendingDuration %>
+                <div class="stat-subtext">
+                    <%= stats.pendingDuration %> (Audio)
                 </div>
             </div>
         </div>
 
-        <!-- 24-Hour Statistics Chart -->
-        <div class="charts-grid">
-            <div class="chart-section">
+        <!-- 2. Charts Section -->
+        <div class="charts-row">
+            <div class="chart-box">
                 <div class="chart-header">
-                    <div>
-                        <div class="chart-title"><i data-lucide="bar-chart-3"
-                                style="width: 16px; margin-right: 8px;"></i> 24 Soatlik Statistika</div>
-                        <div class="chart-subtitle">Soatlar bo'yicha tekshiruvlar hajmi</div>
-                    </div>
+                    <div class="chart-title">24 Soatlik Faollik</div>
+                    <i data-lucide="bar-chart-2" size="18" style="opacity: 0.5"></i>
                 </div>
-                <div class="chart-container">
-                    <canvas id="hourlyChart"></canvas>
-                </div>
+                <canvas id="dailyChart"></canvas>
             </div>
-
-            <!-- New Lifetime Stats Chart -->
-            <div class="chart-section">
+            <div class="chart-box">
                 <div class="chart-header">
-                    <div>
-                        <div class="chart-title"><i data-lucide="pie-chart" style="width: 16px; margin-right: 8px;"></i>
-                            Umumiy Ulushlar</div>
-                        <div class="chart-subtitle">Qabul qilingan vs Rad etilgan</div>
-                    </div>
+                    <div class="chart-title">Status Ratio</div>
+                    <i data-lucide="pie-chart" size="18" style="opacity: 0.5"></i>
                 </div>
-                <div class="chart-container" style="height: 300px;">
-                    <canvas id="lifetimePieChart"></canvas>
-                </div>
+                <canvas id="statusChart"></canvas>
             </div>
         </div>
 
-        <!-- 30-Day Growth Chart -->
-        <div class="chart-section" style="margin-bottom: 48px;">
-            <div class="chart-header">
-                <div>
-                    <div class="chart-title"><i data-lucide="trending-up" style="width: 16px; margin-right: 8px;"></i>
-                        30 Kunlik O'sish</div>
-                    <div class="chart-subtitle">Kunlik tasdiqlangan audiolar tarixi</div>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="lifetimeChart"></canvas>
-            </div>
-        </div>
+        <!-- 3. Upload Section -->
+        <div class="upload-area">
+            <i data-lucide="upload-cloud" size="40" style="margin-bottom: 16px; opacity: 0.5;"></i>
+            <h3 style="margin-bottom: 8px;">Audio Yuklash</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">S3 stolga .wav fayllarni yuklang
+                (Max 100 ta)</p>
 
-        <div class="feature-list">
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span><strong>Annotatorlar</strong> Audio va matnlarni tekshiruvchi jamoangiz</span>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span><strong>20 bepul</strong> Har 24 soatda birinchi 20 tekshiruv bepul</span>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span><strong>30 so'm</strong> Keyingi har bir tekshiruv uchun to'lov</span>
-            </div>
-        </div>
-
-        <!-- Transcription Upload Section -->
-        <div class="upload-section">
-            <h2 class="section-title">📝 Transkripsiya</h2>
-            <p class="section-desc" style="margin-bottom: 16px;">Audio fayllarni transkripsiya uchun yuklang</p>
-
-            <form method="POST" action="/transcription/upload" enctype="multipart/form-data" id="uploadForm">
-                <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-                    <input type="file" name="audioFiles" multiple accept="audio/*" onchange="updateFileCount(this)">
-                    <button type="submit" class="btn" id="uploadBtn">
-                        <i data-lucide="upload" style="width: 16px; height: 16px; margin-right: 4px;"></i> Yuklash
-                    </button>
-                </div>
-                <p id="fileCount" style="color: #737373; font-size: 13px; margin-top: 12px;"></p>
+            <form action="/transcription/upload" method="POST" enctype="multipart/form-data">
+                <input type="file" name="audioFiles" id="fileInput" multiple accept="audio/*" style="display: none;"
+                    onchange="updateFileCount()">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('fileInput').click()">
+                    Fayllarni Tanlash
+                </button>
+                <button type="submit" class="btn" style="margin-left: 8px;">
+                    Yuklash
+                </button>
             </form>
+            <p id="file-label" style="font-size: 13px; margin-top: 12px; color: var(--text-muted);"></p>
 
             <% if (typeof stats.transcriptionPending !=='undefined' ) { %>
-                <p style="color: #525252; font-size: 13px; margin-top: 16px;">
-                    ⏳ Kutilmoqda: <span style="color: #ca8a04; font-weight: 600;">
-                        <%= stats.transcriptionPending %>
-                    </span> ta transkripsiya
-                </p>
+                <div style="margin-top: 20px; font-size: 13px;">
+                    <span style="font-weight: 600;">Navbatda:</span>
+                    <%= stats.transcriptionPending %> ta audio
+                </div>
                 <% } %>
         </div>
 
-        <div class="users-header">
-            <h2 class="section-title">Foydalanuvchilar</h2>
-            <button class="btn" onclick="openModal()">
-                <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 4px;"></i> Yangi Qo'shish
-            </button>
-        </div>
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Ism</th>
-                        <th>Bugun</th>
-                        <th>Jami ✓</th>
-                        <th>Jami ✗</th>
-                        <th>Balans</th>
-                        <th>Amallar</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% users.forEach(user=> { %>
+        <!-- 4. Users Table -->
+        <div class="table-section">
+            <div class="table-header">
+                <h3>Foydalanuvchilar</h3>
+                <button class="btn" onclick="openModal('addUserModal')">
+                    <i data-lucide="plus" size="16"></i> Yangi
+                </button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
                         <tr>
-                            <td><code><%= user.telegram_id %></code></td>
-                            <td>
-                                <%= user.full_name %>
-                                    <% if (user.is_admin) { %><span class="admin-badge">ADMIN</span>
-                                        <% } %>
-                            </td>
-                            <td>
-                                <%= user.checks_today %>
-                            </td>
-                            <td>
-                                <%= user.total_accepted %>
-                            </td>
-                            <td>
-                                <%= user.total_rejected %>
-                            </td>
-                            <td class="balance">
-                                <%= user.balance || 0 %> so'm
-                            </td>
-                            <td class="actions">
-                                <a href="/review/<%= user.telegram_id %>" class="btn btn-outline btn-sm">
-                                    <i data-lucide="shield-check"
-                                        style="width: 14px; height: 14px; margin-right: 4px;"></i> Tekshirish
-                                </a>
-                                <button class="btn btn-warning btn-sm" data-id="<%= user.telegram_id %>"
-                                    data-name="<%= user.full_name %>" onclick="handleBalanceModal(this)">
-                                    <i data-lucide="plus-square"
-                                        style="width: 14px; height: 14px; margin-right: 4px;"></i> Balans
-                                </button>
-
-                                <form method="POST" action="/users/payout/<%= user.telegram_id %>"
-                                    style="display:inline;"
-                                    onsubmit="return confirm('To\'lov yakunlandimi? Balans nolga tushiriladi.')">
-                                    <button type="submit" class="btn btn-success btn-sm">
-                                        <i data-lucide="banknote"
-                                            style="width: 14px; height: 14px; margin-right: 4px;"></i> To'lash
-                                    </button>
-                                </form>
-
-                                <button class="btn btn-outline btn-sm" data-id="<%= user.telegram_id %>"
-                                    data-name="<%= user.full_name %>" data-admin="<%= user.is_admin %>"
-                                    onclick="handleEditModal(this)">
-                                    <i data-lucide="edit" style="width: 14px; height: 14px; margin-right: 4px;"></i>
-                                    Tahrirlash
-                                </button>
-
-                                <form method="POST" action="/users/delete/<%= user.telegram_id %>"
-                                    style="display:inline;"
-                                    onsubmit="return confirm('Foydalanuvchini o\'chirishni tasdiqlaysizmi?')">
-                                    <button type="submit" class="btn btn-sm" style="background: #dc2626; color: #fff;">
-                                        <i data-lucide="trash-2"
-                                            style="width: 14px; height: 14px; margin-right: 4px;"></i>
-                                    </button>
-                                </form>
-                            </td>
+                            <th>ID</th>
+                            <th>Ism</th>
+                            <th style="text-align: right;">Bugun</th>
+                            <th style="text-align: right;">Jami Ok</th>
+                            <th style="text-align: right;">Jami No</th>
+                            <th style="text-align: right;">Balans</th>
+                            <th style="text-align: right;">Amallar</th>
                         </tr>
-                        <% }); %>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <% users.forEach(user=> { %>
+                            <tr>
+                                <td style="font-family: monospace;">
+                                    <%= user.telegram_id %>
+                                </td>
+                                <td>
+                                    <%= user.full_name %>
+                                        <% if(user.is_admin) { %> <i data-lucide="shield" size="12"></i>
+                                            <% } %>
+                                </td>
+                                <td style="text-align: right;">
+                                    <%= user.today_count || 0 %>
+                                </td>
+                                <td style="text-align: right;">
+                                    <%= user.total_accepted || 0 %>
+                                </td>
+                                <td style="text-align: right;">
+                                    <%= user.total_rejected || 0 %>
+                                </td>
+                                <td style="text-align: right; font-weight: 600;">
+                                    <%= user.balance.toLocaleString() %> so'm
+                                </td>
+                                <td>
+                                    <div class="action-cell" style="justify-content: flex-end;">
+                                        <button class="action-btn" title="Tekshirish"
+                                            onclick="window.location.href='/dashboard/check/<%= user.telegram_id %>'">
+                                            <i data-lucide="play" size="14"></i>
+                                        </button>
+                                        <button class="action-btn" title="Balans"
+                                            onclick="openBalanceModal('<%= user.telegram_id %>', '<%= user.full_name %>')">
+                                            <i data-lucide="wallet" size="14"></i>
+                                        </button>
+                                        <button class="action-btn" title="Payout"
+                                            onclick="openPayoutModal('<%= user.telegram_id %>', '<%= user.full_name %>', <%= user.balance %>)">
+                                            <i data-lucide="arrow-up-right" size="14"></i>
+                                        </button>
+                                        <button class="action-btn" title="Tahrirlash"
+                                            onclick="openEditModal('<%= user.telegram_id %>', '<%= user.full_name.replace(/'/g, "
+                                            \\'") %>', <%= user.is_admin %>)">
+                                                <i data-lucide="edit-2" size="14"></i>
+                                        </button>
+                                        <form action="/users/delete/<%= user.telegram_id %>" method="POST"
+                                            onsubmit="return confirm('Ushbu foydalanuvchini o\'chirishni tasdiqlaysizmi?');"
+                                            style="margin:0;">
+                                            <button type="submit" class="action-btn" title="O'chirish"
+                                                style="color: #ef4444; border-color: #ef444450;">
+                                                <i data-lucide="trash-2" size="14"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% }) %>
+                    </tbody>
+                </table>
+            </div>
         </div>
+
     </div>
 
+    <!-- Modals -->
+
     <!-- Add User Modal -->
-    <div class="modal-overlay" id="addUserModal">
+    <div id="addUserModal" class="modal-overlay">
         <div class="modal">
-            <h3>Yangi Foydalanuvchi</h3>
-            <form method="POST" action="/users/add">
+            <h3 class="modal-title">Yangi Foydalanuvchi</h3>
+            <form action="/add-user" method="POST">
                 <div class="form-group">
                     <label>Telegram ID</label>
-                    <input type="number" name="telegram_id" placeholder="123456789" required>
+                    <input type="number" name="telegram_id" class="form-input" required>
                 </div>
                 <div class="form-group">
                     <label>To'liq Ism</label>
-                    <input type="text" name="full_name" placeholder="Ism Familiya" required>
+                    <input type="text" name="full_name" class="form-input" required>
                 </div>
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" name="is_admin" id="is_admin">
-                        <label for="is_admin" style="margin: 0;">Admin qilish</label>
-                    </div>
+                <div class="form-group" style="display: flex; gap: 8px;">
+                    <input type="checkbox" name="is_admin" id="isAdmin">
+                    <label for="isAdmin" style="margin:0; cursor: pointer;">Admin huquqini berish</label>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeModal()">Bekor</button>
-                    <button type="submit" class="btn">Qo'shish →</button>
+                    <button type="button" class="btn btn-outline btn-full"
+                        onclick="closeModal('addUserModal')">Bekor</button>
+                    <button type="submit" class="btn btn-full">Qo'shish</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Add Balance Modal -->
-    <div class="modal-overlay" id="balanceModal">
+    <!-- Balance Modal -->
+    <div id="balanceModal" class="modal-overlay">
         <div class="modal">
-            <h3>Balans Qo'shish</h3>
-            <p style="color: #525252; font-size: 14px; margin-bottom: 20px;">Foydalanuvchi: <span id="balanceUserName"
-                    style="color: #0a0a0a; font-weight: 600;"></span></p>
-            <form method="POST" id="balanceForm">
+            <h3 class="modal-title">Balans Qo'shish</h3>
+            <p id="balanceUserDisplay" style="margin-bottom: 20px; color: var(--text-muted); font-size: 14px;"></p>
+            <form action="/add-balance" method="POST">
+                <input type="hidden" name="user_id" id="balanceUserId">
                 <div class="form-group">
-                    <label>Qo'shiladigan summa (so'm)</label>
-                    <input type="number" name="amount" placeholder="3150" required>
+                    <label>Summa (so'm)</label>
+                    <input type="number" name="amount" class="form-input" required placeholder="50000">
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeBalanceModal()">Bekor</button>
-                    <button type="submit" class="btn">Qo'shish →</button>
+                    <button type="button" class="btn btn-outline btn-full"
+                        onclick="closeModal('balanceModal')">Bekor</button>
+                    <button type="submit" class="btn btn-full">Qo'shish</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Edit User Modal -->
-    <div class="modal-overlay" id="editUserModal">
+    <div id="editUserModal" class="modal-overlay">
         <div class="modal">
-            <h3>Foydalanuvchini Tahrirlash</h3>
-            <form method="POST" id="editUserForm">
+            <h3 class="modal-title">Foydalanuvchini Tahrirlash</h3>
+            <form id="editUserForm" method="POST">
                 <div class="form-group">
-                    <label>Telegram ID</label>
-                    <input type="number" name="telegram_id" id="editTelegramId" placeholder="123456789" required>
+                    <label>Telegram ID (O'zgarmas)</label>
+                    <input type="number" id="editUserIdDisplay" class="form-input" disabled style="opacity: 0.7;">
                 </div>
                 <div class="form-group">
                     <label>To'liq Ism</label>
-                    <input type="text" name="full_name" id="editFullName" placeholder="Ism Familiya" required>
+                    <input type="text" name="full_name" id="editFullName" class="form-input" required>
                 </div>
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" name="is_admin" id="editIsAdmin">
-                        <label for="editIsAdmin" style="margin: 0;">Admin qilish</label>
-                    </div>
+                <div class="form-group" style="display: flex; gap: 8px;">
+                    <input type="checkbox" name="is_admin" id="editIsAdmin">
+                    <label for="editIsAdmin" style="margin:0; cursor: pointer;">Admin</label>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeEditModal()">Bekor</button>
-                    <button type="submit" class="btn">Saqlash →</button>
+                    <button type="button" class="btn btn-outline btn-full"
+                        onclick="closeModal('editUserModal')">Bekor</button>
+                    <button type="submit" class="btn btn-full">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payout Confirmation Modal -->
+    <div id="payoutModal" class="modal-overlay">
+        <div class="modal">
+            <h3 class="modal-title">To'lovni Tasdiqlash</h3>
+            <p style="margin-bottom: 8px;">Foydalanuvchi: <b id="payoutUserName"></b></p>
+            <p style="margin-bottom: 24px;">To'lanadigan summa: <b id="payoutAmount"></b> so'm</p>
+
+            <form action="/payout" method="POST">
+                <input type="hidden" name="user_id" id="payoutUserId">
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline btn-full"
+                        onclick="closeModal('payoutModal')">Bekor</button>
+                    <button type="submit" class="btn btn-full">To'lab berildi</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // Lucide icons initialization
+        // Icons
         lucide.createIcons();
 
-        // Theme management
-        const theme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', theme);
-        updateThemeIcons(theme);
-
+        // Theme Logic
         function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcons(newTheme);
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            const isDark = body.getAttribute('data-theme') === 'dark';
 
-            // Refresh charts colors if they exist
-            if (hourlyChart) loadHourlyStats();
-            if (lifetimeChart) loadLifetimeStats();
-        }
-
-        function updateThemeIcons(theme) {
-            document.getElementById('sunIcon').style.display = theme === 'light' ? 'none' : 'block';
-            document.getElementById('moonIcon').style.display = theme === 'light' ? 'block' : 'none';
-        }
-        function openModal() {
-            document.getElementById('addUserModal').classList.add('active');
-        }
-        function closeModal() {
-            document.getElementById('addUserModal').classList.remove('active');
-        }
-        document.getElementById('addUserModal').addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-overlay')) closeModal();
-        });
-
-        function handleBalanceModal(btn) {
-            const userId = btn.getAttribute('data-id');
-            const userName = btn.getAttribute('data-name');
-            openBalanceModal(userId, userName);
+            if (isDark) {
+                body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                icon.setAttribute('data-lucide', 'moon');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                icon.setAttribute('data-lucide', 'sun');
+            }
+            lucide.createIcons();
+            updateChartsTheme();
         }
 
-        function openBalanceModal(userId, userName) {
-            document.getElementById('balanceUserName').textContent = userName;
-            document.getElementById('balanceForm').action = '/users/add-balance/' + userId;
-            document.getElementById('balanceModal').classList.add('active');
-        }
-        function closeBalanceModal() {
-            document.getElementById('balanceModal').classList.remove('active');
-        }
-        document.getElementById('balanceModal').addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-overlay')) closeBalanceModal();
-        });
-
-        function handleEditModal(btn) {
-            const id = btn.getAttribute('data-id');
-            const name = btn.getAttribute('data-name');
-            const isAdmin = btn.getAttribute('data-admin') === 'true';
-            openEditModal(id, name, isAdmin);
+        // Init Theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
         }
 
-        function openEditModal(telegramId, fullName, isAdmin) {
-            document.getElementById('editTelegramId').value = telegramId;
-            document.getElementById('editFullName').value = fullName;
-            document.getElementById('editIsAdmin').checked = isAdmin;
-            document.getElementById('editUserForm').action = '/users/update/' + telegramId;
-            document.getElementById('editUserModal').classList.add('active');
-        }
-        function closeEditModal() {
-            document.getElementById('editUserModal').classList.remove('active');
-        }
-        document.getElementById('editUserModal').addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-overlay')) closeEditModal();
-        });
+        // Charts Logic
+        let dailyChart, statusChart;
 
-        // Transcription upload
-        function updateFileCount(input) {
-            const count = input.files.length;
-            document.getElementById('fileCount').textContent = count > 0 ? `${count} ta fayl tanlandi` : '';
-        }
+        function updateChartsTheme() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            const color = isDark ? '#ffffff' : '#000000';
+            const gridColor = isDark ? '#333333' : '#e5e5e5';
 
-        document.getElementById('uploadForm').addEventListener('submit', function () {
-            document.getElementById('uploadBtn').textContent = '⏳ Yuklanmoqda...';
-            document.getElementById('uploadBtn').disabled = true;
-        });
-
-        // Chart.js Theme Helpers
-        function getChartColors() {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            return {
-                grid: isDark ? '#262626' : '#f5f5f5',
-                text: isDark ? '#a3a3a3' : '#737373',
-                bg: isDark ? '#111111' : '#ffffff'
+            const commonOptions = {
+                plugins: {
+                    legend: { labels: { color: color } }
+                },
+                scales: {
+                    x: { ticks: { color: color }, grid: { color: gridColor } },
+                    y: { ticks: { color: color }, grid: { color: gridColor } }
+                }
             };
+
+            if (dailyChart) {
+                dailyChart.options.scales.x.ticks.color = color;
+                dailyChart.options.scales.y.ticks.color = color;
+                dailyChart.options.scales.x.grid.color = gridColor;
+                dailyChart.options.scales.y.grid.color = gridColor;
+                dailyChart.data.datasets[0].borderColor = color;
+                dailyChart.data.datasets[0].backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+                dailyChart.update();
+            }
+
+            if (statusChart) {
+                statusChart.data.datasets[0].borderColor = isDark ? '#000' : '#fff';
+                statusChart.update();
+            }
         }
 
-        // 24-Hour Statistics Chart
-        let hourlyChart = null;
+        document.addEventListener('DOMContentLoaded', () => {
+            const chartData = <% - JSON.stringify(chartData || []) %>;
 
-        async function loadHourlyStats() {
-            try {
-                const response = await fetch('/api/hourly-stats');
-                const data = await response.json();
-
-                if (data.success) {
-                    const ctx = document.getElementById('hourlyChart').getContext('2d');
-                    const colors = getChartColors();
-
-                    // Format labels to show hours
-                    const formattedLabels = data.labels.map(label => {
-                        const date = new Date(label);
-                        return date.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
-                    });
-
-                    if (hourlyChart) hourlyChart.destroy();
-
-                    hourlyChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: formattedLabels,
-                            datasets: data.datasets
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'top',
-                                    labels: {
-                                        font: { family: 'Inter', size: 12 },
-                                        color: colors.text,
-                                        usePointStyle: true,
-                                        padding: 20
-                                    }
-                                },
-                                tooltip: {
-                                    backgroundColor: '#0a0a0a',
-                                    padding: 12,
-                                    cornerRadius: 8
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    grid: { color: colors.grid },
-                                    ticks: { font: { family: 'Inter', size: 11 }, color: colors.text }
-                                },
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: colors.grid },
-                                    ticks: { font: { family: 'Inter', size: 11 }, color: colors.text }
-                                }
-                            },
-                            interaction: {
-                                intersect: false,
-                                mode: 'index'
-                            }
-                        }
-                    });
+            // Daily Chart
+            const ctxDaily = document.getElementById('dailyChart').getContext('2d');
+            dailyChart = new Chart(ctxDaily, {
+                type: 'line',
+                data: {
+                    labels: chartData.map(d => d.hour),
+                    datasets: [{
+                        label: 'Tekshiruvlar',
+                        data: chartData.map(d => d.count),
+                        borderColor: '#000',
+                        backgroundColor: 'rgba(0,0,0,0.05)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true }
+                    }
                 }
-            } catch (err) { console.error(err); }
-        }
+            });
 
-        // Lifetime Statistics Chart
-        let lifetimeChart = null;
-        let lifetimePieChart = null;
-
-        async function loadLifetimeStats() {
-            try {
-                const response = await fetch('/api/lifetime-stats');
-                const data = await response.json();
-
-                if (data.success) {
-                    const colors = getChartColors();
-
-                    // 1. Growth Area Chart
-                    const ctxArea = document.getElementById('lifetimeChart').getContext('2d');
-                    const labels = data.stats.map(s => {
-                        const d = new Date(s.day);
-                        return d.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' });
-                    });
-
-                    if (lifetimeChart) lifetimeChart.destroy();
-
-                    lifetimeChart = new Chart(ctxArea, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [
-                                {
-                                    label: 'Qabul qilindi',
-                                    data: data.stats.map(s => s.accepted),
-                                    borderColor: '#16a34a',
-                                    backgroundColor: '#16a34a20',
-                                    fill: true,
-                                    tension: 0.4
-                                },
-                                {
-                                    label: 'Rad etildi',
-                                    data: data.stats.map(s => s.rejected),
-                                    borderColor: '#dc2626',
-                                    backgroundColor: '#dc262620',
-                                    fill: true,
-                                    tension: 0.4
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { labels: { color: colors.text, font: { family: 'Inter' } } }
-                            },
-                            scales: {
-                                x: { grid: { color: colors.grid }, ticks: { color: colors.text } },
-                                y: { grid: { color: colors.grid }, ticks: { color: colors.text } }
-                            }
-                        }
-                    });
-
-                    // 2. Pie Chart (Distribution)
-                    const ctxPie = document.getElementById('lifetimePieChart').getContext('2d');
-                    const totalAccepted = data.stats.reduce((a, b) => a + b.accepted, 0);
-                    const totalRejected = data.stats.reduce((a, b) => a + b.rejected, 0);
-
-                    if (lifetimePieChart) lifetimePieChart.destroy();
-
-                    lifetimePieChart = new Chart(ctxPie, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Qabul', 'Rad'],
-                            datasets: [{
-                                data: [totalAccepted, totalRejected],
-                                backgroundColor: ['#16a34a', '#dc2626'],
-                                borderWidth: 0,
-                                hoverOffset: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            cutout: '70%',
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: { color: colors.text, font: { family: 'Inter' }, padding: 20 }
-                                }
-                            }
-                        }
-                    });
+            // Status Chart
+            const ctxStatus = document.getElementById('statusChart').getContext('2d');
+            statusChart = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Qabul', 'Rad', 'Kutilmoqda'],
+                    datasets: [{
+                        data: [
+                            <%= stats.totalAccepted %>, 
+                            <%= stats.totalRejected %>, 
+                            <%= stats.pending %>
+                        ],
+                        backgroundColor: ['#000000', '#666666', '#e5e5e5'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { legend: { position: 'bottom' } }
                 }
-            } catch (err) { console.error(err); }
+            });
+
+            updateChartsTheme();
+        });
+
+        // Modal Functions
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
         }
 
-        // Initialize all stats
-        loadHourlyStats();
-        loadLifetimeStats();
+        function openBalanceModal(id, name) {
+            document.getElementById('balanceUserId').value = id;
+            document.getElementById('balanceUserDisplay').innerText = 'Foydalanuvchi: ' + name;
+            openModal('balanceModal');
+        }
 
-        // Refresh periodically (every 1 min)
-        setInterval(() => {
-            loadHourlyStats();
-            loadLifetimeStats();
-        }, 60000);
+        function openPayoutModal(id, name, amount) {
+            document.getElementById('payoutUserId').value = id;
+            document.getElementById('payoutUserName').innerText = name;
+            document.getElementById('payoutAmount').innerText = amount.toLocaleString();
+            openModal('payoutModal');
+        }
+
+        function openEditModal(id, name, isAdmin) {
+            document.getElementById('editUserForm').action = '/users/update/' + id;
+            document.getElementById('editUserIdDisplay').value = id;
+            document.getElementById('editFullName').value = name;
+            document.getElementById('editIsAdmin').checked = isAdmin;
+            openModal('editUserModal');
+        }
+
+        // File Upload
+        function updateFileCount() {
+            const input = document.getElementById('fileInput');
+            const label = document.getElementById('file-label');
+            if (input.files.length > 0) {
+                label.innerText = input.files.length + " ta fayl tanlandi";
+            } else {
+                label.innerText = "";
+            }
+        }
+
+        // Close modal on outside click
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = "none";
+            }
+        }
+
     </script>
 </body>
 
