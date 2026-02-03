@@ -2,6 +2,7 @@ import { S3Client, ListObjectsV2Command, GetObjectCommand, CopyObjectCommand, Pu
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from '../config';
 import { dbService } from './db';
+import { parseBuffer } from 'music-metadata';
 
 const s3 = new S3Client({
     region: config.WASABI_REGION,
@@ -32,11 +33,18 @@ export const s3Service = {
 
             for (const file of files) {
                 if (file.Key && file.Key.endsWith('.wav')) {
-                    // Skip if currently in 'saralangan/' or 'stt/saralangan/'
-                    // Since we want saralangan at root, we check if key starts with that
                     if (file.Key.startsWith('saralangan/')) continue;
 
-                    await dbService.addFile(file.Key);
+                    // Try to get duration from JSON first
+                    let duration = 0;
+                    try {
+                        const json = await this.getJsonContent(file.Key);
+                        if (json && json.duration) {
+                            duration = Math.round(json.duration / 1000); // ms to sec
+                        }
+                    } catch (e) { }
+
+                    await dbService.addFile(file.Key, duration);
                     count++;
                 }
             }
@@ -176,7 +184,6 @@ export const s3Service = {
 
             for (const file of files) {
                 if (file.Key && file.Key.endsWith('.wav')) {
-                    // Skip if already in saralangan
                     if (file.Key.includes('saralangan/')) continue;
 
                     await dbService.addTranscriptionFile(file.Key);

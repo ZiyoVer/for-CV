@@ -19,7 +19,8 @@ const initTablesQuery = `
         assigned_to BIGINT,
         locked_at TIMESTAMPTZ,
         processed_at TIMESTAMPTZ,
-        processing_duration_sec INTEGER
+        processing_duration_sec INTEGER,
+        audio_duration_sec INTEGER
     );
 
     CREATE INDEX IF NOT EXISTS idx_files_status ON files(status);
@@ -31,7 +32,8 @@ const initTablesQuery = `
         assigned_to BIGINT,
         locked_at TIMESTAMPTZ,
         processed_at TIMESTAMPTZ,
-        transcribed_text TEXT
+        transcribed_text TEXT,
+        audio_duration_sec INTEGER
     );
 
     CREATE INDEX IF NOT EXISTS idx_transcription_status ON transcription_files(status);
@@ -61,10 +63,11 @@ export const dbService = {
         try {
             await pool.query(`
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS balance INTEGER DEFAULT 0;
+                ALTER TABLE files ADD COLUMN IF NOT EXISTS audio_duration_sec INTEGER;
+                ALTER TABLE transcription_files ADD COLUMN IF NOT EXISTS audio_duration_sec INTEGER;
             `);
         } catch (e) {
-            // Column might already exist, ignore error
-            console.log('Migration note: balance column check completed');
+            console.log('Migration note: columns check completed');
         }
 
         for (const adminId of config.ADMIN_IDS) {
@@ -208,8 +211,11 @@ export const dbService = {
         );
     },
 
-    addFile: async (key: string) => {
-        await pool.query('INSERT INTO files (file_key) VALUES ($1) ON CONFLICT (file_key) DO NOTHING', [key]);
+    addFile: async (key: string, duration?: number) => {
+        await pool.query(
+            'INSERT INTO files (file_key, audio_duration_sec) VALUES ($1, $2) ON CONFLICT (file_key) DO UPDATE SET audio_duration_sec = COALESCE(files.audio_duration_sec, EXCLUDED.audio_duration_sec)',
+            [key, duration || null]
+        );
     },
 
     getPendingCount: async () => {
@@ -258,8 +264,11 @@ export const dbService = {
     },
 
     // --- TRANSCRIPTION FUNCTIONS ---
-    addTranscriptionFile: async (key: string) => {
-        await pool.query('INSERT INTO transcription_files (file_key) VALUES ($1) ON CONFLICT (file_key) DO NOTHING', [key]);
+    addTranscriptionFile: async (key: string, duration?: number) => {
+        await pool.query(
+            'INSERT INTO transcription_files (file_key, audio_duration_sec) VALUES ($1, $2) ON CONFLICT (file_key) DO UPDATE SET audio_duration_sec = COALESCE(transcription_files.audio_duration_sec, EXCLUDED.audio_duration_sec)',
+            [key, duration || null]
+        );
     },
 
     getTranscriptionPendingCount: async () => {
@@ -374,8 +383,19 @@ export const dbService = {
              JOIN users u ON f.assigned_to = u.telegram_id
              WHERE f.status IN ('ACCEPTED', 'REJECTED')
                AND f.processed_at > NOW() - INTERVAL '24 hours'
-             GROUP BY u.full_name, u.telegram_id, DATE_TRUNC('hour', f.processed_at)
-             ORDER BY hour ASC`
+              GROUP BY u.full_name, u.telegram_id, DATE_TRUNC('hour', f.processed_at)
+              ORDER BY hour ASC`
+        );
+        return rows;
+    },
+
+    getDurationStats: async () => {
+        const { rows } = await pool.query(
+            `SELECT 
+                status,
+                SUM(COALESCE(audio_duration_sec, 0))::bigint as total_seconds
+             FROM files
+             GROUP BY status`
         );
         return rows;
     }

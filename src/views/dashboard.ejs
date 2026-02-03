@@ -473,6 +473,19 @@
                     <%= stats.pending %>
                 </div>
             </div>
+            <!-- New Duration Stats -->
+            <div class="stat-card">
+                <div class="stat-label">Tekshirilgan Audio (Vaqt)</div>
+                <div class="stat-value" style="font-size: 24px;">
+                    <%= stats.checkedDuration %>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Kutilayotgan Audio (Vaqt)</div>
+                <div class="stat-value yellow" style="font-size: 24px;">
+                    <%= stats.pendingDuration %>
+                </div>
+            </div>
         </div>
 
         <!-- 24-Hour Statistics Chart -->
