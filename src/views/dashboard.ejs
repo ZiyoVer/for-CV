@@ -568,17 +568,20 @@
                             </td>
                             <td class="actions">
                                 <a href="/review/<%= user.telegram_id %>" class="btn btn-outline btn-sm">Tekshirish</a>
-                                <button class="btn btn-warning btn-sm"
-                                    onclick="openBalanceModal(<%= user.telegram_id %>, '<%= user.full_name %>')">+
+                                <button class="btn btn-warning btn-sm" data-id="<%= user.telegram_id %>"
+                                    data-name="<%= user.full_name %>" onclick="handleBalanceModal(this)">+
                                     Balans</button>
+
                                 <form method="POST" action="/users/payout/<%= user.telegram_id %>"
                                     style="display:inline;">
                                     <button type="submit" class="btn btn-success btn-sm"
                                         onclick="return confirm('Pul to\'lashni tasdiqlaysizmi?')">To'lash</button>
                                 </form>
-                                <button class="btn btn-outline btn-sm"
-                                    onclick="openEditModal(<%= user.telegram_id %>, '<%= user.full_name %>', <%= user.is_admin ? 'true' : 'false' %>)">✏️
-                                    Tahrirlash</button>
+
+                                <button class="btn btn-outline btn-sm" data-id="<%= user.telegram_id %>"
+                                    data-name="<%= user.full_name %>" data-admin="<%= user.is_admin %>"
+                                    onclick="handleEditModal(this)">✏️ Tahrirlash</button>
+
                                 <form method="POST" action="/users/delete/<%= user.telegram_id %>"
                                     style="display:inline;">
                                     <button type="submit" class="btn btn-sm" style="background: #dc2626; color: #fff;"
@@ -676,6 +679,12 @@
             if (e.target.classList.contains('modal-overlay')) closeModal();
         });
 
+        function handleBalanceModal(btn) {
+            const userId = btn.getAttribute('data-id');
+            const userName = btn.getAttribute('data-name');
+            openBalanceModal(userId, userName);
+        }
+
         function openBalanceModal(userId, userName) {
             document.getElementById('balanceUserName').textContent = userName;
             document.getElementById('balanceForm').action = '/users/add-balance/' + userId;
@@ -687,6 +696,13 @@
         document.getElementById('balanceModal').addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) closeBalanceModal();
         });
+
+        function handleEditModal(btn) {
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            const isAdmin = btn.getAttribute('data-admin') === 'true';
+            openEditModal(id, name, isAdmin);
+        }
 
         function openEditModal(telegramId, fullName, isAdmin) {
             document.getElementById('editTelegramId').value = telegramId;
