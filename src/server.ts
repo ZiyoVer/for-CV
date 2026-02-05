@@ -117,8 +117,22 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             return `${hours}s ${minutes}m`;
         };
 
+        // Get Chart Data (Simple aggregation for the main line chart)
+        const hourlyStats = await dbService.get24hHourlyStats();
+        // Aggregate by hour (ignore user breakdown for the main dashboard chart)
+        const hourlyMap = new Map<string, number>();
+        hourlyStats.forEach((s: any) => {
+            const h = new Date(s.hour).toISOString();
+            hourlyMap.set(h, (hourlyMap.get(h) || 0) + Number(s.count));
+        });
+
+        const chartData = Array.from(hourlyMap.entries())
+            .map(([hour, count]) => ({ hour, count }))
+            .sort((a, b) => a.hour.localeCompare(b.hour));
+
         res.render('dashboard', {
             users: usersWithStats,
+            chartData, // Pass this to fix ReferenceError
             stats: {
                 pending: pendingCount,
                 transcriptionPending: transcriptionPendingCount,
