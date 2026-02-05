@@ -143,9 +143,10 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 pendingDuration: formatDuration(pendingDuration)
             }
         });
-    } catch (err) {
+    } catch (err: any) {
         console.error('Dashboard error:', err);
-        res.status(500).send('Server xatosi');
+        // Show actual error to the user for debugging
+        res.status(500).send(`Server xatosi: ${err.message || err}`);
     }
 });
 
