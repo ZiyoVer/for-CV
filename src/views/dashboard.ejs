@@ -982,7 +982,7 @@
         let dailyChart;
 
         document.addEventListener('DOMContentLoaded', () => {
-            const chartData = <% - JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+            const chartData = <%- JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
 
             // Daily Chart
             const ctxDaily = document.getElementById('dailyChart');
