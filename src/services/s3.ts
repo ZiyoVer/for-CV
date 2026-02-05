@@ -63,7 +63,7 @@ export const s3Service = {
             });
             const response = await s3.send(command);
             const str = await response.Body?.transformToString();
-            return str ? JSON.parse(str) : null;
+            return str ? JSON.parse(str) : {};
         } catch (error) {
             console.error(`Error fetching JSON for ${audioKey}:`, error);
             return { text: "[JSON fayli topilmadi]" };

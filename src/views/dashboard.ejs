@@ -612,21 +612,20 @@
                                 <td>
                                     <div class="action-cell" style="justify-content: flex-end;">
                                         <button class="action-btn" title="Tekshirish"
-                                            onclick="window.location.href='/dashboard/check/<%= user.telegram_id %>'">
+                                            onclick="window.location.href='/review/<%= user.telegram_id %>'">
                                             <i data-lucide="play" size="14"></i>
                                         </button>
                                         <button class="action-btn" title="Balans"
-                                            onclick="openBalanceModal('<%= user.telegram_id %>', '<%= user.full_name %>')">
+                                            onclick='openBalanceModal(<%= user.telegram_id %>, <%- JSON.stringify(user.full_name || "") %>)'>
                                             <i data-lucide="wallet" size="14"></i>
                                         </button>
                                         <button class="action-btn" title="Payout"
-                                            onclick="openPayoutModal('<%= user.telegram_id %>', '<%= user.full_name %>', <%= user.balance %>)">
+                                            onclick='openPayoutModal(<%= user.telegram_id %>, <%- JSON.stringify(user.full_name || "") %>, <%= user.balance || 0 %>)'>
                                             <i data-lucide="arrow-up-right" size="14"></i>
                                         </button>
                                         <button class="action-btn" title="Tahrirlash"
-                                            onclick="openEditModal('<%= user.telegram_id %>', '<%= user.full_name.replace(/'/g, "
-                                            \\'") %>', <%= user.is_admin %>)">
-                                                <i data-lucide="edit-2" size="14"></i>
+                                            onclick='openEditModal(<%= user.telegram_id %>, <%- JSON.stringify(user.full_name || "") %>, <%= user.is_admin ? "true" : "false" %>)'>
+                                            <i data-lucide="edit-2" size="14"></i>
                                         </button>
                                         <form action="/users/delete/<%= user.telegram_id %>" method="POST"
                                             onsubmit="return confirm('Ushbu foydalanuvchini o\'chirishni tasdiqlaysizmi?');"
@@ -637,6 +636,7 @@
                                             </button>
                                         </form>
                                     </div>
+
                                 </td>
                             </tr>
                             <% }) %>
@@ -653,7 +653,7 @@
     <div id="addUserModal" class="modal-overlay">
         <div class="modal">
             <h3 class="modal-title">Yangi Foydalanuvchi</h3>
-            <form action="/add-user" method="POST">
+            <form action="/users/add" method="POST">
                 <div class="form-group">
                     <label>Telegram ID</label>
                     <input type="number" name="telegram_id" class="form-input" required>
@@ -890,7 +890,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const chartData = <% - JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+            const chartData = <%- JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
 
             // Daily Chart
             const ctxDaily = document.getElementById('dailyChart');
