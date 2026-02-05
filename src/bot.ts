@@ -300,24 +300,21 @@ bot.callbackQuery(/^reject:(.+)$/, async (ctx) => {
 });
 
 // --- EDIT TEXT HANDLER ---
-// Store edit state per user
-const editState: Map<number, { fileKey: string; originalText: string }> = new Map();
-// Store transcription state per user (now includes text)
-const transcriptionState: Map<number, { fileKey: string, tempText?: string }> = new Map();
+// State is now handling via DB (bot_state table)
 
 bot.callbackQuery(/^edit:(.+)$/, async (ctx) => {
     const key = ctx.match[1];
     await ctx.answerCallbackQuery();
 
-    // Clear conflicting transcription state to prevent mix-ups
-    transcriptionState.delete(ctx.from.id);
-
     try {
+        // Clear any existing state first
+        await dbService.deleteState(ctx.from.id);
+
         const json = await s3Service.getJsonContent(key);
         const originalText = json.text || '';
 
-        // Store the edit state
-        editState.set(ctx.from.id, { fileKey: key, originalText });
+        // Store the edit state (PERSISTED)
+        await dbService.saveState(ctx.from.id, 'edit', { fileKey: key, originalText });
 
         await ctx.reply(
             `✏️ <b>Matnni tahrirlash</b>\n\n` +
@@ -335,7 +332,7 @@ bot.callbackQuery(/^edit:(.+)$/, async (ctx) => {
 });
 
 bot.callbackQuery(/^cancel_edit:(.+)$/, async (ctx) => {
-    editState.delete(ctx.from.id);
+    await dbService.deleteState(ctx.from.id);
     await ctx.answerCallbackQuery("Bekor qilindi");
     await ctx.reply("Tahrirlash bekor qilindi.", {
         reply_markup: new InlineKeyboard()
@@ -347,24 +344,23 @@ bot.callbackQuery(/^cancel_edit:(.+)$/, async (ctx) => {
 // Handle text messages for editing AND transcription
 bot.on("message:text", async (ctx) => {
     const userId = ctx.from.id;
-    const editS = editState.get(userId);
-    const transS = transcriptionState.get(userId);
+    const stateRow = await dbService.getState(userId);
 
-    // If neither state, ignore
-    if (!editS && !transS) {
+    // If no state, ignore
+    if (!stateRow) {
         return;
     }
 
+    const { state_type: type, data } = stateRow;
     const newText = ctx.message.text.trim();
 
     // Handle TRANSCRIPTION text input
-    // Handle TRANSCRIPTION text input
-    if (transS) {
-        const { fileKey } = transS;
+    if (type === 'transcription') {
+        const { fileKey } = data;
 
         // Save temp text in state
-        transS.tempText = newText;
-        transcriptionState.set(userId, transS);
+        data.tempText = newText;
+        await dbService.saveState(userId, 'transcription', data);
 
         // Fetch audio again to show with text
         const audioBuffer = await s3Service.getTranscriptionAudioBuffer(fileKey);
@@ -391,15 +387,15 @@ bot.on("message:text", async (ctx) => {
     }
 
     // Handle EDIT (STT) text input
-    if (editS) {
-        const { fileKey } = editS;
+    if (type === 'edit') {
+        const { fileKey } = data;
         try {
             // Update JSON in S3
             const success = await s3Service.updateJsonText(fileKey, newText);
 
             if (success) {
-                // NEW LOGIC: Don't auto-accept. Show the card again with new text.
-                editState.delete(userId);
+                // Done editing
+                await dbService.deleteState(userId);
 
                 // Fetch audio again
                 const audioBuffer = await s3Service.getFileBuffer(fileKey);
@@ -465,17 +461,17 @@ bot.callbackQuery("transcription_next", async (ctx) => {
 });
 
 bot.callbackQuery("transcription_skip", async (ctx) => {
-    const state = transcriptionState.get(ctx.from.id);
-    if (!state) {
+    const stateRow = await dbService.getState(ctx.from.id);
+    if (!stateRow || stateRow.state_type !== 'transcription') {
         await ctx.answerCallbackQuery("Fayl topilmadi");
         return;
     }
-    const key = state.fileKey;
+    const key = stateRow.data.fileKey;
     await ctx.answerCallbackQuery("O'tkazildi ⏭️");
 
     try {
         // Clear transcription state
-        transcriptionState.delete(ctx.from.id);
+        await dbService.deleteState(ctx.from.id);
 
         // Release the file back to pending
         await dbService.releaseTranscriptionFile(ctx.from.id, key);
@@ -498,15 +494,15 @@ bot.callbackQuery("transcription_skip", async (ctx) => {
 // Retry Edit (Cancellation of current review step, ready for new text)
 bot.callbackQuery("transcription_edit_retry", async (ctx) => {
     await ctx.answerCallbackQuery();
-    const state = transcriptionState.get(ctx.from.id);
-    if (!state) {
+    const stateRow = await dbService.getState(ctx.from.id);
+    if (!stateRow || stateRow.state_type !== 'transcription') {
         await ctx.reply("Vazifa topilmadi.");
         return;
     }
 
     await ctx.reply(
         `✏️ <b>Matnni tahrirlash</b>\n\n` +
-        `<b>Hozirgi matn:</b>\n<code>${state.tempText || ''}</code>\n\n` +
+        `<b>Hozirgi matn:</b>\n<code>${stateRow.data.tempText || ''}</code>\n\n` +
         `<i>To'g'ri matnni pastga yozing:</i>`,
         { parse_mode: "HTML" }
     );
@@ -516,14 +512,14 @@ bot.callbackQuery("transcription_edit_retry", async (ctx) => {
 bot.callbackQuery(/^approve_trans:(male|female)$/, async (ctx) => {
     const gender = ctx.match[1]; // male or female
     const userId = ctx.from.id;
-    const state = transcriptionState.get(userId);
+    const stateRow = await dbService.getState(userId);
 
-    if (!state || !state.tempText) {
+    if (!stateRow || stateRow.state_type !== 'transcription' || !stateRow.data.tempText) {
         await ctx.answerCallbackQuery("Vazifa muddati tugagan yoki topilmadi.");
         return;
     }
 
-    const { fileKey, tempText } = state;
+    const { fileKey, tempText } = stateRow.data;
 
     try {
         await ctx.answerCallbackQuery("Saqlanmoqda...");
@@ -548,7 +544,7 @@ bot.callbackQuery(/^approve_trans:(male|female)$/, async (ctx) => {
         // Update DB
         await dbService.updateTranscriptionFileStatus(userId, fileKey, 'ACCEPTED', tempText);
 
-        transcriptionState.delete(userId);
+        await dbService.deleteState(userId);
 
         await ctx.reply(
             `✅ <b>Transkripsiya saqlandi!</b>\n\n` +
@@ -618,10 +614,8 @@ async function sendNextTranscriptionFile(ctx: any) {
             return;
         }
 
-        // Store state for text input
-        transcriptionState.set(userId, { fileKey });
-        // Clear any edit state
-        editState.delete(userId);
+        // Store state for text input (PERSISTED)
+        await dbService.saveState(userId, 'transcription', { fileKey });
 
         const fileName = fileKey.split('/').pop()?.replace('.wav', '') || fileKey;
         const caption = `📝 <b>TRANSKRIPSIYA</b>\n\n🆔 <code>${fileName}</code>\n\n<i>⬇️ Audioni tinglang va matnni yozing:</i>`;
@@ -667,9 +661,8 @@ async function sendNextFile(ctx: any) {
             return;
         }
 
-        // Clear conflicting states
-        transcriptionState.delete(userId);
-        editState.delete(userId);
+        // Clear existing states
+        await dbService.deleteState(userId);
 
         const json = await s3Service.getJsonContent(fileKey);
         // Instead of URL, download the file

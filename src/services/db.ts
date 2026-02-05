@@ -38,6 +38,13 @@ const initTablesQuery = `
 
     CREATE INDEX IF NOT EXISTS idx_transcription_status ON transcription_files(status);
     CREATE INDEX IF NOT EXISTS idx_transcription_assigned ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL;
+
+    CREATE TABLE IF NOT EXISTS bot_state (
+        user_id BIGINT PRIMARY KEY,
+        state_type TEXT NOT NULL,
+        data JSONB NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
 `;
 
 const withTransaction = async <T>(fn: (client: PoolClient) => Promise<T>): Promise<T> => {
@@ -98,6 +105,32 @@ export const dbService = {
 
     listUsers: async () => {
         const { rows } = await pool.query('SELECT * FROM users ORDER BY full_name');
+        return rows;
+    },
+
+    // Optimized Dashboard Query (N+1 Fix)
+    getDashboardUsers: async () => {
+        const { rows } = await pool.query(`
+            SELECT 
+                u.telegram_id,
+                u.full_name,
+                u.is_admin,
+                u.balance,
+                u.joined_at,
+                (
+                    SELECT COUNT(*)::int 
+                    FROM files f2
+                    WHERE f2.assigned_to = u.telegram_id 
+                      AND f2.status IN ('ACCEPTED', 'REJECTED')
+                      AND f2.processed_at > NOW() - INTERVAL '24 hours'
+                ) as checks_today,
+                COUNT(f.file_key) FILTER (WHERE f.status = 'ACCEPTED')::int as total_accepted,
+                COUNT(f.file_key) FILTER (WHERE f.status = 'REJECTED')::int as total_rejected
+            FROM users u
+            LEFT JOIN files f ON u.telegram_id = f.assigned_to AND f.status IN ('ACCEPTED', 'REJECTED')
+            GROUP BY u.telegram_id
+            ORDER BY u.full_name
+        `);
         return rows;
     },
 
@@ -413,5 +446,25 @@ export const dbService = {
              ORDER BY day ASC`
         );
         return rows;
+    },
+
+    // --- BOT STATE PERSISTENCE ---
+    saveState: async (user_id: number, state_type: string, data: any) => {
+        await pool.query(
+            `INSERT INTO bot_state (user_id, state_type, data, updated_at) 
+             VALUES ($1, $2, $3, NOW()) 
+             ON CONFLICT (user_id) 
+             DO UPDATE SET state_type = $2, data = $3, updated_at = NOW()`,
+            [user_id, state_type, JSON.stringify(data)]
+        );
+    },
+
+    getState: async (user_id: number) => {
+        const { rows } = await pool.query('SELECT * FROM bot_state WHERE user_id = $1', [user_id]);
+        return rows[0];
+    },
+
+    deleteState: async (user_id: number) => {
+        await pool.query('DELETE FROM bot_state WHERE user_id = $1', [user_id]);
     }
 };

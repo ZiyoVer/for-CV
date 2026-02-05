@@ -2,6 +2,7 @@ import express from 'express';
 import session from 'express-session';
 import bodyParser from 'body-parser';
 import multer from 'multer';
+import helmet from 'helmet';
 import path from 'path';
 import { config } from './config';
 import { dbService } from './services/db';
@@ -23,16 +24,35 @@ const upload = multer({
 
 const app = express();
 
+// Security Middleware
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:", "https://*"],
+            mediaSrc: ["'self'", "https://*"], // Allow audio from S3
+        },
+    },
+}));
+
 // Middleware
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(session({
-    secret: config.ADMIN_PASSWORD,
+    secret: config.SESSION_SECRET, // Usage of strong secret
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Secure cookies in prod
+        sameSite: 'lax'
+    }
 }));
 
 // Auth middleware
@@ -68,19 +88,8 @@ app.get('/logout', (req, res) => {
 
 app.get('/dashboard', requireAuth, async (req, res) => {
     try {
-        const users = await dbService.listUsers();
-
-        // Get 24h stats for each user
-        const usersWithStats = await Promise.all(users.map(async (user: any) => {
-            const checksToday = await dbService.get24hCheckCount(user.telegram_id);
-            const stats = await dbService.getUserStats(user.telegram_id);
-            return {
-                ...user,
-                checks_today: checksToday,
-                total_accepted: stats.accepted,
-                total_rejected: stats.rejected
-            };
-        }));
+        // OPTIMIZED: Get all user stats in one query
+        const usersWithStats = await dbService.getDashboardUsers();
 
         // Get total counts
         const pendingCount = await dbService.getPendingCount();

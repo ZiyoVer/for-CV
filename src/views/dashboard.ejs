@@ -392,10 +392,70 @@
                 margin: 24px auto;
             }
         }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+        }
+
+        .toast.success {
+            border-left: 4px solid #22c55e;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ef4444;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
 <body>
+
+    <div class="toast-container" id="toastContainer"></div>
 
     <nav class="navbar">
         <div class="brand">STT ADMIN</div>
@@ -683,6 +743,103 @@
         // Icons
         lucide.createIcons();
 
+        // Toast Logic
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            let icon = type === 'success' ? 'check-circle' : 'alert-circle';
+            let color = type === 'success' ? '#22c55e' : '#ef4444';
+
+            toast.innerHTML = `
+                <i data-lucide="${icon}" style="color: ${color}"></i>
+                <span style="font-size: 14px; font-weight: 500;">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-in forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Parse URL Params for Notifications
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        const success = urlParams.get('success');
+
+        if (error) {
+            let msg = 'Xatolik yuz berdi';
+            if (error === 'add_failed') msg = 'Foydalanuvchi qo\'shishda xatolik';
+            if (error === 'update_failed') msg = 'Yangilashda xatolik';
+            if (error === 'delete_failed') msg = 'O\'chirishda xatolik';
+            if (error === 'upload_failed') msg = 'Fayllarni yuklashda xatolik';
+            if (error === 'no_files') msg = 'Fayl tanlanmadi';
+            showToast(msg, 'error');
+        }
+
+        if (success) {
+            let msg = 'Muvaffaqiyatli bajarildi';
+            if (success.startsWith('uploaded_')) msg = `${success.split('_')[1]} ta fayl yuklandi`;
+            showToast(msg, 'success');
+        }
+
+        // Clean URL
+        if (error || success) {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+
+        // Modal Functions
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function openBalanceModal(id, name) {
+            document.getElementById('balanceUserId').value = id;
+            document.getElementById('balanceUserDisplay').textContent = 'Foydalanuvchi: ' + name;
+            openModal('balanceModal');
+        }
+
+        function openPayoutModal(id, name, amount) {
+            document.getElementById('payoutUserId').value = id;
+            document.getElementById('payoutUserName').textContent = name;
+            document.getElementById('payoutAmount').textContent = amount.toLocaleString();
+            openModal('payoutModal');
+        }
+
+        function openEditModal(id, name, isAdmin) {
+            document.getElementById('editUserForm').action = '/users/update/' + id;
+            document.getElementById('editUserIdDisplay').value = id;
+            document.getElementById('editFullName').value = name;
+            document.getElementById('editIsAdmin').checked = isAdmin;
+            openModal('editUserModal');
+        }
+
+        // File Upload
+        function updateFileCount() {
+            const input = document.getElementById('fileInput');
+            const label = document.getElementById('file-label');
+            if (input.files && input.files.length > 0) {
+                label.textContent = input.files.length + " ta fayl tanlandi";
+            } else {
+                label.textContent = "";
+            }
+        }
+
+        // Close modal on outside click
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = "none";
+            }
+        }
+
         // Theme Logic
         function toggleTheme() {
             const body = document.body;
@@ -716,25 +873,15 @@
             const color = isDark ? '#ffffff' : '#000000';
             const gridColor = isDark ? '#333333' : '#e5e5e5';
 
-            const commonOptions = {
-                plugins: {
-                    legend: { labels: { color: color } }
-                },
-                scales: {
-                    x: { ticks: { color: color }, grid: { color: gridColor } },
-                    y: { ticks: { color: color }, grid: { color: gridColor } }
-                }
-            };
+            if (!dailyChart) return;
 
-            if (dailyChart) {
-                dailyChart.options.scales.x.ticks.color = color;
-                dailyChart.options.scales.y.ticks.color = color;
-                dailyChart.options.scales.x.grid.color = gridColor;
-                dailyChart.options.scales.y.grid.color = gridColor;
-                dailyChart.data.datasets[0].borderColor = color;
-                dailyChart.data.datasets[0].backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
-                dailyChart.update();
-            }
+            dailyChart.options.scales.x.ticks.color = color;
+            dailyChart.options.scales.y.ticks.color = color;
+            dailyChart.options.scales.x.grid.color = gridColor;
+            dailyChart.options.scales.y.grid.color = gridColor;
+            dailyChart.data.datasets[0].borderColor = color;
+            dailyChart.data.datasets[0].backgroundColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+            dailyChart.update();
 
             if (statusChart) {
                 statusChart.data.datasets[0].borderColor = isDark ? '#000' : '#fff';
@@ -743,69 +890,68 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const chartData = <% - JSON.stringify(chartData || []) %>;
+            const chartData = <% - JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
 
             // Daily Chart
-            const ctxDaily = document.getElementById('dailyChart').getContext('2d');
-            dailyChart = new Chart(ctxDaily, {
-                type: 'line',
-                data: {
-                    labels: chartData.map(d => d.hour),
-                    datasets: [{
-                        label: 'Tekshiruvlar',
-                        data: chartData.map(d => d.count),
-                        borderColor: '#000',
-                        backgroundColor: 'rgba(0,0,0,0.05)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false } },
-                        y: { beginAtZero: true }
+            const ctxDaily = document.getElementById('dailyChart');
+            if (ctxDaily) {
+                dailyChart = new Chart(ctxDaily.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: chartData.map(d => {
+                            const date = new Date(d.hour);
+                            return date.getHours() + ':00';
+                        }),
+                        datasets: [{
+                            label: 'Tekshiruvlar',
+                            data: chartData.map(d => d.count),
+                            borderColor: '#000',
+                            backgroundColor: 'rgba(0,0,0,0.05)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: { beginAtZero: true }
+                        }
                     }
-                }
-            });
+                });
+            }
 
             // Status Chart
-            const ctxStatus = document.getElementById('statusChart').getContext('2d');
-            statusChart = new Chart(ctxStatus, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Qabul', 'Rad', 'Kutilmoqda'],
-                    datasets: [{
-                        data: [
-                            <%= stats.totalAccepted %>, 
-                            <%= stats.totalRejected %>, 
-                            <%= stats.pending %>
-                        ],
-                        backgroundColor: ['#000000', '#666666', '#e5e5e5'],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
+            const ctxStatus = document.getElementById('statusChart');
+            if (ctxStatus) {
+                statusChart = new Chart(ctxStatus.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Qabul', 'Rad', 'Kutilmoqda'],
+                        datasets: [{
+                            data: [
+                                <%= stats.totalAccepted %>, 
+                                <%= stats.totalRejected %>, 
+                                <%= stats.pending %>
+                            ],
+                            backgroundColor: ['#000000', '#666666', '#e5e5e5'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }
 
             updateChartsTheme();
         });
-
-        // Modal Functions
-        function openModal(id) {
-            document.getElementById(id).style.setProperty('display', 'flex', 'important');
-        }
-        function closeModal(id) {
-            document.getElementById(id).style.setProperty('display', 'none', 'important');
-        }
 
         function openBalanceModal(id, name) {
             document.getElementById('balanceUserId').value = id;

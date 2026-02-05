@@ -26,8 +26,26 @@ export const config = {
 
     // Web UI
     PORT: Number(process.env.PORT) || 3000,
-    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin'
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+    SESSION_SECRET: process.env.SESSION_SECRET || 'dev-secret-do-not-use-in-prod'
 };
+
+if (!config.TELEGRAM_BOT_TOKEN) console.warn('Warning: TELEGRAM_BOT_TOKEN is missing');
+if (!config.DATABASE_URL && (!config.PGUSER || !config.PGDATABASE)) console.warn('Warning: PostgreSQL connection details are missing');
+
+// Security checks
+if (!config.ADMIN_PASSWORD) {
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('CRITICAL: ADMIN_PASSWORD is missing in production!');
+    } else {
+        console.warn('Warning: ADMIN_PASSWORD is missing. Using default "admin" for development.');
+        (config as any).ADMIN_PASSWORD = 'admin';
+    }
+}
+
+if (config.SESSION_SECRET === 'dev-secret-do-not-use-in-prod' && process.env.NODE_ENV === 'production') {
+    throw new Error('CRITICAL: SESSION_SECRET is missing or default in production!');
+}
 
 export const pgConfig = config.DATABASE_URL
     ? {

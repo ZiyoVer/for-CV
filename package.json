@@ -25,6 +25,7 @@
     "express": "^5.2.1",
     "express-session": "^1.18.2",
     "grammy": "^1.39.2",
+    "helmet": "^8.1.0",
     "multer": "^2.0.2",
     "music-metadata": "^11.11.1",
     "pg": "^8.16.3"
