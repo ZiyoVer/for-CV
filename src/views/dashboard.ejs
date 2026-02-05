@@ -449,7 +449,84 @@
                 transform: translateX(100%);
                 opacity: 0;
             }
-        }
+
+            /* Colored Stats */
+            .stat-card.total {
+                margin-top: 0;
+                border-left: 4px solid #3b82f6;
+            }
+
+            .stat-card.total .stat-value {
+                color: #3b82f6;
+            }
+
+            .stat-card.accepted {
+                margin-top: 0;
+                border-left: 4px solid #22c55e;
+            }
+
+            .stat-card.accepted .stat-value {
+                color: #22c55e;
+            }
+
+            .stat-card.rejected {
+                margin-top: 0;
+                border-left: 4px solid #ef4444;
+            }
+
+            .stat-card.rejected .stat-value {
+                color: #ef4444;
+            }
+
+            .stat-card.pending {
+                margin-top: 0;
+                border-left: 4px solid #f59e0b;
+            }
+
+            .stat-card.pending .stat-value {
+                color: #f59e0b;
+            }
+
+            /* Active Users List */
+            .active-user-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .active-user-item:last-child {
+                border-bottom: none;
+            }
+
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                background: var(--hover-bg);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                font-size: 12px;
+                color: var(--text-muted);
+                margin-right: 12px;
+            }
+
+            .user-info {
+                flex: 1;
+            }
+
+            .user-name {
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            .user-count {
+                font-weight: 700;
+                font-size: 14px;
+            }
     </style>
 </head>
 
@@ -478,7 +555,7 @@
 
         <!-- 1. Stats Cards Grid -->
         <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card total">
                 <div class="stat-label">
                     Total Checked <i data-lucide="activity" size="16"></i>
                 </div>
@@ -487,7 +564,7 @@
                 </div>
                 <div class="stat-subtext">ta fayl tekshirildi</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card accepted">
                 <div class="stat-label">
                     Accepted <i data-lucide="check-circle" size="16"></i>
                 </div>
@@ -498,7 +575,7 @@
                     <%= stats.checkedDuration %> (Audio)
                 </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card rejected">
                 <div class="stat-label">
                     Rejected <i data-lucide="x-circle" size="16"></i>
                 </div>
@@ -507,7 +584,7 @@
                 </div>
                 <div class="stat-subtext">ta fayl rad etildi</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card pending">
                 <div class="stat-label">
                     Pending <i data-lucide="clock" size="16"></i>
                 </div>
@@ -524,17 +601,48 @@
         <div class="charts-row">
             <div class="chart-box">
                 <div class="chart-header">
-                    <div class="chart-title">24 Soatlik Faollik</div>
+                    <div class="chart-title">24 Soatlik Faollik (Barchasi)</div>
                     <i data-lucide="bar-chart-2" size="18" style="opacity: 0.5"></i>
                 </div>
                 <canvas id="dailyChart"></canvas>
             </div>
-            <div class="chart-box">
+
+            <!-- REPLACED Status Ratio with Active Users List -->
+            <div class="chart-box" style="overflow-y: auto;">
                 <div class="chart-header">
-                    <div class="chart-title">Status Ratio</div>
-                    <i data-lucide="pie-chart" size="18" style="opacity: 0.5"></i>
+                    <div class="chart-title">Faol Userlar (24 soat)</div>
+                    <i data-lucide="users" size="18" style="opacity: 0.5"></i>
                 </div>
-                <canvas id="statusChart"></canvas>
+
+                <div class="active-users-list">
+                    <% const activeUsers=users .filter(u=> (u.checks_today || 0) > 0)
+                        .sort((a,b) => (b.checks_today || 0) - (a.checks_today || 0));
+
+                        if (activeUsers.length === 0) { %>
+                        <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                            Faollik yo'q
+                        </div>
+                        <% } else { activeUsers.forEach(user=> { %>
+                            <div class="active-user-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="user-avatar">
+                                        <%= user.full_name.substring(0,2).toUpperCase() %>
+                                    </div>
+                                    <div class="user-info">
+                                        <div class="user-name">
+                                            <%= user.full_name %>
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-muted);">
+                                            <%= user.is_admin ? 'Admin' : 'User' %>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="user-count" style="color: #22c55e;">
+                                    +<%= user.checks_today %>
+                                </div>
+                            </div>
+                            <% }); } %>
+                </div>
             </div>
         </div>
 
@@ -598,7 +706,11 @@
                                             <% } %>
                                 </td>
                                 <td style="text-align: right;">
-                                    <%= user.today_count || 0 %>
+                                    <% if (user.checks_today> 0) { %>
+                                        <span style="color: #22c55e; font-weight: 600;">+<%= user.checks_today %></span>
+                                        <% } else { %>
+                                            <span style="color: var(--text-muted);">-</span>
+                                            <% } %>
                                 </td>
                                 <td style="text-align: right;">
                                     <%= user.total_accepted || 0 %>
@@ -890,7 +1002,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const chartData = <%- JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+            const chartData = <% - JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
 
             // Daily Chart
             const ctxDaily = document.getElementById('dailyChart');
@@ -905,8 +1017,8 @@
                         datasets: [{
                             label: 'Tekshiruvlar',
                             data: chartData.map(d => d.count),
-                            borderColor: '#000',
-                            backgroundColor: 'rgba(0,0,0,0.05)',
+                            borderColor: '#3b82f6', // Blue
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)', // Blue transparent
                             tension: 0.4,
                             fill: true,
                             pointRadius: 0
@@ -924,72 +1036,24 @@
                 });
             }
 
-            // Status Chart
-            const ctxStatus = document.getElementById('statusChart');
-            if (ctxStatus) {
-                statusChart = new Chart(ctxStatus.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Qabul', 'Rad', 'Kutilmoqda'],
-                        datasets: [{
-                            data: [
-                                <%= stats.totalAccepted %>, 
-                                <%= stats.totalRejected %>, 
-                                <%= stats.pending %>
-                            ],
-                            backgroundColor: ['#000000', '#666666', '#e5e5e5'],
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '70%',
-                        plugins: { legend: { position: 'bottom' } }
-                    }
-                });
-            }
-
+            // Update Theme for Charts
             updateChartsTheme();
         });
 
-        function openBalanceModal(id, name) {
-            document.getElementById('balanceUserId').value = id;
-            document.getElementById('balanceUserDisplay').innerText = 'Foydalanuvchi: ' + name;
-            openModal('balanceModal');
-        }
+        // Theme Logic for Charts
+        function updateChartsTheme() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            const color = isDark ? '#ffffff' : '#000000';
+            const gridColor = isDark ? '#333333' : '#e5e5e5';
 
-        function openPayoutModal(id, name, amount) {
-            document.getElementById('payoutUserId').value = id;
-            document.getElementById('payoutUserName').innerText = name;
-            document.getElementById('payoutAmount').innerText = amount.toLocaleString();
-            openModal('payoutModal');
-        }
+            if (!dailyChart) return;
 
-        function openEditModal(id, name, isAdmin) {
-            document.getElementById('editUserForm').action = '/users/update/' + id;
-            document.getElementById('editUserIdDisplay').value = id;
-            document.getElementById('editFullName').value = name;
-            document.getElementById('editIsAdmin').checked = isAdmin;
-            openModal('editUserModal');
-        }
-
-        // File Upload
-        function updateFileCount() {
-            const input = document.getElementById('fileInput');
-            const label = document.getElementById('file-label');
-            if (input.files.length > 0) {
-                label.innerText = input.files.length + " ta fayl tanlandi";
-            } else {
-                label.innerText = "";
-            }
-        }
-
-        // Close modal on outside click
-        window.onclick = function (event) {
-            if (event.target.classList.contains('modal-overlay')) {
-                event.target.style.setProperty('display', 'none', 'important');
-            }
+            dailyChart.options.scales.x.ticks.color = color;
+            dailyChart.options.scales.y.ticks.color = color;
+            dailyChart.options.scales.x.grid.color = gridColor;
+            dailyChart.options.scales.y.grid.color = gridColor;
+            // Keep blue color for line, but maybe adjust background slightly if needed
+            dailyChart.update();
         }
 
     </script>
