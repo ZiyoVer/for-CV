@@ -24,6 +24,9 @@ const upload = multer({
 
 const app = express();
 
+// Trust proxy (required for secure cookies behind Railway/Nginx load balancer)
+app.set('trust proxy', 1);
+
 // Security Middleware
 app.use(helmet({
     contentSecurityPolicy: {
