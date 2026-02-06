@@ -688,7 +688,7 @@
             <div class="table-header">
                 <h3>Foydalanuvchilar</h3>
                 <button class="btn" onclick="openModal('addUserModal')">
-                    <i data-lucide="plus" size="16"></i> Yangi
+                    <i data-lucide="user-plus" size="16"></i> Yangi Foydalanuvchi
                 </button>
             </div>
             <div style="overflow-x: auto;">
@@ -735,23 +735,23 @@
                                     <div class="action-cell" style="justify-content: flex-end;">
                                         <button class="action-btn" title="Tekshirish"
                                             onclick="window.location.href='/review/<%= user.telegram_id %>'">
-                                            <i data-lucide="play" size="14"></i>
+                                            <i data-lucide="headphones" size="14"></i>
                                         </button>
-                                        <button class="action-btn" title="Balans" data-id="<%= user.telegram_id %>"
+                                        <button class="action-btn" title="Balans qo'shish" data-id="<%= user.telegram_id %>"
                                             data-name="<%= user.full_name %>"
                                             onclick="openBalanceModal(this.dataset.id, this.dataset.name)">
-                                            <i data-lucide="wallet" size="14"></i>
+                                            <i data-lucide="coins" size="14"></i>
                                         </button>
-                                        <button class="action-btn" title="Payout" data-id="<%= user.telegram_id %>"
+                                        <button class="action-btn" title="To'lov" data-id="<%= user.telegram_id %>"
                                             data-name="<%= user.full_name %>" data-amount="<%= user.balance || 0 %>"
                                             onclick="openPayoutModal(this.dataset.id, this.dataset.name, Number(this.dataset.amount))">
-                                            <i data-lucide="arrow-up-right" size="14"></i>
+                                            <i data-lucide="banknote" size="14"></i>
                                         </button>
                                         <button class="action-btn" title="Tahrirlash" data-id="<%= user.telegram_id %>"
                                             data-name="<%= user.full_name %>"
                                             data-admin="<%= user.is_admin ? 'true' : 'false' %>"
                                             onclick="openEditModal(this.dataset.id, this.dataset.name, this.dataset.admin === 'true')">
-                                            <i data-lucide="edit-2" size="14"></i>
+                                            <i data-lucide="user-pen" size="14"></i>
                                         </button>
                                         <form action="/users/delete/<%= user.telegram_id %>" method="POST"
                                             onsubmit="return confirm('Ushbu foydalanuvchini o\'chirishni tasdiqlaysizmi?');"
@@ -937,27 +937,36 @@
         }
 
         function openBalanceModal(id, name) {
+            console.log('Opening balance modal for user:', id, name);
             document.getElementById('balanceUserId').value = id;
             document.getElementById('balanceUserDisplay').textContent = 'Foydalanuvchi: ' + name;
             // Set form action dynamically
-            document.querySelector('#balanceModal form').action = `/users/add-balance/${id}`;
+            const form = document.querySelector('#balanceModal form');
+            form.action = `/users/add-balance/${id}`;
+            console.log('Balance form action set to:', form.action);
             openModal('balanceModal');
         }
 
         function openPayoutModal(id, name, amount) {
+            console.log('Opening payout modal for user:', id, name, amount);
             document.getElementById('payoutUserId').value = id;
             document.getElementById('payoutUserName').textContent = name;
             document.getElementById('payoutAmount').textContent = amount.toLocaleString();
             // Set form action dynamically
-            document.querySelector('#payoutModal form').action = `/users/payout/${id}`;
+            const form = document.querySelector('#payoutModal form');
+            form.action = `/users/payout/${id}`;
+            console.log('Payout form action set to:', form.action);
             openModal('payoutModal');
         }
 
         function openEditModal(id, name, isAdmin) {
-            document.getElementById('editUserForm').action = '/users/update/' + id;
+            console.log('Opening edit modal for user:', id, name, isAdmin);
+            const form = document.getElementById('editUserForm');
+            form.action = '/users/update/' + id;
             document.getElementById('editUserIdDisplay').value = id;
             document.getElementById('editFullName').value = name;
             document.getElementById('editIsAdmin').checked = isAdmin;
+            console.log('Edit form action set to:', form.action);
             openModal('editUserModal');
         }
 
@@ -1009,6 +1018,20 @@
         let lifetimeChart;
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Debug: Add form submit listeners
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    console.log('Form submitting:', this.action);
+                    const csrfToken = this.querySelector('input[name="_csrf"]');
+                    if (csrfToken) {
+                        console.log('CSRF token present:', csrfToken.value.substring(0, 20) + '...');
+                    } else {
+                        console.warn('CSRF token missing!');
+                    }
+                });
+            });
+
             const chartData = <%- JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
 
             // Lifetime Chart Logic
