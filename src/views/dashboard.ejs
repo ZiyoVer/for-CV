@@ -602,6 +602,14 @@
         <div class="charts-row">
             <div class="chart-box">
                 <div class="chart-header">
+                    <div class="chart-title">Umumiy Statistika (30 kun)</div>
+                    <i data-lucide="bar-chart" size="18" style="opacity: 0.5"></i>
+                </div>
+                <canvas id="lifetimeChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+                <div class="chart-header">
                     <div class="chart-title">24 Soatlik Faollik (Barchasi)</div>
                     <i data-lucide="bar-chart-2" size="18" style="opacity: 0.5"></i>
                 </div>
@@ -980,9 +988,54 @@
 
         // Charts Logic
         let dailyChart;
+        let lifetimeChart;
 
         document.addEventListener('DOMContentLoaded', () => {
-            const chartData = <%- JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+            const chartData = <% - JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+
+            // Lifetime Chart Logic
+            const lifetimeStats = <% - JSON.stringify(typeof lifetimeStats !== 'undefined' ? lifetimeStats : []) %>;
+            const ctxLifetime = document.getElementById('lifetimeChart');
+
+            if (ctxLifetime) {
+                lifetimeChart = new Chart(ctxLifetime.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: lifetimeStats.map(d => new Date(d.day).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' })),
+                        datasets: [
+                            {
+                                label: 'Qabul qilindi',
+                                data: lifetimeStats.map(d => d.accepted),
+                                backgroundColor: '#22c55e',
+                                borderRadius: 4,
+                                stack: 'Stack 0'
+                            },
+                            {
+                                label: 'Rad etildi',
+                                data: lifetimeStats.map(d => d.rejected),
+                                backgroundColor: '#ef4444',
+                                borderRadius: 4,
+                                stack: 'Stack 0'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                        },
+                        scales: {
+                            x: { stacked: true, grid: { display: false } },
+                            y: { stacked: true, beginAtZero: true }
+                        },
+                        plugins: {
+                            legend: { position: 'top' }
+                        }
+                    }
+                });
+            }
 
             // Daily Chart
             const ctxDaily = document.getElementById('dailyChart');
@@ -1028,12 +1081,14 @@
 
             if (!dailyChart) return;
 
-            dailyChart.options.scales.x.ticks.color = color;
-            dailyChart.options.scales.y.ticks.color = color;
-            dailyChart.options.scales.x.grid.color = gridColor;
-            dailyChart.options.scales.y.grid.color = gridColor;
-            // Keep blue color for line, but maybe adjust background slightly if needed
-            dailyChart.update();
+            [dailyChart, lifetimeChart].forEach(chart => {
+                if (!chart) return;
+                chart.options.scales.x.ticks.color = color;
+                chart.options.scales.y.ticks.color = color;
+                chart.options.scales.x.grid.color = gridColor;
+                chart.options.scales.y.grid.color = gridColor;
+                chart.update();
+            });
         }
 
     </script>

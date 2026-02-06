@@ -7,32 +7,41 @@
     <title>STT Leaderboard - Live Reyting</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --gold: #fef3c7;
+            --gold-text: #b45309;
+            --silver: #f3f4f6;
+            --silver-text: #374151;
+            --bronze: #ffedd5;
+            --bronze-text: #9a3412;
         }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #ffffff;
+            background: var(--bg-body);
             min-height: 100vh;
-            color: #1a1a1a;
+            color: var(--text-primary);
         }
 
         .navbar {
-            background: #fafafa;
-            border-bottom: 1px solid #e5e5e5;
-            padding: 16px 32px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .logo {
             font-size: 16px;
             font-weight: 700;
-            color: #0a0a0a;
+            color: var(--text-primary);
             letter-spacing: -0.5px;
         }
 
@@ -68,93 +77,116 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 48px 32px;
+            padding: 32px 16px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 48px;
+            margin-bottom: 32px;
         }
 
         .header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #0a0a0a;
+            font-size: 28px;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 8px;
             letter-spacing: -0.5px;
         }
 
         .header p {
-            color: #737373;
+            color: var(--text-secondary);
             font-size: 14px;
         }
 
         .update-time {
-            color: #a3a3a3;
+            color: #9ca3af;
             font-size: 12px;
-            margin-top: 12px;
+            margin-top: 8px;
         }
 
         .leaderboard {
-            border: 1px solid #e5e5e5;
-            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
             overflow: hidden;
-            background: #ffffff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            background: var(--bg-card);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         .leaderboard-header {
             display: grid;
-            grid-template-columns: 60px 1fr 100px 100px 100px 120px;
-            background: #fafafa;
-            padding: 16px 24px;
-            font-size: 12px;
-            color: #525252;
+            grid-template-columns: 50px 1fr 80px 80px 80px 100px;
+            background: #f9fafb;
+            padding: 12px 16px;
+            font-size: 11px;
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 600;
-            border-bottom: 1px solid #e5e5e5;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .leaderboard-row {
             display: grid;
-            grid-template-columns: 60px 1fr 100px 100px 100px 120px;
-            padding: 18px 24px;
-            font-size: 14px;
-            border-bottom: 1px solid #f5f5f5;
-            transition: background 0.15s;
+            grid-template-columns: 50px 1fr 80px 80px 80px 100px;
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid #f3f4f6;
             align-items: center;
+            transition: all 0.2s;
         }
 
         .leaderboard-row:hover {
-            background: #fafafa;
+            background: #fdfbf7;
+            transform: scale(1.005);
         }
 
-        .leaderboard-row:last-child {
-            border-bottom: none;
+        /* Top 3 Styling */
+        .leaderboard-row.rank-1 {
+            background: linear-gradient(to right, #fffbeb, #ffffff);
+            border-left: 4px solid #f59e0b;
+        }
+
+        .leaderboard-row.rank-2 {
+            background: linear-gradient(to right, #f9fafb, #ffffff);
+            border-left: 4px solid #9ca3af;
+        }
+
+        .leaderboard-row.rank-3 {
+            background: linear-gradient(to right, #fff7ed, #ffffff);
+            border-left: 4px solid #ea580c;
         }
 
         .rank {
             font-weight: 700;
-            color: #a3a3a3;
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
         }
 
-        .rank-1 {
-            color: #ca8a04;
+        .rank-1 .rank {
+            background: #fcd34d;
+            color: #78350f;
         }
 
-        .rank-2 {
-            color: #64748b;
+        .rank-2 .rank {
+            background: #e5e7eb;
+            color: #374151;
         }
 
-        .rank-3 {
-            color: #92400e;
+        .rank-3 .rank {
+            background: #fed7aa;
+            color: #7c2d12;
         }
 
         .name {
-            color: #0a0a0a;
+            color: var(--text-primary);
             font-weight: 600;
         }
 
@@ -163,104 +195,97 @@
         }
 
         .stat.accepted {
-            color: #16a34a;
+            color: #059669;
             font-weight: 600;
+            background: #ecfdf5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
         }
 
         .stat.rejected {
             color: #dc2626;
+            background: #fef2f2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
         }
 
         .stat.total {
-            color: #525252;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .stat.balance {
-            color: #16a34a;
+            color: #2563eb;
             font-weight: 700;
         }
 
         .trophy {
-            font-size: 18px;
-            margin-right: 8px;
+            display: none;
         }
+
+        /* Hidden, using rank circles */
 
         .empty-state {
             text-align: center;
-            padding: 80px;
-            color: #737373;
+            padding: 60px;
+            color: var(--text-secondary);
             font-size: 14px;
         }
 
         .feature-list {
-            margin-top: 48px;
-            padding-top: 32px;
-            border-top: 1px solid #e5e5e5;
+            margin-top: 32px;
             display: flex;
             justify-content: center;
-            gap: 32px;
+            gap: 24px;
             flex-wrap: wrap;
         }
 
         .feature-item {
             display: flex;
-            gap: 10px;
-            font-size: 13px;
-            color: #525252;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
             align-items: center;
         }
 
         .feature-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 5px;
-            background: #f0fdf4;
-            color: #16a34a;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #d1fae5;
+            color: #059669;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 10px;
         }
 
-        .feature-item strong {
-            color: #0a0a0a;
-            font-weight: 600;
-        }
-
-        @media (max-width: 850px) {
-            .container {
-                padding: 24px 16px;
-            }
+        @media (max-width: 640px) {
 
             .leaderboard-header,
             .leaderboard-row {
-                grid-template-columns: 45px 1fr 70px 70px 70px 100px;
-                font-size: 12px;
-                padding: 12px 16px;
-            }
-
-            .trophy {
-                font-size: 14px;
-            }
-        }
-
-        @media (max-width: 600px) {
-
-            .leaderboard-header,
-            .leaderboard-row {
-                grid-template-columns: 40px 1fr 60px 60px 60px 80px;
+                grid-template-columns: 30px 1fr 50px 50px 50px 70px;
+                padding: 10px;
                 font-size: 11px;
-                padding: 10px 12px;
             }
 
-            .stat.balance {
-                font-size: 10px;
+            .name {
+                font-size: 12px;
             }
 
-            .feature-list {
-                gap: 16px;
-                flex-direction: column;
-                align-items: center;
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .container {
+                padding: 16px 8px;
+            }
+
+            .stat.accepted,
+            .stat.rejected {
+                padding: 2px 4px;
             }
         }
     </style>
@@ -296,17 +321,9 @@
                     <div class="empty-state">Hali hech kim tekshirmagan.</div>
                     <% } else { %>
                         <% leaderboard.forEach(user=> { %>
-                            <div class="leaderboard-row">
-                                <div class="rank <%= user.rank <= 3 ? 'rank-' + user.rank : '' %>">
-                                    <% if (user.rank===1) { %>
-                                        <span class="trophy">🥇</span>
-                                        <% } else if (user.rank===2) { %>
-                                            <span class="trophy">🥈</span>
-                                            <% } else if (user.rank===3) { %>
-                                                <span class="trophy">🥉</span>
-                                                <% } else { %>
-                                                    #<%= user.rank %>
-                                                        <% } %>
+                            <div class="leaderboard-row rank-<%= user.rank %>">
+                                <div class="rank">
+                                    <%= user.rank %>
                                 </div>
                                 <div class="name">
                                     <%= user.name %>
@@ -321,7 +338,7 @@
                                     <%= user.total %>
                                 </div>
                                 <div class="stat balance">
-                                    <%= user.balance %> so'm
+                                    <%= user.balance.toLocaleString() %> so'm
                                 </div>
                             </div>
                             <% }); %>
@@ -332,15 +349,15 @@
         <div class="feature-list">
             <div class="feature-item">
                 <div class="feature-icon">✓</div>
-                <span><strong>Auto-refresh</strong> Har 5 sekundda yangilanadi</span>
+                <span><strong>Auto-refresh</strong> 5s</span>
             </div>
             <div class="feature-item">
                 <div class="feature-icon">✓</div>
-                <span><strong>Real-time</strong> Natijalar darhol ko'rinadi</span>
+                <span><strong>Real-time</strong> Jonli</span>
             </div>
             <div class="feature-item">
                 <div class="feature-icon">✓</div>
-                <span><strong>Reyting</strong> Qabul qilinganlar soni bo'yicha</span>
+                <span><strong>Top 3</strong> Bonus</span>
             </div>
         </div>
     </div>
@@ -358,18 +375,13 @@
                         body.innerHTML = '<div class="empty-state">Hali hech kim tekshirmagan.</div>';
                     } else {
                         body.innerHTML = data.leaderboard.map(user => `
-                            <div class="leaderboard-row">
-                                <div class="rank ${user.rank <= 3 ? 'rank-' + user.rank : ''}">
-                                    ${user.rank === 1 ? '<span class="trophy">🥇</span>' : ''}
-                                    ${user.rank === 2 ? '<span class="trophy">🥈</span>' : ''}
-                                    ${user.rank === 3 ? '<span class="trophy">🥉</span>' : ''}
-                                    ${user.rank > 3 ? '#' + user.rank : ''}
-                                </div>
+                            <div class="leaderboard-row rank-${user.rank}">
+                                <div class="rank">${user.rank}</div>
                                 <div class="name">${user.name}</div>
                                 <div class="stat accepted">${user.accepted}</div>
                                 <div class="stat rejected">${user.rejected}</div>
                                 <div class="stat total">${user.total}</div>
-                                <div class="stat balance">${user.balance} so'm</div>
+                                <div class="stat balance">${user.balance.toLocaleString()} so'm</div>
                             </div>
                         `).join('');
                     }

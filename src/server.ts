@@ -130,9 +130,13 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             .map(([hour, count]) => ({ hour, count }))
             .sort((a, b) => a.hour.localeCompare(b.hour));
 
+        // Get Lifetime Stats (Daily) for the new chart
+        const lifetimeStats = await dbService.getLifetimeDailyStats();
+
         res.render('dashboard', {
             users: usersWithStats,
-            chartData, // Pass this to fix ReferenceError
+            chartData,
+            lifetimeStats, // Pass lifetime stats to view
             stats: {
                 pending: pendingCount,
                 transcriptionPending: transcriptionPendingCount,
