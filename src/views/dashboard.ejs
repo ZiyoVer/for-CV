@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STT Admin - Premium Dashboard</title>
+    <title>STT Admin - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             --bg: #ffffff;
@@ -18,7 +18,6 @@
             --hover-bg: #f5f5f5;
             --primary: #000000;
             --primary-text: #ffffff;
-            --chart-grid: #f0f0f0;
         }
 
         [data-theme="dark"] {
@@ -30,7 +29,6 @@
             --hover-bg: #1a1a1a;
             --primary: #ffffff;
             --primary-text: #000000;
-            --chart-grid: #222222;
         }
 
         * {
@@ -44,10 +42,9 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            transition: background 0.2s ease, color 0.2s ease;
+            transition: background 0.2s, color 0.2s;
         }
 
-        /* Navbar */
         .navbar {
             padding: 20px 40px;
             display: flex;
@@ -63,7 +60,6 @@
         .brand {
             font-weight: 700;
             font-size: 18px;
-            letter-spacing: -0.5px;
         }
 
         .nav-actions {
@@ -87,18 +83,12 @@
 
         .icon-btn:hover {
             background: var(--hover-bg);
-            border-color: var(--text);
         }
 
-        /* Main Layout */
         .container {
             max-width: 1200px;
             margin: 40px auto;
             padding: 0 20px;
-        }
-
-        .header-section {
-            margin-bottom: 40px;
         }
 
         .page-title {
@@ -110,9 +100,9 @@
         .page-subtitle {
             color: var(--text-muted);
             font-size: 14px;
+            margin-bottom: 40px;
         }
 
-        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -125,11 +115,22 @@
             border: 1px solid var(--border);
             padding: 24px;
             border-radius: 12px;
-            transition: transform 0.2s;
         }
 
-        .stat-card:hover {
-            border-color: var(--text);
+        .stat-card.total {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .stat-card.accepted {
+            border-left: 4px solid #22c55e;
+        }
+
+        .stat-card.rejected {
+            border-left: 4px solid #ef4444;
+        }
+
+        .stat-card.pending {
+            border-left: 4px solid #f59e0b;
         }
 
         .stat-label {
@@ -138,15 +139,27 @@
             font-weight: 600;
             color: var(--text-muted);
             margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .stat-value {
             font-size: 36px;
             font-weight: 700;
-            letter-spacing: -1px;
+        }
+
+        .stat-card.total .stat-value {
+            color: #3b82f6;
+        }
+
+        .stat-card.accepted .stat-value {
+            color: #22c55e;
+        }
+
+        .stat-card.rejected .stat-value {
+            color: #ef4444;
+        }
+
+        .stat-card.pending .stat-value {
+            color: #f59e0b;
         }
 
         .stat-subtext {
@@ -155,7 +168,6 @@
             margin-top: 4px;
         }
 
-        /* Charts Section */
         .charts-row {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -171,19 +183,20 @@
             height: 350px;
         }
 
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
         .chart-title {
             font-weight: 600;
             font-size: 16px;
+            margin-bottom: 20px;
         }
 
-        /* Table */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
         .table-section {
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -219,18 +232,12 @@
             padding: 16px 24px;
             font-size: 14px;
             border-bottom: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        tr:last-child td {
-            border-bottom: none;
         }
 
         tr:hover td {
             background: var(--hover-bg);
         }
 
-        /* Buttons */
         .btn {
             background: var(--primary);
             color: var(--primary-text);
@@ -248,6 +255,12 @@
 
         .btn:hover {
             opacity: 0.8;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
         }
 
         .action-cell {
@@ -272,37 +285,25 @@
         .action-btn:hover {
             background: var(--primary);
             color: var(--primary-text);
-            border-color: var(--primary);
         }
 
-        /* Upload Section */
-        .upload-area {
-            border: 2px dashed var(--border);
-            border-radius: 16px;
-            padding: 40px;
-            text-align: center;
-            margin-bottom: 40px;
-            transition: border-color 0.2s;
-        }
-
-        .upload-area:hover {
-            border-color: var(--text-muted);
-        }
-
-        /* Modals */
+        /* MODAL - FIXED VERSION */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px);
             z-index: 1000;
-            display: none !important;
-            /* Forces hidden */
+            display: none;
             align-items: center;
             justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
         }
 
         .modal {
@@ -312,7 +313,7 @@
             width: 90%;
             max-width: 450px;
             border: 1px solid var(--border);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
         .modal-title {
@@ -354,19 +355,8 @@
         }
 
         .btn-full {
-            width: 100%;
+            flex: 1;
             justify-content: center;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        .btn-outline:hover {
-            background: var(--hover-bg);
-            opacity: 1;
         }
 
         @media (max-width: 1024px) {
@@ -383,310 +373,86 @@
             .stats-grid {
                 grid-template-columns: 1fr;
             }
-
-            .navbar {
-                padding: 16px 20px;
-            }
-
-            .container {
-                margin: 24px auto;
-            }
-        }
-
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .toast {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 16px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 300px;
-            animation: slideIn 0.3s ease-out;
-            max-width: 400px;
-        }
-
-        .toast.success {
-            border-left: 4px solid #22c55e;
-        }
-
-        .toast.error {
-            border-left: 4px solid #ef4444;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes fadeOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-
-        /* Colored Stats */
-        .stat-card.total {
-            margin-top: 0;
-            border-left: 4px solid #3b82f6;
-        }
-
-        .stat-card.total .stat-value {
-            color: #3b82f6;
-        }
-
-        .stat-card.accepted {
-            margin-top: 0;
-            border-left: 4px solid #22c55e;
-        }
-
-        .stat-card.accepted .stat-value {
-            color: #22c55e;
-        }
-
-        .stat-card.rejected {
-            margin-top: 0;
-            border-left: 4px solid #ef4444;
-        }
-
-        .stat-card.rejected .stat-value {
-            color: #ef4444;
-        }
-
-        .stat-card.pending {
-            margin-top: 0;
-            border-left: 4px solid #f59e0b;
-        }
-
-        .stat-card.pending .stat-value {
-            color: #f59e0b;
-        }
-
-        /* Active Users List */
-        .active-user-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .active-user-item:last-child {
-            border-bottom: none;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: var(--hover-bg);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-right: 12px;
-        }
-
-        .user-info {
-            flex: 1;
-        }
-
-        .user-name {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .user-count {
-            font-weight: 700;
-            font-size: 14px;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="toast-container" id="toastContainer"></div>
-
     <nav class="navbar">
         <div class="brand">STT ADMIN</div>
         <div class="nav-actions">
-            <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+            <button class="icon-btn" onclick="toggleTheme()">
                 <i data-lucide="moon" id="theme-icon"></i>
             </button>
-            <a href="/logout" class="icon-btn" title="Chiqish">
+            <a href="/logout" class="icon-btn">
                 <i data-lucide="log-out"></i>
             </a>
         </div>
     </nav>
 
     <div class="container">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Platforma statistikasi va foydalanuvchilar boshqaruvi</p>
 
-        <div class="header-section">
-            <h1 class="page-title">Dashboard</h1>
-            <p class="page-subtitle">Platforma statistikasi va foydalanuvchilar boshqaruvi</p>
-        </div>
-
-        <!-- 1. Stats Cards Grid -->
+        <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card total">
-                <div class="stat-label">
-                    Total Checked <i data-lucide="activity" size="16"></i>
-                </div>
-                <div class="stat-value">
-                    <%= stats.totalChecked %>
-                </div>
+                <div class="stat-label">TOTAL CHECKED</div>
+                <div class="stat-value"><%= stats.totalChecked %></div>
                 <div class="stat-subtext">ta fayl tekshirildi</div>
             </div>
             <div class="stat-card accepted">
-                <div class="stat-label">
-                    Accepted <i data-lucide="check-circle" size="16"></i>
-                </div>
-                <div class="stat-value">
-                    <%= stats.totalAccepted %>
-                </div>
-                <div class="stat-subtext">
-                    <%= stats.checkedDuration %> (Audio)
-                </div>
+                <div class="stat-label">ACCEPTED</div>
+                <div class="stat-value"><%= stats.totalAccepted %></div>
+                <div class="stat-subtext"><%= stats.checkedDuration %></div>
             </div>
             <div class="stat-card rejected">
-                <div class="stat-label">
-                    Rejected <i data-lucide="x-circle" size="16"></i>
-                </div>
-                <div class="stat-value">
-                    <%= stats.totalRejected %>
-                </div>
+                <div class="stat-label">REJECTED</div>
+                <div class="stat-value"><%= stats.totalRejected %></div>
                 <div class="stat-subtext">ta fayl rad etildi</div>
             </div>
             <div class="stat-card pending">
-                <div class="stat-label">
-                    Pending <i data-lucide="clock" size="16"></i>
-                </div>
-                <div class="stat-value">
-                    <%= stats.pending %>
-                </div>
-                <div class="stat-subtext">
-                    <%= stats.pendingDuration %> (Audio)
-                </div>
+                <div class="stat-label">PENDING</div>
+                <div class="stat-value"><%= stats.pending %></div>
+                <div class="stat-subtext"><%= stats.pendingDuration %></div>
             </div>
         </div>
 
-        <!-- 2. Charts Section -->
+        <!-- Charts -->
         <div class="charts-row">
             <div class="chart-box">
-                <div class="chart-header">
-                    <div class="chart-title">Umumiy Statistika (30 kun)</div>
-                    <i data-lucide="bar-chart" size="18" style="opacity: 0.5"></i>
-                </div>
+                <div class="chart-title">Umumiy Statistika (30 kun)</div>
                 <canvas id="lifetimeChart"></canvas>
             </div>
-
             <div class="chart-box">
-                <div class="chart-header">
-                    <div class="chart-title">24 Soatlik Faollik (Barchasi)</div>
-                    <i data-lucide="bar-chart-2" size="18" style="opacity: 0.5"></i>
-                </div>
+                <div class="chart-title">24 Soatlik Faollik</div>
                 <canvas id="dailyChart"></canvas>
-            </div>
-
-            <!-- REPLACED Status Ratio with Active Users List -->
-            <div class="chart-box" style="overflow-y: auto;">
-                <div class="chart-header">
-                    <div class="chart-title">Faol Userlar (24 soat)</div>
-                    <i data-lucide="users" size="18" style="opacity: 0.5"></i>
-                </div>
-
-                <div class="active-users-list">
-                    <% const activeUsers=users .filter(u=> (u.checks_today || 0) > 0)
-                        .sort((a,b) => (b.checks_today || 0) - (a.checks_today || 0));
-
-                        if (activeUsers.length === 0) { %>
-                        <div style="text-align: center; color: var(--text-muted); padding: 20px;">
-                            Faollik yo'q
-                        </div>
-                        <% } else { activeUsers.forEach(user=> { %>
-                            <div class="active-user-item">
-                                <div style="display: flex; align-items: center;">
-                                    <div class="user-avatar">
-                                        <%= user.full_name.substring(0,2).toUpperCase() %>
-                                    </div>
-                                    <div class="user-info">
-                                        <div class="user-name">
-                                            <%= user.full_name %>
-                                        </div>
-                                        <div style="font-size: 12px; color: var(--text-muted);">
-                                            <%= user.is_admin ? 'Admin' : 'User' %>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="user-count" style="color: #22c55e;">
-                                    +<%= user.checks_today %>
-                                </div>
-                            </div>
-                            <% }); } %>
-                </div>
             </div>
         </div>
 
-        <!-- 3. Upload Section -->
+        <!-- Upload -->
         <div class="upload-area">
             <i data-lucide="upload-cloud" size="40" style="margin-bottom: 16px; opacity: 0.5;"></i>
-            <h3 style="margin-bottom: 8px;">Audio Yuklash</h3>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">S3 stolga .wav fayllarni yuklang
-                (Max 100 ta)</p>
-
+            <h3 style="margin-bottom: 8px;">Audio Yuklash (Transkripsiya)</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">
+                S3 ga audio fayllar yuklang (Max 100 ta)
+            </p>
             <form action="/transcription/upload" method="POST" enctype="multipart/form-data">
-                <input type="file" name="audioFiles" id="fileInput" multiple accept="audio/*" style="display: none;"
-                    onchange="updateFileCount()">
+                <input type="file" name="audioFiles" id="fileInput" multiple accept="audio/*" style="display: none;" onchange="updateFileCount()">
                 <button type="button" class="btn btn-outline" onclick="document.getElementById('fileInput').click()">
                     Fayllarni Tanlash
                 </button>
-                <button type="submit" class="btn" style="margin-left: 8px;">
-                    Yuklash
-                </button>
+                <button type="submit" class="btn" style="margin-left: 8px;">Yuklash</button>
             </form>
             <p id="file-label" style="font-size: 13px; margin-top: 12px; color: var(--text-muted);"></p>
-
-            <% if (typeof stats.transcriptionPending !=='undefined' ) { %>
-                <div style="margin-top: 20px; font-size: 13px;">
-                    <span style="font-weight: 600;">Navbatda:</span>
-                    <%= stats.transcriptionPending %> ta audio
-                </div>
-                <% } %>
         </div>
 
-        <!-- 4. Users Table -->
+        <!-- Users Table -->
         <div class="table-section">
             <div class="table-header">
                 <h3>Foydalanuvchilar</h3>
-                <button class="btn" onclick="alert('Tugma ishladi!'); openModal('addUserModal')">
+                <button class="btn" onclick="openAddUserModal()">
                     <i data-lucide="user-plus" size="16"></i> Yangi Foydalanuvchi
                 </button>
             </div>
@@ -704,78 +470,54 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <% users.forEach(user=> { %>
+                        <% users.forEach(user => { %>
                             <tr>
-                                <td style="font-family: monospace;">
-                                    <%= user.telegram_id %>
-                                </td>
+                                <td style="font-family: monospace;"><%= user.telegram_id %></td>
                                 <td>
                                     <%= user.full_name %>
-                                        <% if(user.is_admin) { %> <i data-lucide="shield" size="12"></i>
-                                            <% } %>
+                                    <% if(user.is_admin) { %><i data-lucide="shield" size="12"></i><% } %>
                                 </td>
                                 <td style="text-align: right;">
-                                    <% if (user.checks_today> 0) { %>
+                                    <% if (user.checks_today > 0) { %>
                                         <span style="color: #22c55e; font-weight: 600;">+<%= user.checks_today %></span>
-                                        <% } else { %>
-                                            <span style="color: var(--text-muted);">-</span>
-                                            <% } %>
+                                    <% } else { %>
+                                        <span style="color: var(--text-muted);">-</span>
+                                    <% } %>
                                 </td>
-                                <td style="text-align: right;">
-                                    <%= user.total_accepted || 0 %>
-                                </td>
-                                <td style="text-align: right;">
-                                    <%= user.total_rejected || 0 %>
-                                </td>
-                                <td style="text-align: right; font-weight: 600;">
-                                    <%= user.balance.toLocaleString() %> so'm
-                                </td>
+                                <td style="text-align: right;"><%= user.total_accepted || 0 %></td>
+                                <td style="text-align: right;"><%= user.total_rejected || 0 %></td>
+                                <td style="text-align: right; font-weight: 600;"><%= user.balance.toLocaleString() %> so'm</td>
                                 <td>
                                     <div class="action-cell" style="justify-content: flex-end;">
-                                        <button class="action-btn" title="Tekshirish"
-                                            onclick="window.location.href='/review/<%= user.telegram_id %>'">
+                                        <button class="action-btn" title="Tekshirish" onclick="window.location.href='/review/<%= user.telegram_id %>'">
                                             <i data-lucide="headphones" size="14"></i>
                                         </button>
-                                        <button class="action-btn" title="Balans qo'shish" data-id="<%= user.telegram_id %>"
-                                            data-name="<%= user.full_name %>"
-                                            onclick="openBalanceModal(this.dataset.id, this.dataset.name)">
+                                        <button class="action-btn" title="Balans qo'shish" onclick="openBalanceModal(<%= user.telegram_id %>, '<%= user.full_name %>')">
                                             <i data-lucide="coins" size="14"></i>
                                         </button>
-                                        <button class="action-btn" title="To'lov" data-id="<%= user.telegram_id %>"
-                                            data-name="<%= user.full_name %>" data-amount="<%= user.balance || 0 %>"
-                                            onclick="openPayoutModal(this.dataset.id, this.dataset.name, Number(this.dataset.amount))">
+                                        <button class="action-btn" title="To'lov" onclick="openPayoutModal(<%= user.telegram_id %>, '<%= user.full_name %>', <%= user.balance || 0 %>)">
                                             <i data-lucide="banknote" size="14"></i>
                                         </button>
-                                        <button class="action-btn" title="Tahrirlash" data-id="<%= user.telegram_id %>"
-                                            data-name="<%= user.full_name %>"
-                                            data-admin="<%= user.is_admin ? 'true' : 'false' %>"
-                                            onclick="openEditModal(this.dataset.id, this.dataset.name, this.dataset.admin === 'true')">
+                                        <button class="action-btn" title="Tahrirlash" onclick="openEditModal(<%= user.telegram_id %>, '<%= user.full_name %>', <%= user.is_admin ? 'true' : 'false' %>)">
                                             <i data-lucide="user-pen" size="14"></i>
                                         </button>
-                                        <form action="/users/delete/<%= user.telegram_id %>" method="POST"
-                                            onsubmit="return confirm('Ushbu foydalanuvchini o\'chirishni tasdiqlaysizmi?');"
-                                            style="margin:0;">
-                                                                        <button type="submit" class="action-btn" title="O'chirish"
-                                                style="color: #ef4444; border-color: #ef444450;">
+                                        <form action="/users/delete/<%= user.telegram_id %>" method="POST" onsubmit="return confirm('O\'chirishni tasdiqlaysizmi?');" style="margin:0; display:inline;">
+                                            <button type="submit" class="action-btn" title="O'chirish" style="color: #ef4444;">
                                                 <i data-lucide="trash-2" size="14"></i>
                                             </button>
                                         </form>
                                     </div>
-
                                 </td>
                             </tr>
-                            <% }) %>
+                        <% }) %>
                     </tbody>
                 </table>
             </div>
         </div>
-
     </div>
 
-    <!-- Modals -->
-
     <!-- Add User Modal -->
-    <div id="addUserModal" class="modal-overlay">
+    <div id="addUserModal" class="modal-overlay" onclick="closeModalOnOutsideClick(event, 'addUserModal')">
         <div class="modal">
             <h3 class="modal-title">Yangi Foydalanuvchi</h3>
             <form action="/users/add" method="POST">
@@ -787,13 +529,12 @@
                     <label>To'liq Ism</label>
                     <input type="text" name="full_name" class="form-input" required>
                 </div>
-                <div class="form-group" style="display: flex; gap: 8px;">
+                <div class="form-group" style="display: flex; gap: 8px; align-items: center;">
                     <input type="checkbox" name="is_admin" id="isAdmin">
-                    <label for="isAdmin" style="margin:0; cursor: pointer;">Admin huquqini berish</label>
+                    <label for="isAdmin" style="margin:0; cursor: pointer;">Admin</label>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline btn-full"
-                        onclick="closeModal('addUserModal')">Bekor</button>
+                    <button type="button" class="btn btn-outline btn-full" onclick="closeModal('addUserModal')">Bekor</button>
                     <button type="submit" class="btn btn-full">Qo'shish</button>
                 </div>
             </form>
@@ -801,157 +542,129 @@
     </div>
 
     <!-- Balance Modal -->
-    <div id="balanceModal" class="modal-overlay">
+    <div id="balanceModal" class="modal-overlay" onclick="closeModalOnOutsideClick(event, 'balanceModal')">
         <div class="modal">
             <h3 class="modal-title">Balans Qo'shish</h3>
-            <p id="balanceUserDisplay" style="margin-bottom: 20px; color: var(--text-muted); font-size: 14px;"></p>
-            <form action="/add-balance" method="POST">
-                <input type="hidden" name="user_id" id="balanceUserId">
+            <p id="balanceUserName" style="margin-bottom: 20px; color: var(--text-muted);"></p>
+            <form id="balanceForm" method="POST">
                 <div class="form-group">
                     <label>Summa (so'm)</label>
                     <input type="number" name="amount" class="form-input" required placeholder="50000">
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline btn-full"
-                        onclick="closeModal('balanceModal')">Bekor</button>
+                    <button type="button" class="btn btn-outline btn-full" onclick="closeModal('balanceModal')">Bekor</button>
                     <button type="submit" class="btn btn-full">Qo'shish</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Payout Modal -->
+    <div id="payoutModal" class="modal-overlay" onclick="closeModalOnOutsideClick(event, 'payoutModal')">
+        <div class="modal">
+            <h3 class="modal-title">To'lovni Tasdiqlash</h3>
+            <p style="margin-bottom: 8px;">Foydalanuvchi: <b id="payoutUserName"></b></p>
+            <p style="margin-bottom: 24px;">Summa: <b id="payoutAmount"></b> so'm</p>
+            <form id="payoutForm" method="POST">
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline btn-full" onclick="closeModal('payoutModal')">Bekor</button>
+                    <button type="submit" class="btn btn-full">To'lab Berildi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Edit User Modal -->
-    <div id="editUserModal" class="modal-overlay">
+    <div id="editModal" class="modal-overlay" onclick="closeModalOnOutsideClick(event, 'editModal')">
         <div class="modal">
             <h3 class="modal-title">Foydalanuvchini Tahrirlash</h3>
-            <form id="editUserForm" method="POST">
+            <form id="editForm" method="POST">
                 <div class="form-group">
-                    <label>Telegram ID (O'zgarmas)</label>
-                    <input type="number" id="editUserIdDisplay" class="form-input" disabled style="opacity: 0.7;">
+                    <label>Telegram ID</label>
+                    <input type="number" id="editTelegramId" class="form-input" disabled style="opacity: 0.6;">
                 </div>
                 <div class="form-group">
                     <label>To'liq Ism</label>
                     <input type="text" name="full_name" id="editFullName" class="form-input" required>
                 </div>
-                <div class="form-group" style="display: flex; gap: 8px;">
+                <div class="form-group" style="display: flex; gap: 8px; align-items: center;">
                     <input type="checkbox" name="is_admin" id="editIsAdmin">
                     <label for="editIsAdmin" style="margin:0; cursor: pointer;">Admin</label>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-outline btn-full"
-                        onclick="closeModal('editUserModal')">Bekor</button>
+                    <button type="button" class="btn btn-outline btn-full" onclick="closeModal('editModal')">Bekor</button>
                     <button type="submit" class="btn btn-full">Saqlash</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Payout Confirmation Modal -->
-    <div id="payoutModal" class="modal-overlay">
-        <div class="modal">
-            <h3 class="modal-title">To'lovni Tasdiqlash</h3>
-            <p style="margin-bottom: 8px;">Foydalanuvchi: <b id="payoutUserName"></b></p>
-            <p style="margin-bottom: 24px;">To'lanadigan summa: <b id="payoutAmount"></b> so'm</p>
-
-            <form action="/payout" method="POST">
-                <input type="hidden" name="user_id" id="payoutUserId">
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-outline btn-full"
-                        onclick="closeModal('payoutModal')">Bekor</button>
-                    <button type="submit" class="btn btn-full">To'lab berildi</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
-        // Icons
-        try {
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Theme
+        function toggleTheme() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+            }
             lucide.createIcons();
-        } catch (e) {
-            console.error('Lucide icons failed to load:', e);
         }
 
-        // Toast Logic
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-
-            let icon = type === 'success' ? 'check-circle' : 'alert-circle';
-            let color = type === 'success' ? '#22c55e' : '#ef4444';
-
-            toast.innerHTML = `
-                <i data-lucide="${icon}" style="color: ${color}"></i>
-                <span style="font-size: 14px; font-weight: 500;">${message}</span>
-            `;
-
-            container.appendChild(toast);
-            lucide.createIcons();
-
-            setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease-in forwards';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // Parse URL Params for Notifications
-        const urlParams = new URLSearchParams(window.location.search);
-        const error = urlParams.get('error');
-        const success = urlParams.get('success');
-
-        if (error) {
-            let msg = 'Xatolik yuz berdi';
-            if (error === 'add_failed') msg = 'Foydalanuvchi qo\'shishda xatolik';
-            if (error === 'update_failed') msg = 'Yangilashda xatolik';
-            if (error === 'delete_failed') msg = 'O\'chirishda xatolik';
-            if (error === 'upload_failed') msg = 'Fayllarni yuklashda xatolik';
-            if (error === 'no_files') msg = 'Fayl tanlanmadi';
-            showToast(msg, 'error');
-        }
-
-        if (success) {
-            let msg = 'Muvaffaqiyatli bajarildi';
-            if (success.startsWith('uploaded_')) msg = `${success.split('_')[1]} ta fayl yuklandi`;
-            showToast(msg, 'success');
-        }
-
-        // Clean URL
-        if (error || success) {
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
         }
 
         // Modal Functions
         function openModal(id) {
-            document.getElementById(id).style.display = 'flex';
-        }
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
+            document.getElementById(id).classList.add('active');
         }
 
-        function openBalanceModal(id, name) {
-            document.getElementById('balanceUserId').value = id;
-            document.getElementById('balanceUserDisplay').textContent = 'Foydalanuvchi: ' + name;
-            document.querySelector('#balanceModal form').action = `/users/add-balance/${id}`;
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function closeModalOnOutsideClick(event, id) {
+            if (event.target.id === id) {
+                closeModal(id);
+            }
+        }
+
+        // Add User Modal
+        function openAddUserModal() {
+            openModal('addUserModal');
+        }
+
+        // Balance Modal
+        function openBalanceModal(userId, userName) {
+            document.getElementById('balanceUserName').textContent = 'Foydalanuvchi: ' + userName;
+            document.getElementById('balanceForm').action = '/users/add-balance/' + userId;
             openModal('balanceModal');
         }
 
-        function openPayoutModal(id, name, amount) {
-            document.getElementById('payoutUserId').value = id;
-            document.getElementById('payoutUserName').textContent = name;
+        // Payout Modal
+        function openPayoutModal(userId, userName, amount) {
+            document.getElementById('payoutUserName').textContent = userName;
             document.getElementById('payoutAmount').textContent = amount.toLocaleString();
-            document.querySelector('#payoutModal form').action = `/users/payout/${id}`;
+            document.getElementById('payoutForm').action = '/users/payout/' + userId;
             openModal('payoutModal');
         }
 
-        function openEditModal(id, name, isAdmin) {
-            const form = document.getElementById('editUserForm');
-            form.action = '/users/update/' + id;
-            document.getElementById('editUserIdDisplay').value = id;
-            document.getElementById('editFullName').value = name;
+        // Edit Modal
+        function openEditModal(userId, userName, isAdmin) {
+            document.getElementById('editTelegramId').value = userId;
+            document.getElementById('editFullName').value = userName;
             document.getElementById('editIsAdmin').checked = isAdmin;
-            openModal('editUserModal');
+            document.getElementById('editForm').action = '/users/update/' + userId;
+            openModal('editModal');
         }
 
         // File Upload
@@ -965,64 +678,28 @@
             }
         }
 
-        // Close modal on outside click
-        window.onclick = function (event) {
-            if (event.target.classList.contains('modal-overlay')) {
-                event.target.style.display = "none";
-            }
-        }
-
-        // Theme Logic
-        function toggleTheme() {
-            const body = document.body;
-            const icon = document.getElementById('theme-icon');
-            const isDark = body.getAttribute('data-theme') === 'dark';
-
-            if (isDark) {
-                body.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-                icon.setAttribute('data-lucide', 'moon');
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-                icon.setAttribute('data-lucide', 'sun');
-            }
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-            updateChartsTheme();
-        }
-
-        // Init Theme
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-            document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
-        }
-
-        // Charts Logic
-        let dailyChart;
-        let lifetimeChart;
-
+        // Charts
         document.addEventListener('DOMContentLoaded', () => {
-            const chartData = <%- JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+            const chartData = <%= JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+            const lifetimeStats = <%= JSON.stringify(typeof lifetimeStats !== 'undefined' ? lifetimeStats : []) %>;
 
-            // Lifetime Chart Logic
-            const lifetimeStats = <%- JSON.stringify(typeof lifetimeStats !== 'undefined' ? lifetimeStats : []) %>;
+            // Lifetime Chart
             const ctxLifetime = document.getElementById('lifetimeChart');
-
             if (ctxLifetime) {
-                lifetimeChart = new Chart(ctxLifetime.getContext('2d'), {
+                new Chart(ctxLifetime.getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: lifetimeStats.map(d => new Date(d.day).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' })),
                         datasets: [
                             {
-                                label: 'Qabul qilindi',
+                                label: 'Qabul',
                                 data: lifetimeStats.map(d => d.accepted),
                                 backgroundColor: '#22c55e',
                                 borderRadius: 4,
                                 stack: 'Stack 0'
                             },
                             {
-                                label: 'Rad etildi',
+                                label: 'Rad',
                                 data: lifetimeStats.map(d => d.rejected),
                                 backgroundColor: '#ef4444',
                                 borderRadius: 4,
@@ -1033,17 +710,11 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            intersect: false,
-                            mode: 'index',
-                        },
                         scales: {
                             x: { stacked: true, grid: { display: false } },
                             y: { stacked: true, beginAtZero: true }
                         },
-                        plugins: {
-                            legend: { position: 'top' }
-                        }
+                        plugins: { legend: { position: 'top' } }
                     }
                 });
             }
@@ -1051,18 +722,15 @@
             // Daily Chart
             const ctxDaily = document.getElementById('dailyChart');
             if (ctxDaily) {
-                dailyChart = new Chart(ctxDaily.getContext('2d'), {
+                new Chart(ctxDaily.getContext('2d'), {
                     type: 'line',
                     data: {
-                        labels: chartData.map(d => {
-                            const date = new Date(d.hour);
-                            return date.getHours() + ':00';
-                        }),
+                        labels: chartData.map(d => new Date(d.hour).getHours() + ':00'),
                         datasets: [{
                             label: 'Tekshiruvlar',
                             data: chartData.map(d => d.count),
-                            borderColor: '#3b82f6', // Blue
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)', // Blue transparent
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
                             tension: 0.4,
                             fill: true,
                             pointRadius: 0
@@ -1080,28 +748,8 @@
                 });
             }
 
-            // Update Theme for Charts
-            updateChartsTheme();
+            lucide.createIcons();
         });
-
-        // Theme Logic for Charts
-        function updateChartsTheme() {
-            const isDark = document.body.getAttribute('data-theme') === 'dark';
-            const color = isDark ? '#ffffff' : '#000000';
-            const gridColor = isDark ? '#333333' : '#e5e5e5';
-
-            if (!dailyChart) return;
-
-            [dailyChart, lifetimeChart].forEach(chart => {
-                if (!chart) return;
-                chart.options.scales.x.ticks.color = color;
-                chart.options.scales.y.ticks.color = color;
-                chart.options.scales.x.grid.color = gridColor;
-                chart.options.scales.y.grid.color = gridColor;
-                chart.update();
-            });
-        }
-
     </script>
 </body>
 
