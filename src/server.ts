@@ -1,6 +1,7 @@
 import express from 'express';
 import session from 'express-session';
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -46,6 +47,7 @@ app.use(helmet({
 // Middleware
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use(cookieParser()); // Required for CSRF with cookies
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(session({
@@ -61,8 +63,14 @@ app.use(session({
     rolling: true // Reset expiry on each request
 }));
 
-// CSRF Protection (must come after session)
-const csrfProtection = csrf({ cookie: false }); // Use session-based tokens
+// CSRF Protection (must come after session and body parser)
+const csrfProtection = csrf({
+    cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production'
+    }
+}); // Use cookie-based tokens for better reliability
 
 // Rate limiting for login
 const loginLimiter = rateLimit({
