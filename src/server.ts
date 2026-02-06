@@ -440,6 +440,22 @@ app.get('/api/leaderboard', apiLimiter, async (req, res) => {
     }
 });
 
+// CSRF Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err.code === 'EBADCSRFTOKEN') {
+        // CSRF token validation failed
+        console.error('CSRF token validation failed');
+        return res.status(403).send('Formani qayta yuklang va qayta urinib ko\'ring.');
+    }
+    next(err);
+});
+
+// Global Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Server error:', err);
+    res.status(500).send('Server xatoligi yuz berdi.');
+});
+
 export function startServer() {
     const port = config.PORT;
     app.listen(port, () => {
