@@ -3,46 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STT Admin Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>STT Dashboard</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: #f5f5f5;
-            color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f0f2f5;
             padding: 20px;
         }
 
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
         .header {
             background: white;
-            padding: 20px;
-            border-radius: 12px;
+            padding: 20px 30px;
+            border-radius: 8px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .header h1 { font-size: 24px; }
+        .header h1 {
+            font-size: 24px;
+            color: #1a1a1a;
+        }
 
-        .btn {
-            background: #000;
-            color: #fff;
+        .logout-btn {
+            background: #dc3545;
+            color: white;
             border: none;
             padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
+            border-radius: 6px;
+            text-decoration: none;
             font-weight: 600;
+            cursor: pointer;
         }
 
-        .btn:hover { opacity: 0.8; }
-
-        .stats-grid {
+        .stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
@@ -51,79 +58,102 @@
 
         .stat-card {
             background: white;
-            padding: 24px;
-            border-radius: 12px;
-            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .stat-card.accepted { border-left-color: #22c55e; }
-        .stat-card.rejected { border-left-color: #ef4444; }
-        .stat-card.pending { border-left-color: #f59e0b; }
-
         .stat-label {
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
-            color: #666;
+            color: #6c757d;
+            font-weight: 600;
             margin-bottom: 8px;
         }
 
         .stat-value {
             font-size: 32px;
             font-weight: 700;
-            color: #3b82f6;
+            color: #1a1a1a;
         }
-
-        .stat-card.accepted .stat-value { color: #22c55e; }
-        .stat-card.rejected .stat-value { color: #ef4444; }
-        .stat-card.pending .stat-value { color: #f59e0b; }
 
         .stat-subtext {
             font-size: 12px;
-            color: #999;
+            color: #6c757d;
             margin-top: 4px;
         }
 
-        .charts {
+        .charts-row {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 20px;
             margin-bottom: 20px;
         }
 
-        .chart-box {
+        .chart-card {
             background: white;
-            padding: 24px;
-            border-radius: 12px;
-            height: 350px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .chart-title {
             font-size: 16px;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 15px;
+            color: #1a1a1a;
         }
 
-        .upload-section {
+        .upload-card {
             background: white;
-            padding: 40px;
-            border-radius: 12px;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             text-align: center;
             margin-bottom: 20px;
-            border: 2px dashed #ddd;
         }
 
-        .table-section {
+        .table-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             overflow: hidden;
         }
 
         .table-header {
             padding: 20px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #e9ecef;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .table-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
         }
 
         table {
@@ -133,185 +163,185 @@
 
         th {
             text-align: left;
-            padding: 16px 20px;
-            font-size: 12px;
+            padding: 12px 20px;
+            font-size: 11px;
             text-transform: uppercase;
-            color: #666;
-            background: #f9f9f9;
-            border-bottom: 1px solid #eee;
+            color: #6c757d;
+            font-weight: 600;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
         }
 
         td {
-            padding: 16px 20px;
-            border-bottom: 1px solid #eee;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e9ecef;
             font-size: 14px;
         }
 
-        tr:hover { background: #f9f9f9; }
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
 
-        .action-cell {
+        .action-btns {
             display: flex;
-            gap: 8px;
+            gap: 5px;
         }
 
         .action-btn {
             width: 32px;
             height: 32px;
-            border: 1px solid #ddd;
+            border: 1px solid #dee2e6;
             background: white;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
         }
 
         .action-btn:hover {
-            background: #000;
-            color: white;
-            border-color: #000;
+            background: #f8f9fa;
+            border-color: #adb5bd;
         }
 
-        /* MODAL */
-        .modal-overlay {
+        /* SIMPLE MODAL */
+        .modal {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            display: none;
+            z-index: 9999;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
         }
 
-        .modal-overlay.show {
-            display: flex;
+        .modal.active {
+            display: flex !important;
         }
 
-        .modal {
+        .modal-content {
             background: white;
-            padding: 32px;
-            border-radius: 12px;
+            padding: 30px;
+            border-radius: 8px;
             width: 90%;
-            max-width: 450px;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .modal-title {
             font-size: 20px;
-            font-weight: 700;
+            font-weight: 600;
             margin-bottom: 20px;
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 15px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             font-size: 13px;
             font-weight: 600;
+            color: #495057;
         }
 
-        .form-input {
+        .form-control {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
             font-size: 14px;
         }
 
-        .form-input:focus {
+        .form-control:focus {
             outline: none;
-            border-color: #000;
+            border-color: #007bff;
         }
 
-        .modal-actions {
-            display: flex;
-            gap: 12px;
+        .modal-footer {
             margin-top: 20px;
-        }
-
-        .btn-full {
-            flex: 1;
-        }
-
-        .btn-outline {
-            background: white;
-            color: #000;
-            border: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
         }
 
         @media (max-width: 1024px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .charts { grid-template-columns: 1fr; }
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- Header -->
     <div class="header">
         <h1>📊 STT Admin Dashboard</h1>
-        <a href="/logout" class="btn">🚪 Chiqish</a>
+        <a href="/logout" class="logout-btn">Chiqish</a>
     </div>
 
     <!-- Stats -->
-    <div class="stats-grid">
+    <div class="stats">
         <div class="stat-card">
             <div class="stat-label">Total Checked</div>
             <div class="stat-value"><%= stats.totalChecked %></div>
-            <div class="stat-subtext">ta fayl</div>
+            <div class="stat-subtext">ta fayl tekshirildi</div>
         </div>
-        <div class="stat-card accepted">
+        <div class="stat-card">
             <div class="stat-label">Accepted</div>
-            <div class="stat-value"><%= stats.totalAccepted %></div>
+            <div class="stat-value" style="color:#28a745;"><%= stats.totalAccepted %></div>
             <div class="stat-subtext"><%= stats.checkedDuration %></div>
         </div>
-        <div class="stat-card rejected">
+        <div class="stat-card">
             <div class="stat-label">Rejected</div>
-            <div class="stat-value"><%= stats.totalRejected %></div>
-            <div class="stat-subtext">ta fayl</div>
+            <div class="stat-value" style="color:#dc3545;"><%= stats.totalRejected %></div>
+            <div class="stat-subtext">ta fayl rad etildi</div>
         </div>
-        <div class="stat-card pending">
+        <div class="stat-card">
             <div class="stat-label">Pending</div>
-            <div class="stat-value"><%= stats.pending %></div>
+            <div class="stat-value" style="color:#ffc107;"><%= stats.pending %></div>
             <div class="stat-subtext"><%= stats.pendingDuration %></div>
         </div>
     </div>
 
     <!-- Charts -->
-    <div class="charts">
-        <div class="chart-box">
-            <div class="chart-title">📈 Umumiy Statistika (30 kun)</div>
-            <canvas id="lifetimeChart"></canvas>
+    <div class="charts-row">
+        <div class="chart-card" style="height:350px;">
+            <div class="chart-title">Umumiy Statistika (30 kun)</div>
+            <canvas id="lifetimeChart" style="height:280px;"></canvas>
         </div>
-        <div class="chart-box">
-            <div class="chart-title">⚡ 24 Soatlik Faollik</div>
-            <canvas id="dailyChart"></canvas>
+        <div class="chart-card" style="height:350px;">
+            <div class="chart-title">24 Soatlik Faollik</div>
+            <canvas id="dailyChart" style="height:280px;"></canvas>
         </div>
     </div>
 
     <!-- Upload -->
-    <div class="upload-section">
-        <h3>☁️ Audio Yuklash (Transkripsiya)</h3>
-        <p style="color: #999; margin: 12px 0;">S3 ga audio fayllar yuklang (Max 100 ta)</p>
-        <form action="/transcription/upload" method="POST" enctype="multipart/form-data">
-            <input type="file" name="audioFiles" id="fileInput" multiple accept="audio/*" style="display:none;" onchange="updateFileCount()">
-            <button type="button" class="btn btn-outline" onclick="document.getElementById('fileInput').click()">📁 Fayllarni Tanlash</button>
-            <button type="submit" class="btn" style="margin-left: 8px;">⬆️ Yuklash</button>
+    <div class="upload-card">
+        <h3 style="margin-bottom:10px;">☁️ Audio Yuklash (Transkripsiya)</h3>
+        <p style="color:#6c757d;margin-bottom:20px;">S3 ga audio fayllar yuklang (Max 100 ta)</p>
+        <form action="/transcription/upload" method="POST" enctype="multipart/form-data" style="display:inline-flex;gap:10px;">
+            <input type="file" name="audioFiles" id="fileInput" multiple accept="audio/*" style="display:none;" onchange="showFileCount()">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">Fayllarni Tanlash</button>
+            <button type="submit" class="btn">Yuklash</button>
         </form>
-        <p id="file-label" style="margin-top: 12px; color: #999; font-size: 13px;"></p>
+        <p id="fileCount" style="margin-top:10px;font-size:13px;color:#6c757d;"></p>
     </div>
 
     <!-- Users Table -->
-    <div class="table-section">
+    <div class="table-card">
         <div class="table-header">
-            <h3>👥 Foydalanuvchilar</h3>
-            <button class="btn" onclick="openAddModal()">➕ Yangi Foydalanuvchi</button>
+            <h2>Foydalanuvchilar</h2>
+            <button class="btn" onclick="showAddUserModal()">+ Yangi Foydalanuvchi</button>
         </div>
         <table>
             <thead>
@@ -328,24 +358,24 @@
             <tbody>
                 <% users.forEach(user => { %>
                 <tr>
-                    <td><%= user.telegram_id %></td>
+                    <td style="font-family:monospace;"><%= user.telegram_id %></td>
                     <td><%= user.full_name %> <% if(user.is_admin) { %>🛡️<% } %></td>
                     <td style="text-align:right;">
                         <% if(user.checks_today > 0) { %>
-                            <span style="color:#22c55e;font-weight:600;">+<%= user.checks_today %></span>
+                            <span style="color:#28a745;font-weight:600;">+<%= user.checks_today %></span>
                         <% } else { %>-<% } %>
                     </td>
                     <td style="text-align:right;"><%= user.total_accepted || 0 %></td>
                     <td style="text-align:right;"><%= user.total_rejected || 0 %></td>
                     <td style="text-align:right;font-weight:600;"><%= user.balance.toLocaleString() %> so'm</td>
-                    <td>
-                        <div class="action-cell" style="justify-content:flex-end;">
-                            <button class="action-btn" onclick="window.location.href='/review/<%= user.telegram_id %>'" title="Tekshirish">🎧</button>
-                            <button class="action-btn" onclick="openBalanceModal(<%= user.telegram_id %>,'<%= user.full_name %>')" title="Balans qo'shish">💰</button>
-                            <button class="action-btn" onclick="openPayoutModal(<%= user.telegram_id %>,'<%= user.full_name %>',<%= user.balance %>)" title="To'lov">💸</button>
-                            <button class="action-btn" onclick="openEditModal(<%= user.telegram_id %>,'<%= user.full_name %>',<%= user.is_admin %>)" title="Tahrirlash">✏️</button>
-                            <form action="/users/delete/<%= user.telegram_id %>" method="POST" onsubmit="return confirm('O\'chirish?')" style="display:inline;margin:0;">
-                                <button type="submit" class="action-btn" title="O'chirish" style="color:#ef4444;">🗑️</button>
+                    <td style="text-align:right;">
+                        <div class="action-btns">
+                            <button class="action-btn" onclick="location.href='/review/<%= user.telegram_id %>'" title="Tekshirish">🎧</button>
+                            <button class="action-btn" onclick="showBalanceModal(<%= user.telegram_id %>,'<%= user.full_name %>')" title="Balans qo'shish">💰</button>
+                            <button class="action-btn" onclick="showPayoutModal(<%= user.telegram_id %>,'<%= user.full_name %>',<%= user.balance %>)" title="To'lov">💸</button>
+                            <button class="action-btn" onclick="showEditModal(<%= user.telegram_id %>,'<%= user.full_name %>',<%= user.is_admin ? 1 : 0 %>)" title="Tahrirlash">✏️</button>
+                            <form action="/users/delete/<%= user.telegram_id %>" method="POST" onsubmit="return confirm('O\'chirish tasdiqlaysizmi?')" style="display:inline;margin:0;">
+                                <button type="submit" class="action-btn" style="color:#dc3545;" title="O'chirish">🗑️</button>
                             </form>
                         </div>
                     </td>
@@ -357,83 +387,87 @@
 </div>
 
 <!-- Add User Modal -->
-<div id="addModal" class="modal-overlay" onclick="if(event.target===this) closeModal('addModal')">
-    <div class="modal">
-        <h3 class="modal-title">➕ Yangi Foydalanuvchi</h3>
+<div id="addUserModal" class="modal" onclick="if(event.target===this) hideModal('addUserModal')">
+    <div class="modal-content">
+        <h3 class="modal-title">Yangi Foydalanuvchi Qo'shish</h3>
         <form action="/users/add" method="POST">
             <div class="form-group">
                 <label>Telegram ID</label>
-                <input type="number" name="telegram_id" class="form-input" required>
+                <input type="number" name="telegram_id" class="form-control" required>
             </div>
             <div class="form-group">
                 <label>To'liq Ism</label>
-                <input type="text" name="full_name" class="form-input" required>
+                <input type="text" name="full_name" class="form-control" required>
             </div>
             <div class="form-group">
-                <input type="checkbox" name="is_admin" id="addIsAdmin">
-                <label for="addIsAdmin" style="display:inline;margin-left:6px;cursor:pointer;">Admin</label>
+                <label style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" name="is_admin">
+                    Admin huquqi
+                </label>
             </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-outline btn-full" onclick="closeModal('addModal')">Bekor</button>
-                <button type="submit" class="btn btn-full">Qo'shish</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideModal('addUserModal')">Bekor</button>
+                <button type="submit" class="btn">Qo'shish</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Balance Modal -->
-<div id="balanceModal" class="modal-overlay" onclick="if(event.target===this) closeModal('balanceModal')">
-    <div class="modal">
-        <h3 class="modal-title">💰 Balans Qo'shish</h3>
-        <p id="balanceUserName" style="color:#666;margin-bottom:16px;"></p>
+<div id="balanceModal" class="modal" onclick="if(event.target===this) hideModal('balanceModal')">
+    <div class="modal-content">
+        <h3 class="modal-title">Balans Qo'shish</h3>
+        <p id="balanceUserName" style="margin-bottom:15px;color:#6c757d;"></p>
         <form id="balanceForm" method="POST">
             <div class="form-group">
                 <label>Summa (so'm)</label>
-                <input type="number" name="amount" class="form-input" required placeholder="50000">
+                <input type="number" name="amount" class="form-control" required placeholder="50000">
             </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-outline btn-full" onclick="closeModal('balanceModal')">Bekor</button>
-                <button type="submit" class="btn btn-full">Qo'shish</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideModal('balanceModal')">Bekor</button>
+                <button type="submit" class="btn">Qo'shish</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Payout Modal -->
-<div id="payoutModal" class="modal-overlay" onclick="if(event.target===this) closeModal('payoutModal')">
-    <div class="modal">
-        <h3 class="modal-title">💸 To'lovni Tasdiqlash</h3>
-        <p>Foydalanuvchi: <b id="payoutUserName"></b></p>
-        <p style="margin-bottom:20px;">Summa: <b id="payoutAmount"></b> so'm</p>
+<div id="payoutModal" class="modal" onclick="if(event.target===this) hideModal('payoutModal')">
+    <div class="modal-content">
+        <h3 class="modal-title">To'lovni Tasdiqlash</h3>
+        <p style="margin-bottom:8px;">Foydalanuvchi: <strong id="payoutUserName"></strong></p>
+        <p style="margin-bottom:20px;">To'lov summasi: <strong id="payoutAmount"></strong> so'm</p>
         <form id="payoutForm" method="POST">
-            <div class="modal-actions">
-                <button type="button" class="btn btn-outline btn-full" onclick="closeModal('payoutModal')">Bekor</button>
-                <button type="submit" class="btn btn-full">To'lab Berildi</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideModal('payoutModal')">Bekor</button>
+                <button type="submit" class="btn">To'lab Berildi</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Edit Modal -->
-<div id="editModal" class="modal-overlay" onclick="if(event.target===this) closeModal('editModal')">
-    <div class="modal">
-        <h3 class="modal-title">✏️ Tahrirlash</h3>
+<div id="editModal" class="modal" onclick="if(event.target===this) hideModal('editModal')">
+    <div class="modal-content">
+        <h3 class="modal-title">Foydalanuvchini Tahrirlash</h3>
         <form id="editForm" method="POST">
             <div class="form-group">
-                <label>Telegram ID</label>
-                <input type="number" id="editId" class="form-input" disabled style="opacity:0.6;">
+                <label>Telegram ID (O'zgarmas)</label>
+                <input type="number" id="editUserId" class="form-control" disabled style="background:#e9ecef;">
             </div>
             <div class="form-group">
                 <label>To'liq Ism</label>
-                <input type="text" name="full_name" id="editName" class="form-input" required>
+                <input type="text" name="full_name" id="editUserName" class="form-control" required>
             </div>
             <div class="form-group">
-                <input type="checkbox" name="is_admin" id="editIsAdmin">
-                <label for="editIsAdmin" style="display:inline;margin-left:6px;cursor:pointer;">Admin</label>
+                <label style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" name="is_admin" id="editUserAdmin">
+                    Admin huquqi
+                </label>
             </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-outline btn-full" onclick="closeModal('editModal')">Bekor</button>
-                <button type="submit" class="btn btn-full">Saqlash</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideModal('editModal')">Bekor</button>
+                <button type="submit" class="btn">Saqlash</button>
             </div>
         </form>
     </div>
@@ -441,47 +475,43 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-console.log('🚀 Dashboard loaded');
-
-// Modal functions
-function openModal(id) {
-    console.log('Opening modal:', id);
-    document.getElementById(id).classList.add('show');
+// SIMPLE MODAL FUNCTIONS
+function showModal(id) {
+    document.getElementById(id).classList.add('active');
 }
 
-function closeModal(id) {
-    console.log('Closing modal:', id);
-    document.getElementById(id).classList.remove('show');
+function hideModal(id) {
+    document.getElementById(id).classList.remove('active');
 }
 
-function openAddModal() {
-    openModal('addModal');
+function showAddUserModal() {
+    showModal('addUserModal');
 }
 
-function openBalanceModal(id, name) {
-    document.getElementById('balanceUserName').textContent = 'Foydalanuvchi: ' + name;
-    document.getElementById('balanceForm').action = '/users/add-balance/' + id;
-    openModal('balanceModal');
+function showBalanceModal(userId, userName) {
+    document.getElementById('balanceUserName').textContent = 'Foydalanuvchi: ' + userName;
+    document.getElementById('balanceForm').action = '/users/add-balance/' + userId;
+    showModal('balanceModal');
 }
 
-function openPayoutModal(id, name, amount) {
-    document.getElementById('payoutUserName').textContent = name;
+function showPayoutModal(userId, userName, amount) {
+    document.getElementById('payoutUserName').textContent = userName;
     document.getElementById('payoutAmount').textContent = amount.toLocaleString();
-    document.getElementById('payoutForm').action = '/users/payout/' + id;
-    openModal('payoutModal');
+    document.getElementById('payoutForm').action = '/users/payout/' + userId;
+    showModal('payoutModal');
 }
 
-function openEditModal(id, name, isAdmin) {
-    document.getElementById('editId').value = id;
-    document.getElementById('editName').value = name;
-    document.getElementById('editIsAdmin').checked = isAdmin;
-    document.getElementById('editForm').action = '/users/update/' + id;
-    openModal('editModal');
+function showEditModal(userId, userName, isAdmin) {
+    document.getElementById('editUserId').value = userId;
+    document.getElementById('editUserName').value = userName;
+    document.getElementById('editUserAdmin').checked = isAdmin === 1;
+    document.getElementById('editForm').action = '/users/update/' + userId;
+    showModal('editModal');
 }
 
-function updateFileCount() {
+function showFileCount() {
     const input = document.getElementById('fileInput');
-    const label = document.getElementById('file-label');
+    const label = document.getElementById('fileCount');
     if (input.files && input.files.length > 0) {
         label.textContent = input.files.length + ' ta fayl tanlandi';
     } else {
@@ -489,97 +519,82 @@ function updateFileCount() {
     }
 }
 
-// Charts
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('📊 Initializing charts...');
+// CHARTS
+window.addEventListener('DOMContentLoaded', function() {
+    const chartData = <%= JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+    const lifetimeStats = <%= JSON.stringify(typeof lifetimeStats !== 'undefined' ? lifetimeStats : []) %>;
 
-    try {
-        const chartData = <%= JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
-        const lifetimeStats = <%= JSON.stringify(typeof lifetimeStats !== 'undefined' ? lifetimeStats : []) %>;
-
-        console.log('Chart data:', chartData.length, 'items');
-        console.log('Lifetime data:', lifetimeStats.length, 'items');
-
-        // Lifetime Chart
-        const ctxLifetime = document.getElementById('lifetimeChart');
-        if (ctxLifetime) {
-            new Chart(ctxLifetime, {
-                type: 'bar',
-                data: {
-                    labels: lifetimeStats.map(d => {
-                        const date = new Date(d.day);
-                        return date.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' });
-                    }),
-                    datasets: [
-                        {
-                            label: 'Qabul',
-                            data: lifetimeStats.map(d => d.accepted),
-                            backgroundColor: '#22c55e',
-                            borderRadius: 4,
-                            stack: 'Stack 0'
-                        },
-                        {
-                            label: 'Rad',
-                            data: lifetimeStats.map(d => d.rejected),
-                            backgroundColor: '#ef4444',
-                            borderRadius: 4,
-                            stack: 'Stack 0'
-                        }
-                    ]
+    // Lifetime Chart
+    const ctxLifetime = document.getElementById('lifetimeChart');
+    if (ctxLifetime && lifetimeStats.length > 0) {
+        new Chart(ctxLifetime, {
+            type: 'bar',
+            data: {
+                labels: lifetimeStats.map(d => {
+                    const date = new Date(d.day);
+                    return date.getDate() + '/' + (date.getMonth() + 1);
+                }),
+                datasets: [{
+                    label: 'Qabul qilindi',
+                    data: lifetimeStats.map(d => d.accepted),
+                    backgroundColor: '#28a745',
+                    borderRadius: 4,
+                    stack: 'stack'
+                }, {
+                    label: 'Rad etildi',
+                    data: lifetimeStats.map(d => d.rejected),
+                    backgroundColor: '#dc3545',
+                    borderRadius: 4,
+                    stack: 'stack'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: true, beginAtZero: true }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { stacked: true, grid: { display: false } },
-                        y: { stacked: true, beginAtZero: true }
-                    },
-                    plugins: {
-                        legend: { position: 'top' }
-                    }
+                plugins: {
+                    legend: { position: 'top' }
                 }
-            });
-            console.log('✅ Lifetime chart created');
-        }
+            }
+        });
+    }
 
-        // Daily Chart
-        const ctxDaily = document.getElementById('dailyChart');
-        if (ctxDaily) {
-            new Chart(ctxDaily, {
-                type: 'line',
-                data: {
-                    labels: chartData.map(d => {
-                        const date = new Date(d.hour);
-                        return date.getHours() + ':00';
-                    }),
-                    datasets: [{
-                        label: 'Tekshiruvlar',
-                        data: chartData.map(d => d.count),
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59,130,246,0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false } },
-                        y: { beginAtZero: true }
-                    }
+    // Daily Chart
+    const ctxDaily = document.getElementById('dailyChart');
+    if (ctxDaily && chartData.length > 0) {
+        new Chart(ctxDaily, {
+            type: 'line',
+            data: {
+                labels: chartData.map(d => {
+                    const date = new Date(d.hour);
+                    return date.getHours() + ':00';
+                }),
+                datasets: [{
+                    label: 'Tekshiruvlar',
+                    data: chartData.map(d => d.count),
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0,123,255,0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true }
                 }
-            });
-            console.log('✅ Daily chart created');
-        }
-    } catch (error) {
-        console.error('❌ Chart error:', error);
+            }
+        });
     }
 });
-
-console.log('✅ All scripts loaded successfully');
 </script>
+
 </body>
 </html>
