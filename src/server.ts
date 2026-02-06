@@ -186,6 +186,64 @@ app.get('/dashboard', requireAuth, async (req, res) => {
     }
 });
 
+// DEBUG DASHBOARD - Remove after testing
+app.get('/dashboard-debug', requireAuth, async (req, res) => {
+    try {
+        const usersWithStats = await dbService.getDashboardUsers();
+        const pendingCount = await dbService.getPendingCount();
+        const transcriptionPendingCount = await dbService.getTranscriptionPendingCount();
+        const allStats = await dbService.getAllUserStats();
+        const totalAccepted = allStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+        const totalRejected = allStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
+        const durationStats = await dbService.getDurationStats();
+        const durationByStatus: Record<string, number> = {};
+        durationStats.forEach((s: any) => {
+            durationByStatus[s.status] = Number(s.total_seconds) || 0;
+        });
+
+        const totalCheckedDuration = (durationByStatus['ACCEPTED'] || 0) + (durationByStatus['REJECTED'] || 0);
+        const pendingDuration = durationByStatus['PENDING'] || 0;
+
+        const formatDuration = (sec: number) => {
+            const hours = Math.floor(sec / 3600);
+            const minutes = Math.floor((sec % 3600) / 60);
+            return `${hours}s ${minutes}m`;
+        };
+
+        const hourlyStats = await dbService.get24hHourlyStats();
+        const hourlyMap = new Map<string, number>();
+        hourlyStats.forEach((s: any) => {
+            const h = new Date(s.hour).toISOString();
+            hourlyMap.set(h, (hourlyMap.get(h) || 0) + Number(s.count));
+        });
+
+        const chartData = Array.from(hourlyMap.entries())
+            .map(([hour, count]) => ({ hour, count }))
+            .sort((a, b) => a.hour.localeCompare(b.hour));
+
+        const lifetimeStats = await dbService.getLifetimeDailyStats();
+
+        res.render('dashboard-debug', {
+            users: usersWithStats,
+            chartData,
+            lifetimeStats,
+            stats: {
+                pending: pendingCount,
+                transcriptionPending: transcriptionPendingCount,
+                totalAccepted,
+                totalRejected,
+                totalChecked: totalAccepted + totalRejected,
+                checkedDuration: formatDuration(totalCheckedDuration),
+                pendingDuration: formatDuration(pendingDuration)
+            }
+        });
+    } catch (err: any) {
+        console.error('Debug Dashboard error:', err);
+        res.status(500).send(`Server xatosi: ${err.message || err}`);
+    }
+});
+
 app.post('/users/add', requireAuth, async (req, res) => {
     const { telegram_id, full_name, is_admin } = req.body;
     try {

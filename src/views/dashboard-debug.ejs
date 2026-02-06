@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>DEBUG Dashboard</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn-danger { background: #dc3545; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        .modal.show { display: flex !important; align-items: center; justify-content: center; }
+        .modal-box { background: white; padding: 30px; border-radius: 8px; width: 400px; }
+        input, select { width: 100%; padding: 8px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<h1>🐛 DEBUG Dashboard</h1>
+<p style="color: red; font-weight: bold;">DEBUG MODE - Her tugma alert ko'rsatadi</p>
+
+<div class="card">
+    <h2>Stats</h2>
+    <p>Total: <%= stats.totalChecked %> | Accepted: <%= stats.totalAccepted %> | Rejected: <%= stats.totalRejected %> | Pending: <%= stats.pending %></p>
+</div>
+
+<div class="card">
+    <h2>Users</h2>
+    <button class="btn" onclick="testAddUser()">➕ TEST: Add User</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Balance</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% users.forEach(user => { %>
+            <tr>
+                <td><%= user.telegram_id %></td>
+                <td><%= user.full_name %></td>
+                <td><%= user.balance %> so'm</td>
+                <td>
+                    <button class="btn" onclick="testBalance(<%= user.telegram_id %>,'<%= user.full_name %>')">💰</button>
+                    <button class="btn" onclick="testPayout(<%= user.telegram_id %>,'<%= user.full_name %>',<%= user.balance %>)">💸</button>
+                    <button class="btn" onclick="testEdit(<%= user.telegram_id %>,'<%= user.full_name %>',<%= user.is_admin ? 1 : 0 %>)">✏️</button>
+                </td>
+            </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal" class="modal">
+    <div class="modal-box">
+        <h3>Add User</h3>
+        <form action="/users/add" method="POST">
+            <label>Telegram ID:</label>
+            <input type="number" name="telegram_id" required>
+            <label>Name:</label>
+            <input type="text" name="full_name" required>
+            <label><input type="checkbox" name="is_admin"> Admin</label>
+            <br><br>
+            <button type="button" class="btn btn-danger" onclick="closeAddModal()">Cancel</button>
+            <button type="submit" class="btn">Add</button>
+        </form>
+    </div>
+</div>
+
+<!-- Balance Modal -->
+<div id="balanceModal" class="modal">
+    <div class="modal-box">
+        <h3>Add Balance</h3>
+        <p id="balanceUser"></p>
+        <form id="balanceForm" method="POST">
+            <label>Amount (som):</label>
+            <input type="number" name="amount" required>
+            <br><br>
+            <button type="button" class="btn btn-danger" onclick="closeBalanceModal()">Cancel</button>
+            <button type="submit" class="btn">Add</button>
+        </form>
+    </div>
+</div>
+
+<!-- Payout Modal -->
+<div id="payoutModal" class="modal">
+    <div class="modal-box">
+        <h3>Confirm Payout</h3>
+        <p>User: <strong id="payoutUser"></strong></p>
+        <p>Amount: <strong id="payoutAmount"></strong> som</p>
+        <form id="payoutForm" method="POST">
+            <button type="button" class="btn btn-danger" onclick="closePayoutModal()">Cancel</button>
+            <button type="submit" class="btn">Confirm</button>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-box">
+        <h3>Edit User</h3>
+        <form id="editForm" method="POST">
+            <label>Telegram ID:</label>
+            <input type="number" id="editId" disabled>
+            <label>Name:</label>
+            <input type="text" name="full_name" id="editName" required>
+            <label><input type="checkbox" name="is_admin" id="editAdmin"> Admin</label>
+            <br><br>
+            <button type="button" class="btn btn-danger" onclick="closeEditModal()">Cancel</button>
+            <button type="submit" class="btn">Save</button>
+        </form>
+    </div>
+</div>
+
+<div class="card" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+    <h3>🐛 DEBUG LOG</h3>
+    <div id="debugLog" style="font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;"></div>
+</div>
+
+<script>
+// DEBUG LOGGER
+function log(message) {
+    console.log('DEBUG:', message);
+    const logDiv = document.getElementById('debugLog');
+    const time = new Date().toLocaleTimeString();
+    logDiv.innerHTML += time + ' - ' + message + '<br>';
+    logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+log('✅ Page loaded successfully');
+log('✅ Script initialized');
+
+// TEST FUNCTIONS
+function testAddUser() {
+    alert('🟢 ADD USER BUTTON CLICKED!\n\nIf you see this, JavaScript is working!');
+    log('🟢 testAddUser() called');
+
+    const modal = document.getElementById('addModal');
+    log('Modal element: ' + (modal ? 'FOUND ✅' : 'NOT FOUND ❌'));
+
+    if (modal) {
+        modal.classList.add('show');
+        log('Modal class added: show');
+        log('Modal display: ' + window.getComputedStyle(modal).display);
+    }
+}
+
+function closeAddModal() {
+    log('closeAddModal() called');
+    document.getElementById('addModal').classList.remove('show');
+}
+
+function testBalance(userId, userName) {
+    alert('🟢 BALANCE BUTTON CLICKED!\n\nUser ID: ' + userId + '\nName: ' + userName);
+    log('🟢 testBalance() called - User: ' + userName);
+
+    const modal = document.getElementById('balanceModal');
+    if (modal) {
+        document.getElementById('balanceUser').textContent = 'User: ' + userName;
+        document.getElementById('balanceForm').action = '/users/add-balance/' + userId;
+        modal.classList.add('show');
+        log('Balance modal opened for user ' + userId);
+    } else {
+        log('❌ Balance modal NOT FOUND');
+    }
+}
+
+function closeBalanceModal() {
+    log('closeBalanceModal() called');
+    document.getElementById('balanceModal').classList.remove('show');
+}
+
+function testPayout(userId, userName, amount) {
+    alert('🟢 PAYOUT BUTTON CLICKED!\n\nUser: ' + userName + '\nAmount: ' + amount);
+    log('🟢 testPayout() called - User: ' + userName + ', Amount: ' + amount);
+
+    const modal = document.getElementById('payoutModal');
+    if (modal) {
+        document.getElementById('payoutUser').textContent = userName;
+        document.getElementById('payoutAmount').textContent = amount.toLocaleString();
+        document.getElementById('payoutForm').action = '/users/payout/' + userId;
+        modal.classList.add('show');
+        log('Payout modal opened for user ' + userId);
+    } else {
+        log('❌ Payout modal NOT FOUND');
+    }
+}
+
+function closePayoutModal() {
+    log('closePayoutModal() called');
+    document.getElementById('payoutModal').classList.remove('show');
+}
+
+function testEdit(userId, userName, isAdmin) {
+    alert('🟢 EDIT BUTTON CLICKED!\n\nUser: ' + userName + '\nAdmin: ' + (isAdmin ? 'Yes' : 'No'));
+    log('🟢 testEdit() called - User: ' + userName + ', Admin: ' + isAdmin);
+
+    const modal = document.getElementById('editModal');
+    if (modal) {
+        document.getElementById('editId').value = userId;
+        document.getElementById('editName').value = userName;
+        document.getElementById('editAdmin').checked = isAdmin === 1;
+        document.getElementById('editForm').action = '/users/update/' + userId;
+        modal.classList.add('show');
+        log('Edit modal opened for user ' + userId);
+    } else {
+        log('❌ Edit modal NOT FOUND');
+    }
+}
+
+function closeEditModal() {
+    log('closeEditModal() called');
+    document.getElementById('editModal').classList.remove('show');
+}
+
+// Click outside to close
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            log('Clicked outside modal, closing...');
+            this.classList.remove('show');
+        }
+    });
+});
+
+log('✅ All event listeners attached');
+log('🎯 Ready for testing!');
+</script>
+
+</body>
+</html>
