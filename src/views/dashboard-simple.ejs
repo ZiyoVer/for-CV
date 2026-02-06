@@ -13,8 +13,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            background: #f8f9fa;
+            color: #2d3748;
             padding: 20px;
         }
 
@@ -25,73 +25,64 @@
 
         /* Header */
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px 35px;
-            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .header-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        h2 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #2d3748;
         }
 
         /* Buttons */
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
+            background: #3182ce;
+            color: white;
             border: none;
-            padding: 12px 28px;
+            padding: 10px 20px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             text-decoration: none;
             display: inline-block;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            border-radius: 6px;
+            transition: background 0.2s;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            background: #2c5aa0;
         }
 
         .btn-outline {
             background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
-            box-shadow: none;
+            color: #3182ce;
+            border: 1px solid #e2e8f0;
         }
 
         .btn-outline:hover {
-            background: #667eea;
-            color: white;
+            background: #f7fafc;
         }
 
         .btn-small {
-            padding: 8px 16px;
+            padding: 6px 12px;
             font-size: 13px;
         }
 
-        /* Stats */
-        .stats {
+        /* Stats Grid */
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
@@ -100,79 +91,69 @@
 
         .stat-card {
             background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+            padding: 24px;
+            border-radius: 8px;
+            border-left: 4px solid #3182ce;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             position: relative;
-            overflow: hidden;
         }
 
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        .stat-card.accepted {
+            border-left-color: #38a169;
         }
 
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+        .stat-card.rejected {
+            border-left-color: #e53e3e;
         }
 
-        .stat-card.accepted::before {
-            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+        .stat-card.pending {
+            border-left-color: #dd6b20;
         }
 
-        .stat-card.rejected::before {
-            background: linear-gradient(90deg, #eb3349 0%, #f45c43 100%);
-        }
-
-        .stat-card.pending::before {
-            background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
         .stat-label {
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             color: #718096;
-            margin-bottom: 12px;
+        }
+
+        .stat-icon {
+            width: 32px;
+            height: 32px;
+            background: #f7fafc;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #718096;
+            font-size: 18px;
         }
 
         .stat-value {
-            font-size: 48px;
+            font-size: 36px;
             font-weight: 700;
-            margin-bottom: 5px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #3182ce;
+            margin-bottom: 4px;
         }
 
         .stat-card.accepted .stat-value {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #38a169;
         }
 
         .stat-card.rejected .stat-value {
-            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #e53e3e;
         }
 
         .stat-card.pending .stat-value {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #dd6b20;
         }
 
         .stat-subtext {
@@ -180,43 +161,43 @@
             color: #a0aec0;
         }
 
-        /* Card */
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        /* Section */
+        .section {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 20px;
         }
 
         /* Table */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
 
         th {
             text-align: left;
-            padding: 15px 12px;
-            font-size: 11px;
-            font-weight: 700;
+            padding: 12px;
+            font-size: 12px;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             color: #718096;
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         td {
-            padding: 18px 12px;
+            padding: 16px 12px;
             border-bottom: 1px solid #f7fafc;
             font-size: 14px;
-            color: #2d3748;
-        }
-
-        tbody tr {
-            transition: all 0.2s ease;
         }
 
         tbody tr:hover {
@@ -227,35 +208,33 @@
         input[type="text"],
         input[type="number"],
         input[type="file"] {
-            border: 2px solid #e2e8f0;
-            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            padding: 10px 12px;
             font-size: 14px;
             background: white;
             color: #2d3748;
-            border-radius: 10px;
+            border-radius: 6px;
             font-family: inherit;
-            transition: all 0.3s ease;
+            transition: border-color 0.2s;
         }
 
         input[type="text"]:focus,
         input[type="number"]:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #3182ce;
         }
 
         input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             cursor: pointer;
         }
 
         .form-inline {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
-            margin-top: 20px;
         }
 
         .form-inline input[type="text"],
@@ -266,7 +245,7 @@
 
         label {
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 500;
             color: #4a5568;
             display: flex;
             align-items: center;
@@ -276,39 +255,27 @@
         /* User Actions */
         .user-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
         }
 
         /* Expandable Forms */
         .expandable-form {
             display: none;
-            margin-top: 15px;
-            padding: 20px;
-            border-radius: 12px;
+            margin-top: 12px;
+            padding: 16px;
+            border-radius: 6px;
             background: #f7fafc;
-            border: 2px solid #e2e8f0;
+            border: 1px solid #e2e8f0;
         }
 
         .expandable-form.show {
             display: block;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         /* Responsive */
         @media (max-width: 1024px) {
-            .stats {
+            .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
@@ -318,22 +285,16 @@
                 padding: 15px;
             }
 
-            .stats {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
 
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-
             h1 {
-                font-size: 24px;
+                font-size: 22px;
             }
 
             .stat-value {
-                font-size: 36px;
+                font-size: 28px;
             }
         }
     </style>
@@ -342,47 +303,65 @@
 
 <div class="container">
     <!-- Header -->
-    <div class="header">
-        <h1>STT ADMIN</h1>
+    <div class="header-actions">
+        <div class="header">
+            <h1>Dashboard</h1>
+            <p class="subtitle">Platforma statistikasi va foydalanuvchilar boshqaruvi</p>
+        </div>
         <a href="/logout" class="btn">Chiqish</a>
     </div>
 
-    <!-- Stats -->
-    <div class="stats">
+    <!-- Stats Grid -->
+    <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-label">Total</div>
+            <div class="stat-header">
+                <div class="stat-label">Total Checked</div>
+                <div class="stat-icon">📊</div>
+            </div>
             <div class="stat-value"><%= stats.totalChecked %></div>
-            <div class="stat-subtext">tekshirilgan</div>
+            <div class="stat-subtext">ta fayl tekshirildi</div>
         </div>
+
         <div class="stat-card accepted">
-            <div class="stat-label">Accepted</div>
+            <div class="stat-header">
+                <div class="stat-label">Accepted</div>
+                <div class="stat-icon">✓</div>
+            </div>
             <div class="stat-value"><%= stats.totalAccepted %></div>
             <div class="stat-subtext"><%= stats.checkedDuration %></div>
         </div>
+
         <div class="stat-card rejected">
-            <div class="stat-label">Rejected</div>
+            <div class="stat-header">
+                <div class="stat-label">Rejected</div>
+                <div class="stat-icon">✕</div>
+            </div>
             <div class="stat-value"><%= stats.totalRejected %></div>
-            <div class="stat-subtext">rad etilgan</div>
+            <div class="stat-subtext">ta fayl rad etildi</div>
         </div>
+
         <div class="stat-card pending">
-            <div class="stat-label">Pending</div>
+            <div class="stat-header">
+                <div class="stat-label">Pending</div>
+                <div class="stat-icon">⏱</div>
+            </div>
             <div class="stat-value"><%= stats.pending %></div>
             <div class="stat-subtext"><%= stats.pendingDuration %></div>
         </div>
     </div>
 
-    <!-- Upload -->
-    <div class="card">
-        <h2>☁️ Audio Yuklash</h2>
-        <form action="/transcription/upload" method="POST" enctype="multipart/form-data" style="display: flex; gap: 15px; align-items: center; margin-top: 20px;">
+    <!-- Upload Section -->
+    <div class="section">
+        <h2 class="section-title">Audio Yuklash</h2>
+        <form action="/transcription/upload" method="POST" enctype="multipart/form-data" style="display: flex; gap: 12px; align-items: center;">
             <input type="file" name="audioFiles" multiple accept="audio/*" required style="flex: 1;">
             <button type="submit" class="btn">Yuklash</button>
         </form>
     </div>
 
-    <!-- Add User -->
-    <div class="card">
-        <h2>➕ Yangi Foydalanuvchi</h2>
+    <!-- Add User Section -->
+    <div class="section">
+        <h2 class="section-title">Yangi Foydalanuvchi Qo'shish</h2>
         <form action="/users/add" method="POST" class="form-inline">
             <input type="number" name="telegram_id" placeholder="Telegram ID" required>
             <input type="text" name="full_name" placeholder="Ism Familiya" required>
@@ -395,16 +374,16 @@
     </div>
 
     <!-- Users Table -->
-    <div class="card">
-        <h2>👥 Foydalanuvchilar (<%= users.length %>)</h2>
+    <div class="section">
+        <h2 class="section-title">Foydalanuvchilar (<%= users.length %>)</h2>
         <table>
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Ism</th>
                     <th>Bugun</th>
-                    <th>OK</th>
-                    <th>NO</th>
+                    <th>Jami OK</th>
+                    <th>Jami NO</th>
                     <th>Balans</th>
                     <th>Amallar</th>
                 </tr>
@@ -415,11 +394,11 @@
                     <td style="font-family: monospace; font-weight: 600;"><%= user.telegram_id %></td>
                     <td style="font-weight: 500;">
                         <%= user.full_name %>
-                        <% if(user.is_admin) { %> <span style="color: #667eea;">●</span><% } %>
+                        <% if(user.is_admin) { %> <span style="color: #3182ce;">●</span><% } %>
                     </td>
                     <td>
                         <% if(user.checks_today > 0) { %>
-                            <span style="color: #38ef7d; font-weight: 700;">+<%= user.checks_today %></span>
+                            <span style="color: #38a169; font-weight: 600;">+<%= user.checks_today %></span>
                         <% } else { %>—<% } %>
                     </td>
                     <td><%= user.total_accepted || 0 %></td>
