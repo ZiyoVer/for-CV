@@ -7,7 +7,7 @@
     <title>STT Admin - Premium Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         :root {
             --bg: #ffffff;
@@ -743,7 +743,7 @@
                                         </button>
                                         <button class="action-btn" title="Payout" data-id="<%= user.telegram_id %>"
                                             data-name="<%= user.full_name %>" data-amount="<%= user.balance || 0 %>"
-                                            onclick="openPayoutModal(this.dataset.id, this.dataset.name, this.dataset.amount)">
+                                            onclick="openPayoutModal(this.dataset.id, this.dataset.name, Number(this.dataset.amount))">
                                             <i data-lucide="arrow-up-right" size="14"></i>
                                         </button>
                                         <button class="action-btn" title="Tahrirlash" data-id="<%= user.telegram_id %>"
@@ -866,10 +866,10 @@
 
     <script>
         // Icons
-        if (typeof lucide !== 'undefined') {
+        try {
             lucide.createIcons();
-        } else {
-            console.warn('Lucide icons library not loaded');
+        } catch (e) {
+            console.error('Lucide icons failed to load:', e);
         }
 
         // Toast Logic
