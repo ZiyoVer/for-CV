@@ -31,9 +31,18 @@ export const s3Service = {
             const response = await s3.send(command);
             const files = response.Contents || [];
 
-            for (const file of files) {
-                if (file.Key && file.Key.endsWith('.wav')) {
-                    if (file.Key.startsWith('saralangan/')) continue;
+            // Process in batches of 10 for better performance
+            const BATCH_SIZE = 10;
+            const wavFiles = files.filter(file =>
+                file.Key &&
+                file.Key.endsWith('.wav') &&
+                !file.Key.startsWith('saralangan/')
+            );
+
+            for (let i = 0; i < wavFiles.length; i += BATCH_SIZE) {
+                const batch = wavFiles.slice(i, i + BATCH_SIZE);
+                await Promise.all(batch.map(async (file) => {
+                    if (!file.Key) return;
 
                     // Try to get duration from JSON first
                     let duration = 0;
@@ -45,8 +54,8 @@ export const s3Service = {
                     } catch (e) { }
 
                     await dbService.addFile(file.Key, duration);
-                    count++;
-                }
+                }));
+                count += batch.length;
             }
 
             continuationToken = response.NextContinuationToken;
@@ -182,13 +191,21 @@ export const s3Service = {
             const response = await s3.send(command);
             const files = response.Contents || [];
 
-            for (const file of files) {
-                if (file.Key && file.Key.endsWith('.wav')) {
-                    if (file.Key.includes('saralangan/')) continue;
+            // Process in batches of 10 for better performance
+            const BATCH_SIZE = 10;
+            const wavFiles = files.filter(file =>
+                file.Key &&
+                file.Key.endsWith('.wav') &&
+                !file.Key.includes('saralangan/')
+            );
 
+            for (let i = 0; i < wavFiles.length; i += BATCH_SIZE) {
+                const batch = wavFiles.slice(i, i + BATCH_SIZE);
+                await Promise.all(batch.map(async (file) => {
+                    if (!file.Key) return;
                     await dbService.addTranscriptionFile(file.Key);
-                    count++;
-                }
+                }));
+                count += batch.length;
             }
 
             continuationToken = response.NextContinuationToken;

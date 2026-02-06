@@ -3,6 +3,8 @@ import session from 'express-session';
 import bodyParser from 'body-parser';
 import multer from 'multer';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import csrf from 'csurf';
 import path from 'path';
 import { config } from './config';
 import { dbService } from './services/db';
@@ -51,12 +53,33 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 60 * 60 * 1000, // 1 hour (improved from 24h)
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // Secure cookies in prod
         sameSite: 'lax'
-    }
+    },
+    rolling: true // Reset expiry on each request
 }));
+
+// CSRF Protection (must come after session)
+const csrfProtection = csrf({ cookie: false }); // Use session-based tokens
+
+// Rate limiting for login
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 login attempts per window
+    message: 'Juda ko\'p urinish. 15 daqiqadan keyin qayta urinib ko\'ring.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// General API rate limiter
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // Auth middleware
 function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -73,7 +96,7 @@ app.get('/login', (req, res) => {
     res.render('login', { error: null });
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', loginLimiter, (req, res) => {
     const { password } = req.body;
     if (password === config.ADMIN_PASSWORD) {
         (req.session as any).isAdmin = true;
@@ -89,7 +112,7 @@ app.get('/logout', (req, res) => {
     });
 });
 
-app.get('/dashboard', requireAuth, async (req, res) => {
+app.get('/dashboard', requireAuth, csrfProtection, async (req, res) => {
     try {
         // OPTIMIZED: Get all user stats in one query
         const usersWithStats = await dbService.getDashboardUsers();
@@ -145,7 +168,8 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 totalChecked: totalAccepted + totalRejected,
                 checkedDuration: formatDuration(totalCheckedDuration),
                 pendingDuration: formatDuration(pendingDuration)
-            }
+            },
+            csrfToken: req.csrfToken()
         });
     } catch (err: any) {
         console.error('Dashboard error:', err);
@@ -154,7 +178,7 @@ app.get('/dashboard', requireAuth, async (req, res) => {
     }
 });
 
-app.post('/users/add', requireAuth, async (req, res) => {
+app.post('/users/add', requireAuth, csrfProtection, async (req, res) => {
     const { telegram_id, full_name, is_admin } = req.body;
     try {
         await dbService.addUser(Number(telegram_id), full_name, is_admin ? 1 : 0);
@@ -165,7 +189,7 @@ app.post('/users/add', requireAuth, async (req, res) => {
     }
 });
 
-app.post('/users/payout/:id', requireAuth, async (req, res) => {
+app.post('/users/payout/:id', requireAuth, csrfProtection, async (req, res) => {
     const userId = Number(req.params.id);
     try {
         await dbService.resetBalance(userId);
@@ -177,7 +201,7 @@ app.post('/users/payout/:id', requireAuth, async (req, res) => {
 });
 
 // Add balance manually (for missed payments)
-app.post('/users/add-balance/:id', requireAuth, async (req, res) => {
+app.post('/users/add-balance/:id', requireAuth, csrfProtection, async (req, res) => {
     const userId = Number(req.params.id);
     const amount = Number(req.body.amount) || 0;
     try {
@@ -190,7 +214,7 @@ app.post('/users/add-balance/:id', requireAuth, async (req, res) => {
 });
 
 // Update user (change telegram_id, name, admin status)
-app.post('/users/update/:id', requireAuth, async (req, res) => {
+app.post('/users/update/:id', requireAuth, csrfProtection, async (req, res) => {
     const oldId = Number(req.params.id);
     const { telegram_id, full_name, is_admin } = req.body;
     try {
@@ -208,7 +232,7 @@ app.post('/users/update/:id', requireAuth, async (req, res) => {
 });
 
 // Delete user
-app.post('/users/delete/:id', requireAuth, async (req, res) => {
+app.post('/users/delete/:id', requireAuth, csrfProtection, async (req, res) => {
     const userId = Number(req.params.id);
     try {
         await dbService.deleteUser(userId);
@@ -243,7 +267,7 @@ app.get('/review/:id', requireAuth, async (req, res) => {
     }
 });
 
-app.post('/review/penalty/:id', requireAuth, async (req, res) => {
+app.post('/review/penalty/:id', requireAuth, csrfProtection, async (req, res) => {
     const userId = Number(req.params.id);
     try {
         await dbService.reduceBalanceByPercent(userId, 50);
@@ -257,7 +281,7 @@ app.post('/review/penalty/:id', requireAuth, async (req, res) => {
 // ========== TRANSCRIPTION AUDIO UPLOAD ==========
 
 // Upload transcription audio files
-app.post('/transcription/upload', requireAuth, upload.array('audioFiles', 100), async (req, res) => {
+app.post('/transcription/upload', requireAuth, csrfProtection, upload.array('audioFiles', 100), async (req, res) => {
     try {
         const files = req.files as Express.Multer.File[];
         if (!files || files.length === 0) {
@@ -284,7 +308,7 @@ app.post('/transcription/upload', requireAuth, upload.array('audioFiles', 100), 
 });
 
 // API: Get transcription stats
-app.get('/api/transcription-stats', requireAuth, async (req, res) => {
+app.get('/api/transcription-stats', requireAuth, apiLimiter, async (req, res) => {
     try {
         const pendingCount = await dbService.getTranscriptionPendingCount();
         const allStats = await dbService.getAllTranscriptionStats();
@@ -329,7 +353,7 @@ app.get('/leaderboard', async (req, res) => {
 });
 
 // API: Get Lifetime Statistics (Last 30 days)
-app.get('/api/lifetime-stats', requireAuth, async (req, res) => {
+app.get('/api/lifetime-stats', requireAuth, apiLimiter, async (req, res) => {
     try {
         const stats = await dbService.getLifetimeDailyStats();
         res.json({
@@ -343,7 +367,7 @@ app.get('/api/lifetime-stats', requireAuth, async (req, res) => {
 });
 
 // API: Get 24-hour hourly statistics for chart
-app.get('/api/hourly-stats', requireAuth, async (req, res) => {
+app.get('/api/hourly-stats', requireAuth, apiLimiter, async (req, res) => {
     try {
         const hourlyStats = await dbService.get24hHourlyStats();
 
@@ -389,7 +413,8 @@ app.get('/api/hourly-stats', requireAuth, async (req, res) => {
 });
 
 // JSON API for live updates (polling every 5 seconds)
-app.get('/api/leaderboard', async (req, res) => {
+// Public API with rate limiting
+app.get('/api/leaderboard', apiLimiter, async (req, res) => {
     try {
         const allStats = await dbService.getAllUserStats();
 

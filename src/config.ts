@@ -21,36 +21,100 @@ export const config = {
     PGDATABASE: process.env.PGDATABASE || '',
     PGSSL: ['true', '1'].includes((process.env.PGSSL || '').toLowerCase()),
 
-    // Timeout for locked files (e.g. 30 mins)
-    LOCK_TIMEOUT_MS: 30 * 60 * 1000,
+    // Payment settings
+    FREE_CHECKS_LIMIT: Number(process.env.FREE_CHECKS_LIMIT || '20'),
+    CHECK_PRICE: Number(process.env.CHECK_PRICE || '30'), // so'm
+
+    // Timeouts and intervals
+    LOCK_TIMEOUT_MS: Number(process.env.LOCK_TIMEOUT_MS || String(5 * 60 * 1000)), // 5 minutes
+    SYNC_INTERVAL_MS: Number(process.env.SYNC_INTERVAL_MS || String(30 * 60 * 1000)), // 30 minutes
+
+    // File upload limits
+    MAX_UPLOAD_SIZE: Number(process.env.MAX_UPLOAD_SIZE || '52428800'), // 50MB
+    MAX_FILES_PER_UPLOAD: Number(process.env.MAX_FILES_PER_UPLOAD || '100'),
 
     // Web UI
     PORT: Number(process.env.PORT) || 3000,
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
-    SESSION_SECRET: process.env.SESSION_SECRET || 'dev-secret-do-not-use-in-prod'
+    SESSION_SECRET: process.env.SESSION_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-secret-do-not-use-in-prod')
 };
 
-if (!config.TELEGRAM_BOT_TOKEN) console.warn('Warning: TELEGRAM_BOT_TOKEN is missing');
-if (!config.DATABASE_URL && (!config.PGUSER || !config.PGDATABASE)) console.warn('Warning: PostgreSQL connection details are missing');
+// Validate configuration
+function validateConfig() {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const errors: string[] = [];
+    const warnings: string[] = [];
 
-// Security checks
-if (!config.ADMIN_PASSWORD) {
-    if (process.env.NODE_ENV === 'production') {
-        throw new Error('CRITICAL: ADMIN_PASSWORD is missing in production!');
-    } else {
-        console.warn('Warning: ADMIN_PASSWORD is missing. Using default "admin" for development.');
-        (config as any).ADMIN_PASSWORD = 'admin';
+    // Critical checks - throw errors in production
+    if (!config.TELEGRAM_BOT_TOKEN) {
+        warnings.push('TELEGRAM_BOT_TOKEN is missing');
+        if (isProduction) errors.push('TELEGRAM_BOT_TOKEN is required in production');
+    }
+
+    if (!config.WASABI_ACCESS_KEY || !config.WASABI_SECRET_KEY || !config.WASABI_BUCKET) {
+        warnings.push('Wasabi S3 credentials are incomplete');
+        if (isProduction) errors.push('Wasabi S3 credentials are required in production');
+    }
+
+    if (!config.DATABASE_URL && (!config.PGUSER || !config.PGDATABASE)) {
+        warnings.push('PostgreSQL connection details are missing');
+        if (isProduction) errors.push('PostgreSQL connection is required in production');
+    }
+
+    if (!config.ADMIN_PASSWORD) {
+        if (isProduction) {
+            errors.push('ADMIN_PASSWORD is required in production');
+        } else {
+            warnings.push('ADMIN_PASSWORD is missing. Using default "admin" for development');
+            (config as any).ADMIN_PASSWORD = 'admin';
+        }
+    }
+
+    if (!config.SESSION_SECRET || config.SESSION_SECRET === 'dev-secret-do-not-use-in-prod') {
+        if (isProduction) {
+            errors.push('SESSION_SECRET must be set in production (not default)');
+        } else {
+            warnings.push('SESSION_SECRET is using default value for development');
+        }
+    }
+
+    // Log warnings
+    warnings.forEach(msg => console.warn(`[CONFIG WARNING] ${msg}`));
+
+    // Throw errors if any
+    if (errors.length > 0) {
+        throw new Error(`Configuration errors:\n${errors.map(e => `  - ${e}`).join('\n')}`);
     }
 }
 
-if (config.SESSION_SECRET === 'dev-secret-do-not-use-in-prod' && process.env.NODE_ENV === 'production') {
-    throw new Error('CRITICAL: SESSION_SECRET is missing or default in production!');
-}
+// Run validation
+validateConfig();
+
+// SSL configuration - only disable verification for custom CA or development
+const getSslConfig = () => {
+    if (!config.PGSSL) return undefined;
+
+    // In production, prefer secure SSL
+    if (process.env.NODE_ENV === 'production') {
+        // Allow custom CA certificate if provided
+        if (process.env.PGSSLROOTCERT) {
+            return {
+                rejectUnauthorized: true,
+                ca: process.env.PGSSLROOTCERT
+            };
+        }
+        // Use secure SSL by default in production
+        return { rejectUnauthorized: true };
+    }
+
+    // In development, allow self-signed certificates
+    return { rejectUnauthorized: false };
+};
 
 export const pgConfig = config.DATABASE_URL
     ? {
         connectionString: config.DATABASE_URL,
-        ssl: config.PGSSL ? { rejectUnauthorized: false } : undefined
+        ssl: getSslConfig()
     }
     : {
         host: config.PGHOST,
@@ -58,8 +122,5 @@ export const pgConfig = config.DATABASE_URL
         user: config.PGUSER,
         password: config.PGPASSWORD,
         database: config.PGDATABASE,
-        ssl: config.PGSSL ? { rejectUnauthorized: false } : undefined
+        ssl: getSslConfig()
     };
-
-if (!config.TELEGRAM_BOT_TOKEN) console.warn('Warning: TELEGRAM_BOT_TOKEN is missing');
-if (!config.DATABASE_URL && (!config.PGUSER || !config.PGDATABASE)) console.warn('Warning: PostgreSQL connection details are missing');

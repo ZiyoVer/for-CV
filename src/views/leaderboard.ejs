@@ -371,13 +371,20 @@
 
                     const body = document.getElementById('leaderboardBody');
 
+                    // Helper function to escape HTML
+                    const escapeHtml = (text) => {
+                        const div = document.createElement('div');
+                        div.textContent = text;
+                        return div.innerHTML;
+                    };
+
                     if (data.leaderboard.length === 0) {
                         body.innerHTML = '<div class="empty-state">Hali hech kim tekshirmagan.</div>';
                     } else {
                         body.innerHTML = data.leaderboard.map(user => `
                             <div class="leaderboard-row rank-${user.rank}">
                                 <div class="rank">${user.rank}</div>
-                                <div class="name">${user.name}</div>
+                                <div class="name">${escapeHtml(user.name)}</div>
                                 <div class="stat accepted">${user.accepted}</div>
                                 <div class="stat rejected">${user.rejected}</div>
                                 <div class="stat total">${user.total}</div>

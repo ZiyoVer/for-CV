@@ -25,6 +25,9 @@ const initTablesQuery = `
 
     CREATE INDEX IF NOT EXISTS idx_files_status ON files(status);
     CREATE INDEX IF NOT EXISTS idx_files_assigned ON files(assigned_to) WHERE assigned_to IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_files_processed_at ON files(processed_at) WHERE processed_at IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_files_status_created ON files(status, locked_at);
+    CREATE INDEX IF NOT EXISTS idx_files_locked_by ON files(assigned_to) WHERE assigned_to IS NOT NULL AND status = 'LOCKED';
 
     CREATE TABLE IF NOT EXISTS transcription_files (
         file_key TEXT PRIMARY KEY,
@@ -38,6 +41,9 @@ const initTablesQuery = `
 
     CREATE INDEX IF NOT EXISTS idx_transcription_status ON transcription_files(status);
     CREATE INDEX IF NOT EXISTS idx_transcription_assigned ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_transcription_processed_at ON transcription_files(processed_at) WHERE processed_at IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_transcription_status_created ON transcription_files(status, locked_at);
+    CREATE INDEX IF NOT EXISTS idx_transcription_locked_by ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL AND status = 'LOCKED';
 
     CREATE TABLE IF NOT EXISTS bot_state (
         user_id BIGINT PRIMARY KEY,
@@ -148,14 +154,27 @@ export const dbService = {
         );
     },
 
-    deleteUser: async (telegramId: number) => {
-        // First release any locked files
-        await pool.query(
-            'UPDATE files SET status = $1, assigned_to = NULL, locked_at = NULL WHERE assigned_to = $2 AND status = $3',
-            ['PENDING', telegramId, 'LOCKED']
-        );
-        // Then delete user
-        await pool.query('DELETE FROM users WHERE telegram_id = $1', [telegramId]);
+    deleteUser: async (telegramId: number): Promise<void> => {
+        return withTransaction<void>(async (client) => {
+            // Release all files (LOCKED, ACCEPTED, REJECTED) back to PENDING
+            await client.query(
+                `UPDATE files
+                 SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
+                 WHERE assigned_to = $1 AND status IN ('LOCKED', 'ACCEPTED', 'REJECTED')`,
+                [telegramId]
+            );
+
+            // Do same for transcription_files
+            await client.query(
+                `UPDATE transcription_files
+                 SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
+                 WHERE assigned_to = $1 AND status IN ('LOCKED', 'ACCEPTED', 'REJECTED')`,
+                [telegramId]
+            );
+
+            // Delete user
+            await client.query('DELETE FROM users WHERE telegram_id = $1', [telegramId]);
+        });
     },
 
     // --- FINANCIAL / STATS LOGIC ---
@@ -466,5 +485,11 @@ export const dbService = {
 
     deleteState: async (user_id: number) => {
         await pool.query('DELETE FROM bot_state WHERE user_id = $1', [user_id]);
+    },
+
+    // --- CLEANUP ---
+    close: async () => {
+        await pool.end();
+        console.log('Database pool closed');
     }
 };

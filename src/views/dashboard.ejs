@@ -663,6 +663,7 @@
                 (Max 100 ta)</p>
 
             <form action="/transcription/upload" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="file" name="audioFiles" id="fileInput" multiple accept="audio/*" style="display: none;"
                     onchange="updateFileCount()">
                 <button type="button" class="btn btn-outline" onclick="document.getElementById('fileInput').click()">
@@ -755,6 +756,7 @@
                                         <form action="/users/delete/<%= user.telegram_id %>" method="POST"
                                             onsubmit="return confirm('Ushbu foydalanuvchini o\'chirishni tasdiqlaysizmi?');"
                                             style="margin:0;">
+                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                             <button type="submit" class="action-btn" title="O'chirish"
                                                 style="color: #ef4444; border-color: #ef444450;">
                                                 <i data-lucide="trash-2" size="14"></i>
@@ -779,6 +781,7 @@
         <div class="modal">
             <h3 class="modal-title">Yangi Foydalanuvchi</h3>
             <form action="/users/add" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="form-group">
                     <label>Telegram ID</label>
                     <input type="number" name="telegram_id" class="form-input" required>
@@ -806,6 +809,7 @@
             <h3 class="modal-title">Balans Qo'shish</h3>
             <p id="balanceUserDisplay" style="margin-bottom: 20px; color: var(--text-muted); font-size: 14px;"></p>
             <form action="/add-balance" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="user_id" id="balanceUserId">
                 <div class="form-group">
                     <label>Summa (so'm)</label>
@@ -825,6 +829,7 @@
         <div class="modal">
             <h3 class="modal-title">Foydalanuvchini Tahrirlash</h3>
             <form id="editUserForm" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="form-group">
                     <label>Telegram ID (O'zgarmas)</label>
                     <input type="number" id="editUserIdDisplay" class="form-input" disabled style="opacity: 0.7;">
@@ -854,6 +859,7 @@
             <p style="margin-bottom: 24px;">To'lanadigan summa: <b id="payoutAmount"></b> so'm</p>
 
             <form action="/payout" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="user_id" id="payoutUserId">
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline btn-full"
@@ -933,6 +939,8 @@
         function openBalanceModal(id, name) {
             document.getElementById('balanceUserId').value = id;
             document.getElementById('balanceUserDisplay').textContent = 'Foydalanuvchi: ' + name;
+            // Set form action dynamically
+            document.querySelector('#balanceModal form').action = `/users/add-balance/${id}`;
             openModal('balanceModal');
         }
 
@@ -940,6 +948,8 @@
             document.getElementById('payoutUserId').value = id;
             document.getElementById('payoutUserName').textContent = name;
             document.getElementById('payoutAmount').textContent = amount.toLocaleString();
+            // Set form action dynamically
+            document.querySelector('#payoutModal form').action = `/users/payout/${id}`;
             openModal('payoutModal');
         }
 
@@ -999,10 +1009,10 @@
         let lifetimeChart;
 
         document.addEventListener('DOMContentLoaded', () => {
-            const chartData = <% - JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+            const chartData = <%- JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
 
             // Lifetime Chart Logic
-            const lifetimeStats = <% - JSON.stringify(typeof lifetimeStats !== 'undefined' ? lifetimeStats : []) %>;
+            const lifetimeStats = <%- JSON.stringify(typeof lifetimeStats !== 'undefined' ? lifetimeStats : []) %>;
             const ctxLifetime = document.getElementById('lifetimeChart');
 
             if (ctxLifetime) {

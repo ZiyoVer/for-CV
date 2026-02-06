@@ -4,8 +4,23 @@ import { s3Service } from './services/s3';
 import { dbService } from './services/db';
 import { statsService } from './services/stats';
 import { parseBuffer } from 'music-metadata';
+import { Logger } from './utils/logger';
 
 export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
+
+// Track intervals for cleanup
+const intervals: NodeJS.Timeout[] = [];
+
+// State management types
+interface BotState {
+    fileKey?: string;
+    tempText?: string;
+    [key: string]: any;
+}
+
+function isValidState(data: any): data is BotState {
+    return data && typeof data === 'object';
+}
 
 // --- MIDDLEWARE: AUTH CHECK ---
 async function authMiddleware(ctx: Context, next: NextFunction) {
@@ -50,7 +65,7 @@ async function showMainMenu(ctx: any) {
     const transStats = await dbService.getUserTranscriptionStats(ctx.from.id);
     const checksToday = await dbService.get24hCheckCount(ctx.from.id);
     const transToday = await dbService.get24hTranscriptionCount(ctx.from.id);
-    const freeLeft = Math.max(0, 20 - checksToday);
+    const freeLeft = Math.max(0, config.FREE_CHECKS_LIMIT - checksToday);
 
     let text = `🏠 <b>Asosiy Menyu</b>\n\n`;
     text += `Salom, <b>${ctx.from?.first_name}</b>! 👋\n\n`;
@@ -66,7 +81,7 @@ async function showMainMenu(ctx: any) {
         text += `<code>│</code> 💰 Balans: <code>${String(user.balance).padStart(6)}</code> so'm<code>│</code>\n`;
     }
     text += `<code>└─────────────────────────┘</code>\n`;
-    text += `🎁 Bepul qoldi: <b>${freeLeft}</b>/20\n\n`;
+    text += `🎁 Bepul qoldi: <b>${freeLeft}</b>/${config.FREE_CHECKS_LIMIT}\n\n`;
 
     // Transcription Stats
     text += `<b>📝 Transkripsiya:</b>\n`;
@@ -124,7 +139,7 @@ bot.callbackQuery("my_stats", async (ctx) => {
     const transToday = await dbService.get24hTranscriptionCount(ctx.from.id);
     const totalChecked = stats.accepted + stats.rejected;
     const accuracy = totalChecked > 0 ? Math.round((stats.accepted / totalChecked) * 100) : 0;
-    const freeLeft = Math.max(0, 20 - checksToday);
+    const freeLeft = Math.max(0, config.FREE_CHECKS_LIMIT - checksToday);
 
     let text = `📊 <b>Batafsil Statistika</b>\n\n`;
 
@@ -143,7 +158,7 @@ bot.callbackQuery("my_stats", async (ctx) => {
         text += `<code>║</code> 💰 Balans:    <code>${String(user.balance).padStart(6)}</code> so'm<code>║</code>\n`;
     }
     text += `<code>╚═══════════════════════════╝</code>\n`;
-    text += `<i>💡 20 ta bepul, keyin 30 so'm</i>\n\n`;
+    text += `<i>💡 ${config.FREE_CHECKS_LIMIT} ta bepul, keyin ${config.CHECK_PRICE} so'm</i>\n\n`;
 
     // Transcription Section
     text += `<b>📝 TRANSKRIPSIYA</b>\n`;
@@ -173,7 +188,7 @@ bot.callbackQuery("help_info", async (ctx) => {
         `• Audiodagi matnni diqqat bilan tinglang\n` +
         `• Agar matn to'g'ri bo'lsa "To'g'ri" bosing\n` +
         `• Agar xato bo'lsa "Xato" yoki "Tahrirlash" bosing\n` +
-        `• Har kuni 20 ta bepul, keyin 30 so'm`,
+        `• Har kuni ${config.FREE_CHECKS_LIMIT} ta bepul, keyin ${config.CHECK_PRICE} so'm`,
         {
             parse_mode: "HTML",
             reply_markup: new InlineKeyboard().text("🏠 Asosiy menyu", "main_menu")
@@ -257,15 +272,16 @@ bot.callbackQuery(/^accept:(.+)$/, async (ctx) => {
         });
 
         // PAYMENT LOGIC
-        // 20 free checks per 24 hours. After that 30 som per check.
+        // First N checks are free per 24 hours. After that, charge per check.
         const checksToday = await dbService.get24hCheckCount(ctx.from.id);
-        // We just added one (Wait, dbService.updateFileStatus marks it processed NOW).
+        // We just added one (dbService.updateFileStatus marks it processed NOW).
         // Since we verify AFTER update, checksToday includes the current one.
-        // So if checksToday > 20, we pay.
-        // Example: 20th check -> checksToday=20. No pay.
-        // 21st check -> checksToday=21. Pay.
-        if (checksToday > 20) {
-            await dbService.incrementBalance(ctx.from.id, 30);
+        // So if checksToday > FREE_CHECKS_LIMIT, we charge.
+        // Example: 20th check -> checksToday=20. No charge.
+        // 21st check -> checksToday=21. Charge.
+        if (checksToday > config.FREE_CHECKS_LIMIT) {
+            await dbService.incrementBalance(ctx.from.id, config.CHECK_PRICE);
+            await ctx.reply(`💳 ${config.CHECK_PRICE} so'm hisobdan yechildi. Kunlik bepul limit: ${config.FREE_CHECKS_LIMIT}`);
         }
 
         // 4. Offer Next
@@ -276,7 +292,7 @@ bot.callbackQuery(/^accept:(.+)$/, async (ctx) => {
         });
 
     } catch (e) {
-        console.error(e);
+        Logger.error('Bot command error', e, { userId: ctx.from?.id });
         await ctx.reply("Xatolik yuz berdi.");
     }
 });
@@ -296,7 +312,10 @@ bot.callbackQuery(/^reject:(.+)$/, async (ctx) => {
                 .text("Keyingisi ➡️", "check_next")
                 .text("🏠 Menyu", "main_menu")
         });
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        Logger.error('Error rejecting file', e, { userId: ctx.from?.id });
+        await ctx.reply("Xatolik yuz berdi.").catch(() => {});
+    }
 });
 
 // --- EDIT TEXT HANDLER ---
@@ -326,7 +345,7 @@ bot.callbackQuery(/^edit:(.+)$/, async (ctx) => {
             }
         );
     } catch (e) {
-        console.error(e);
+        Logger.error('Bot command error', e, { userId: ctx.from?.id });
         await ctx.reply("Xatolik yuz berdi.");
     }
 });
@@ -368,6 +387,11 @@ bot.on("message:text", async (ctx) => {
         if (!audioBuffer) {
             await ctx.reply("Matn qabul qilindi, lekin audio faylni qayta yuklab bo'lmadi.");
             return;
+        }
+
+        // Warn for large files
+        if (audioBuffer.length > 20 * 1024 * 1024) {
+            await ctx.reply('⚠️ Fayl juda katta, yuklanishi biroz vaqt oladi...');
         }
 
         const fileName = fileKey.split('/').pop()?.replace('.wav', '') || fileKey;
@@ -447,7 +471,7 @@ bot.callbackQuery(/^skip:(.+)$/, async (ctx) => {
                 .text("🏠 Menyu", "main_menu")
         });
     } catch (e) {
-        console.error(e);
+        Logger.error('Bot command error', e, { userId: ctx.from?.id });
         await ctx.reply("Xatolik yuz berdi.");
     }
 });
@@ -462,7 +486,7 @@ bot.callbackQuery("transcription_next", async (ctx) => {
 
 bot.callbackQuery("transcription_skip", async (ctx) => {
     const stateRow = await dbService.getState(ctx.from.id);
-    if (!stateRow || stateRow.state_type !== 'transcription') {
+    if (!stateRow || stateRow.state_type !== 'transcription' || !isValidState(stateRow.data)) {
         await ctx.answerCallbackQuery("Fayl topilmadi");
         return;
     }
@@ -486,7 +510,7 @@ bot.callbackQuery("transcription_skip", async (ctx) => {
                 .text("🏠 Menyu", "main_menu")
         });
     } catch (e) {
-        console.error(e);
+        Logger.error('Bot command error', e, { userId: ctx.from?.id });
         await ctx.reply("Xatolik yuz berdi.");
     }
 });
@@ -495,7 +519,7 @@ bot.callbackQuery("transcription_skip", async (ctx) => {
 bot.callbackQuery("transcription_edit_retry", async (ctx) => {
     await ctx.answerCallbackQuery();
     const stateRow = await dbService.getState(ctx.from.id);
-    if (!stateRow || stateRow.state_type !== 'transcription') {
+    if (!stateRow || stateRow.state_type !== 'transcription' || !isValidState(stateRow.data)) {
         await ctx.reply("Vazifa topilmadi.");
         return;
     }
@@ -514,7 +538,7 @@ bot.callbackQuery(/^approve_trans:(male|female)$/, async (ctx) => {
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
-    if (!stateRow || stateRow.state_type !== 'transcription' || !stateRow.data.tempText) {
+    if (!stateRow || stateRow.state_type !== 'transcription' || !isValidState(stateRow.data) || !stateRow.data.tempText) {
         await ctx.answerCallbackQuery("Vazifa muddati tugagan yoki topilmadi.");
         return;
     }
@@ -529,12 +553,16 @@ bot.callbackQuery(/^approve_trans:(male|female)$/, async (ctx) => {
         const audioBuffer = await s3Service.getTranscriptionAudioBuffer(fileKey);
         if (audioBuffer) {
             try {
-                // parseBuffer requires Buffer, but we might have Uint8Array. 
-                // music-metadata parseBuffer takes Uint8Array or Buffer.
-                const metadata = await parseBuffer(audioBuffer as Uint8Array);
-                duration = (metadata.format.duration || 0) * 1000; // to ms
+                // Validate buffer type before parsing
+                if (Buffer.isBuffer(audioBuffer) || audioBuffer instanceof Uint8Array) {
+                    const metadata = await parseBuffer(new Uint8Array(audioBuffer));
+                    duration = Math.floor((metadata.format.duration || 0) * 1000); // to ms
+                } else {
+                    Logger.warn('Invalid audio buffer type for duration parsing', { fileKey, type: typeof audioBuffer });
+                }
             } catch (err) {
-                console.error("Error parsing audio metadata:", err);
+                Logger.warn('Failed to parse audio duration', { error: err, fileKey });
+                duration = 0; // Default fallback
             }
         }
 
@@ -560,7 +588,7 @@ bot.callbackQuery(/^approve_trans:(male|female)$/, async (ctx) => {
         );
 
     } catch (e) {
-        console.error(e);
+        Logger.error('Bot command error', e, { userId: ctx.from?.id });
         await ctx.reply("Xatolik yuz berdi.");
     }
 });
@@ -673,6 +701,11 @@ async function sendNextFile(ctx: any) {
             return;
         }
 
+        // Warn for large files
+        if (audioBuffer.length > 20 * 1024 * 1024) {
+            await ctx.reply('⚠️ Fayl juda katta, yuklanishi biroz vaqt oladi...');
+        }
+
         // Truncate text if too long
         let text = json.text || 'Noma\'lum';
         if (text.length > 800) text = text.substring(0, 800) + "...";
@@ -711,14 +744,14 @@ export async function launchBot() {
     console.log("Bot ishga tushmoqda...");
 
     // Periodically release locks (every 5 mins)
-    setInterval(() => {
+    const lockReleaseInterval = setInterval(() => {
         // Release STT files
         dbService.releaseTimedOutFiles(config.LOCK_TIMEOUT_MS)
             .then((released) => {
                 const count = released ?? 0;
                 if (count > 0) console.log(`Released ${count} timed out STT files.`);
             })
-            .catch((err) => console.error('Error releasing STT locks', err));
+            .catch((err) => Logger.error('Error releasing STT locks', err));
 
         // Release Transcription files
         dbService.releaseTimedOutTranscriptionFiles(config.LOCK_TIMEOUT_MS)
@@ -726,32 +759,30 @@ export async function launchBot() {
                 const count = released ?? 0;
                 if (count > 0) console.log(`Released ${count} timed out transcription files.`);
             })
-            .catch((err) => console.error('Error releasing transcription locks', err));
-    }, 5 * 60 * 1000);
-
-    // Auto-sync S3 files every 30 minutes (1800000 ms)
-    const AUTO_SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+            .catch((err) => Logger.error('Error releasing transcription locks', err));
+    }, config.LOCK_TIMEOUT_MS);
+    intervals.push(lockReleaseInterval);
 
     // Initial sync on startup
     console.log("Running initial STT sync...");
     s3Service.syncFiles()
         .then(() => console.log("Initial STT sync completed."))
-        .catch((err) => console.error("Initial STT sync error:", err));
+        .catch((err) => Logger.error("Initial STT sync error", err));
 
     console.log("Running initial Transcription sync...");
     s3Service.syncTranscriptionFiles()
         .then(() => console.log("Initial Transcription sync completed."))
-        .catch((err) => console.error("Initial Transcription sync error:", err));
+        .catch((err) => Logger.error("Initial Transcription sync error", err));
 
     // Periodic auto-sync
-    setInterval(() => {
+    const autoSyncInterval = setInterval(() => {
         console.log("Auto-syncing STT files from S3...");
         s3Service.syncFiles()
             .then(async () => {
                 const pendingCount = await dbService.getPendingCount();
                 console.log(`STT auto-sync completed. Pending files: ${pendingCount}`);
             })
-            .catch((err) => console.error('STT auto-sync error:', err));
+            .catch((err) => Logger.error('STT auto-sync error', err));
 
         console.log("Auto-syncing Transcription files from S3...");
         s3Service.syncTranscriptionFiles()
@@ -759,10 +790,11 @@ export async function launchBot() {
                 const pendingCount = await dbService.getTranscriptionPendingCount();
                 console.log(`Transcription auto-sync completed. Pending files: ${pendingCount}`);
             })
-            .catch((err) => console.error('Transcription auto-sync error:', err));
-    }, AUTO_SYNC_INTERVAL_MS);
+            .catch((err) => Logger.error('Transcription auto-sync error', err));
+    }, config.SYNC_INTERVAL_MS);
+    intervals.push(autoSyncInterval);
 
-    console.log(`Auto-sync enabled: every ${AUTO_SYNC_INTERVAL_MS / 60000} minutes`);
+    console.log(`Auto-sync enabled: every ${config.SYNC_INTERVAL_MS / 60000} minutes`);
 
     // Bot start will be handled by runner, but bot.start() blocks...
     // We should use bot.start() or bot.run() (runner). 
@@ -778,4 +810,20 @@ export async function launchBot() {
             console.log(`Bot @${botInfo.username} started!`);
         }
     });
+}
+
+/**
+ * Cleanup function to clear all intervals and stop the bot gracefully
+ */
+export function cleanup() {
+    console.log('Cleaning up bot resources...');
+
+    // Clear all intervals
+    intervals.forEach(interval => clearInterval(interval));
+    intervals.length = 0;
+
+    // Stop bot
+    bot.stop();
+
+    console.log('Bot cleanup completed');
 }
