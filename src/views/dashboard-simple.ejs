@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STT Dashboard - Simple</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin: 15px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1, h2, h3 { margin-bottom: 15px; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .stat-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; }
+        .stat-box h3 { font-size: 14px; opacity: 0.9; margin-bottom: 10px; }
+        .stat-box .value { font-size: 32px; font-weight: bold; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; margin: 5px 5px 5px 0; }
+        .btn-danger { background: #dc3545; }
+        .btn-success { background: #28a745; }
+        .btn-warning { background: #ffc107; color: #000; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; font-weight: 600; }
+        tbody tr:hover { background: #f8f9fa; }
+        input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin: 5px 0; }
+        .form-inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .form-inline input { flex: 1; min-width: 150px; }
+        .user-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+        .hidden { display: none; }
+        .show { display: block; }
+        hr { margin: 20px 0; border: none; border-top: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>📊 STT Admin Dashboard</h1>
+            <a href="/logout" class="btn btn-danger">Chiqish</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-box">
+            <h3>TOTAL CHECKED</h3>
+            <div class="value"><%= stats.totalChecked %></div>
+        </div>
+        <div class="stat-box" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+            <h3>ACCEPTED</h3>
+            <div class="value"><%= stats.totalAccepted %></div>
+            <small><%= stats.checkedDuration %></small>
+        </div>
+        <div class="stat-box" style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);">
+            <h3>REJECTED</h3>
+            <div class="value"><%= stats.totalRejected %></div>
+        </div>
+        <div class="stat-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <h3>PENDING</h3>
+            <div class="value"><%= stats.pending %></div>
+            <small><%= stats.pendingDuration %></small>
+        </div>
+    </div>
+
+    <!-- Upload -->
+    <div class="card">
+        <h2>☁️ Audio Yuklash (Transkripsiya)</h2>
+        <form action="/transcription/upload" method="POST" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: center;">
+            <input type="file" name="audioFiles" multiple accept="audio/*" required>
+            <button type="submit" class="btn btn-success">Yuklash</button>
+        </form>
+    </div>
+
+    <!-- Add User Form -->
+    <div class="card">
+        <h2>➕ Yangi Foydalanuvchi Qo'shish</h2>
+        <form action="/users/add" method="POST" class="form-inline">
+            <input type="number" name="telegram_id" placeholder="Telegram ID" required>
+            <input type="text" name="full_name" placeholder="Ism Familiya" required>
+            <label style="display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" name="is_admin">
+                Admin
+            </label>
+            <button type="submit" class="btn">Qo'shish</button>
+        </form>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <h2>👥 Foydalanuvchilar (<%= users.length %>)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Ism</th>
+                    <th>Bugun</th>
+                    <th>Jami OK</th>
+                    <th>Jami NO</th>
+                    <th>Balans</th>
+                    <th>Amallar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% users.forEach(user => { %>
+                <tr>
+                    <td style="font-family: monospace;"><%= user.telegram_id %></td>
+                    <td>
+                        <%= user.full_name %>
+                        <% if(user.is_admin) { %> 🛡️<% } %>
+                    </td>
+                    <td>
+                        <% if(user.checks_today > 0) { %>
+                            <span style="color: #28a745; font-weight: bold;">+<%= user.checks_today %></span>
+                        <% } else { %>-<% } %>
+                    </td>
+                    <td><%= user.total_accepted || 0 %></td>
+                    <td><%= user.total_rejected || 0 %></td>
+                    <td style="font-weight: bold;"><%= user.balance.toLocaleString() %> so'm</td>
+                    <td>
+                        <div class="user-actions">
+                            <a href="/review/<%= user.telegram_id %>" class="btn" style="padding: 8px 12px; font-size: 12px;">🎧 Review</a>
+                            <button type="button" class="btn btn-success" style="padding: 8px 12px; font-size: 12px;" onclick="toggleForm('balance-<%= user.telegram_id %>')">💰 Balans</button>
+                            <form action="/users/payout/<%= user.telegram_id %>" method="POST" style="display: inline;" onsubmit="return confirm('To\'lov tasdiqlaysizmi? Balans nollanadi.')">
+                                <button type="submit" class="btn btn-warning" style="padding: 8px 12px; font-size: 12px;">💸 To'lov</button>
+                            </form>
+                            <button type="button" class="btn" style="padding: 8px 12px; font-size: 12px;" onclick="toggleForm('edit-<%= user.telegram_id %>')">✏️ Edit</button>
+                            <form action="/users/delete/<%= user.telegram_id %>" method="POST" style="display: inline;" onsubmit="return confirm('O\'chirishni tasdiqlaysizmi?')">
+                                <button type="submit" class="btn btn-danger" style="padding: 8px 12px; font-size: 12px;">🗑️</button>
+                            </form>
+                        </div>
+
+                        <!-- Balance Form (Hidden by default) -->
+                        <div id="balance-<%= user.telegram_id %>" class="hidden" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                            <form action="/users/add-balance/<%= user.telegram_id %>" method="POST" class="form-inline">
+                                <input type="number" name="amount" placeholder="Summa (so'm)" required style="flex: 1;">
+                                <button type="submit" class="btn btn-success">Qo'shish</button>
+                                <button type="button" class="btn btn-danger" onclick="toggleForm('balance-<%= user.telegram_id %>')">Bekor</button>
+                            </form>
+                        </div>
+
+                        <!-- Edit Form (Hidden by default) -->
+                        <div id="edit-<%= user.telegram_id %>" class="hidden" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                            <form action="/users/update/<%= user.telegram_id %>" method="POST" class="form-inline">
+                                <input type="text" name="full_name" value="<%= user.full_name %>" required style="flex: 1;">
+                                <label style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="checkbox" name="is_admin" <%= user.is_admin ? 'checked' : '' %>>
+                                    Admin
+                                </label>
+                                <button type="submit" class="btn btn-success">Saqlash</button>
+                                <button type="button" class="btn btn-danger" onclick="toggleForm('edit-<%= user.telegram_id %>')">Bekor</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Charts -->
+    <div class="card">
+        <h2>📈 Statistika</h2>
+        <p style="color: #666;">Grafikalar keyingi versiyada qo'shiladi.</p>
+    </div>
+</div>
+
+<script>
+// Simple toggle function
+function toggleForm(id) {
+    var el = document.getElementById(id);
+    if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        el.classList.add('show');
+    } else {
+        el.classList.remove('show');
+        el.classList.add('hidden');
+    }
+}
+</script>
+
+</body>
+</html>
