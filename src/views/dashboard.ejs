@@ -991,10 +991,10 @@
         let lifetimeChart;
 
         document.addEventListener('DOMContentLoaded', () => {
-            const chartData = <% - JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
+            const chartData = <%- JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
 
             // Lifetime Chart Logic
-            const lifetimeStats = <% - JSON.stringify(typeof lifetimeStats !== 'undefined' ? lifetimeStats : []) %>;
+            const lifetimeStats = <%- JSON.stringify(typeof lifetimeStats !== 'undefined' ? lifetimeStats : []) %>;
             const ctxLifetime = document.getElementById('lifetimeChart');
 
             if (ctxLifetime) {
