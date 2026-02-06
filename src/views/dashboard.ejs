@@ -663,7 +663,6 @@
                 (Max 100 ta)</p>
 
             <form action="/transcription/upload" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="file" name="audioFiles" id="fileInput" multiple accept="audio/*" style="display: none;"
                     onchange="updateFileCount()">
                 <button type="button" class="btn btn-outline" onclick="document.getElementById('fileInput').click()">
@@ -756,8 +755,7 @@
                                         <form action="/users/delete/<%= user.telegram_id %>" method="POST"
                                             onsubmit="return confirm('Ushbu foydalanuvchini o\'chirishni tasdiqlaysizmi?');"
                                             style="margin:0;">
-                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                            <button type="submit" class="action-btn" title="O'chirish"
+                                                                        <button type="submit" class="action-btn" title="O'chirish"
                                                 style="color: #ef4444; border-color: #ef444450;">
                                                 <i data-lucide="trash-2" size="14"></i>
                                             </button>
@@ -781,7 +779,6 @@
         <div class="modal">
             <h3 class="modal-title">Yangi Foydalanuvchi</h3>
             <form action="/users/add" method="POST">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="form-group">
                     <label>Telegram ID</label>
                     <input type="number" name="telegram_id" class="form-input" required>
@@ -809,7 +806,6 @@
             <h3 class="modal-title">Balans Qo'shish</h3>
             <p id="balanceUserDisplay" style="margin-bottom: 20px; color: var(--text-muted); font-size: 14px;"></p>
             <form action="/add-balance" method="POST">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="user_id" id="balanceUserId">
                 <div class="form-group">
                     <label>Summa (so'm)</label>
@@ -829,7 +825,6 @@
         <div class="modal">
             <h3 class="modal-title">Foydalanuvchini Tahrirlash</h3>
             <form id="editUserForm" method="POST">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="form-group">
                     <label>Telegram ID (O'zgarmas)</label>
                     <input type="number" id="editUserIdDisplay" class="form-input" disabled style="opacity: 0.7;">
@@ -859,7 +854,6 @@
             <p style="margin-bottom: 24px;">To'lanadigan summa: <b id="payoutAmount"></b> so'm</p>
 
             <form action="/payout" method="POST">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="user_id" id="payoutUserId">
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline btn-full"
@@ -937,36 +931,26 @@
         }
 
         function openBalanceModal(id, name) {
-            console.log('Opening balance modal for user:', id, name);
             document.getElementById('balanceUserId').value = id;
             document.getElementById('balanceUserDisplay').textContent = 'Foydalanuvchi: ' + name;
-            // Set form action dynamically
-            const form = document.querySelector('#balanceModal form');
-            form.action = `/users/add-balance/${id}`;
-            console.log('Balance form action set to:', form.action);
+            document.querySelector('#balanceModal form').action = `/users/add-balance/${id}`;
             openModal('balanceModal');
         }
 
         function openPayoutModal(id, name, amount) {
-            console.log('Opening payout modal for user:', id, name, amount);
             document.getElementById('payoutUserId').value = id;
             document.getElementById('payoutUserName').textContent = name;
             document.getElementById('payoutAmount').textContent = amount.toLocaleString();
-            // Set form action dynamically
-            const form = document.querySelector('#payoutModal form');
-            form.action = `/users/payout/${id}`;
-            console.log('Payout form action set to:', form.action);
+            document.querySelector('#payoutModal form').action = `/users/payout/${id}`;
             openModal('payoutModal');
         }
 
         function openEditModal(id, name, isAdmin) {
-            console.log('Opening edit modal for user:', id, name, isAdmin);
             const form = document.getElementById('editUserForm');
             form.action = '/users/update/' + id;
             document.getElementById('editUserIdDisplay').value = id;
             document.getElementById('editFullName').value = name;
             document.getElementById('editIsAdmin').checked = isAdmin;
-            console.log('Edit form action set to:', form.action);
             openModal('editUserModal');
         }
 
@@ -1018,20 +1002,6 @@
         let lifetimeChart;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Debug: Add form submit listeners
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    console.log('Form submitting:', this.action);
-                    const csrfToken = this.querySelector('input[name="_csrf"]');
-                    if (csrfToken) {
-                        console.log('CSRF token present:', csrfToken.value.substring(0, 20) + '...');
-                    } else {
-                        console.warn('CSRF token missing!');
-                    }
-                });
-            });
-
             const chartData = <%- JSON.stringify(typeof chartData !== 'undefined' ? chartData : []) %>;
 
             // Lifetime Chart Logic
