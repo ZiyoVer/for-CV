@@ -388,8 +388,24 @@ bot.hears("⏭️ O'tkazish", async (ctx) => {
 
 // --- TEXT INPUT HANDLER FOR EDITING AND TRANSCRIPTION ---
 
+// List of known button texts to ignore in the text handler
+const BUTTON_TEXTS = [
+    "🎧 STT Tekshirish", "📝 Transkripsiya", "📋 Anotatsiya qoidalari", "⬅️ Asosiy menyu",
+    "📚 Adabiy gaplar", "🌍 Xorazm viloyati",
+    "✅ To'g'ri", "❌ Xato", "✏️ Tahrirlash", "⏭️ O'tkazish", "❌ Bekor qilish",
+    "👨 Erkak", "👩 Ayol", "✏️ Matnni tahrirlash",
+    "✅ Tasdiqlash", "❌ Rad etish", "✏️ Jinsni o'zgartirish"
+];
+
 bot.on("message:text", async (ctx) => {
     const userId = ctx.from.id;
+    const messageText = ctx.message.text.trim();
+
+    // Skip if it's a known button text (let bot.hears handle it)
+    if (BUTTON_TEXTS.includes(messageText)) {
+        return;
+    }
+
     const stateRow = await dbService.getState(userId);
 
     // If no state, ignore (user is just navigating menus)
@@ -398,7 +414,7 @@ bot.on("message:text", async (ctx) => {
     }
 
     const { state_type: type, data } = stateRow;
-    const newText = ctx.message.text.trim();
+    const newText = messageText;
 
     // Handle TRANSCRIPTION text input
     if (type === 'transcription') {
