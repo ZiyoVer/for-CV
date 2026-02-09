@@ -186,50 +186,9 @@ app.get('/dashboard', requireAuth, async (req, res) => {
     }
 });
 
-// SIMPLE DASHBOARD (No modals, inline forms)
-app.get('/dashboard-simple', requireAuth, async (req, res) => {
-    try {
-        const usersWithStats = await dbService.getDashboardUsers();
-        const pendingCount = await dbService.getPendingCount();
-        const transcriptionPendingCount = await dbService.getTranscriptionPendingCount();
-        const allStats = await dbService.getAllUserStats();
-        const totalAccepted = allStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
-        const totalRejected = allStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
-
-        const durationStats = await dbService.getDurationStats();
-        const durationByStatus: Record<string, number> = {};
-        durationStats.forEach((s: any) => {
-            durationByStatus[s.status] = Number(s.total_seconds) || 0;
-        });
-
-        const totalCheckedDuration = (durationByStatus['ACCEPTED'] || 0) + (durationByStatus['REJECTED'] || 0);
-        const pendingDuration = durationByStatus['PENDING'] || 0;
-
-        const formatDuration = (sec: number) => {
-            const hours = Math.floor(sec / 3600);
-            const minutes = Math.floor((sec % 3600) / 60);
-            return `${hours}s ${minutes}m`;
-        };
-
-        const lifetimeStats = await dbService.getLifetimeDailyStats();
-
-        res.render('dashboard-simple', {
-            users: usersWithStats,
-            stats: {
-                pending: pendingCount,
-                transcriptionPending: transcriptionPendingCount,
-                totalAccepted,
-                totalRejected,
-                totalChecked: totalAccepted + totalRejected,
-                checkedDuration: formatDuration(totalCheckedDuration),
-                pendingDuration: formatDuration(pendingDuration)
-            },
-            lifetimeStats
-        });
-    } catch (err: any) {
-        console.error('Simple Dashboard error:', err);
-        res.status(500).send(`Server xatosi: ${err.message || err}`);
-    }
+// Redirect old dashboard-simple to dashboard
+app.get('/dashboard-simple', requireAuth, (req, res) => {
+    res.redirect('/dashboard');
 });
 
 // DEBUG DASHBOARD - Remove after testing
