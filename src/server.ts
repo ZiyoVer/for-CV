@@ -331,10 +331,14 @@ app.get('/review/:id', requireAuth, async (req, res) => {
         const files = await dbService.getRandomReviewFiles(userId, 5);
 
         // Get JSON content and audio URL for each file
+        // Use original_file_key (destination after copy) if available, otherwise use file_key
         const filesWithContent = await Promise.all(files.map(async (file: any) => {
             try {
-                const json = await s3Service.getJsonContent(file.file_key);
-                const audioUrl = await s3Service.getAudioUrl(file.file_key);
+                // After acceptance, files are copied to saralangan/ and originals are deleted
+                // original_file_key stores the destination path
+                const audioKey = file.original_file_key || file.file_key;
+                const json = await s3Service.getJsonContent(audioKey);
+                const audioUrl = await s3Service.getAudioUrl(audioKey);
                 return { ...file, text: json.text || 'Noma\'lum', audioUrl };
             } catch {
                 return { ...file, text: 'Yuklab bo\'lmadi', audioUrl: null };

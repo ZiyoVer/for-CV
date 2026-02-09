@@ -8,56 +8,125 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-body: #f3f4f6;
-            --bg-card: #ffffff;
+            --bg-primary: #f9fafb;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f3f4f6;
             --text-primary: #111827;
             --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
             --border-color: #e5e7eb;
-            --gold: #fef3c7;
-            --gold-text: #b45309;
-            --silver: #f3f4f6;
-            --silver-text: #374151;
-            --bronze: #ffedd5;
-            --bronze-text: #9a3412;
+            --accent: #d97757;
+            --accent-light: rgba(217, 119, 87, 0.1);
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --error: #ef4444;
+            --error-light: rgba(239, 68, 68, 0.1);
+            --gold: #f59e0b;
+            --gold-light: rgba(245, 158, 11, 0.15);
+            --silver: #6b7280;
+            --silver-light: rgba(107, 114, 128, 0.1);
+            --bronze: #ea580c;
+            --bronze-light: rgba(234, 88, 12, 0.1);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1f1f1f;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border-color: #27272a;
+            --accent: #d97757;
+            --accent-light: rgba(217, 119, 87, 0.15);
+            --success: #22c55e;
+            --success-light: rgba(34, 197, 94, 0.15);
+            --error: #ef4444;
+            --error-light: rgba(239, 68, 68, 0.15);
+            --gold: #fbbf24;
+            --gold-light: rgba(251, 191, 36, 0.15);
+            --silver: #a1a1aa;
+            --silver-light: rgba(161, 161, 170, 0.15);
+            --bronze: #fb923c;
+            --bronze-light: rgba(251, 146, 60, 0.15);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-body);
+            background: var(--bg-primary);
             min-height: 100vh;
             color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
+        /* Navbar */
         .navbar {
-            background: var(--bg-card);
+            background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
-            padding: 12px 24px;
+            padding: 16px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .logo {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
             color: var(--text-primary);
             letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            font-size: 24px;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .live-indicator {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
-            color: #16a34a;
+            font-size: 12px;
+            color: var(--success);
             font-weight: 600;
+            background: var(--success-light);
+            padding: 6px 12px;
+            border-radius: 20px;
         }
 
         .live-dot {
             width: 8px;
             height: 8px;
-            background: #16a34a;
+            background: var(--success);
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
@@ -72,56 +141,191 @@
 
             50% {
                 opacity: 0.5;
-                transform: scale(1.2);
+                transform: scale(1.3);
             }
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 32px 16px;
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
         }
 
+        .theme-toggle:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        /* Container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header */
         .header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 40px;
         }
 
         .header h1 {
-            font-size: 28px;
-            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
             margin-bottom: 8px;
             letter-spacing: -0.5px;
         }
 
         .header p {
             color: var(--text-secondary);
-            font-size: 14px;
+            font-size: 15px;
         }
 
         .update-time {
-            color: #9ca3af;
-            font-size: 12px;
-            margin-top: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
+        /* Top 3 Podium */
+        .podium {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 40px;
+            padding: 0 20px;
+        }
+
+        .podium-item {
+            flex: 1;
+            max-width: 180px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .podium-item:hover {
+            transform: translateY(-4px);
+        }
+
+        .podium-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px 16px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .podium-item.first .podium-card {
+            border-color: var(--gold);
+            background: linear-gradient(180deg, var(--gold-light) 0%, var(--bg-secondary) 100%);
+        }
+
+        .podium-item.second .podium-card {
+            border-color: var(--silver);
+            background: linear-gradient(180deg, var(--silver-light) 0%, var(--bg-secondary) 100%);
+        }
+
+        .podium-item.third .podium-card {
+            border-color: var(--bronze);
+            background: linear-gradient(180deg, var(--bronze-light) 0%, var(--bg-secondary) 100%);
+        }
+
+        .podium-rank {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 auto 12px;
+        }
+
+        .podium-item.first .podium-rank {
+            background: var(--gold);
+            color: #78350f;
+        }
+
+        .podium-item.second .podium-rank {
+            background: var(--silver);
+            color: #ffffff;
+        }
+
+        .podium-item.third .podium-rank {
+            background: var(--bronze);
+            color: #ffffff;
+        }
+
+        .podium-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .podium-stats {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .podium-stat {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .podium-stat.accepted {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .podium-stat.rejected {
+            background: var(--error-light);
+            color: var(--error);
+        }
+
+        .podium-balance {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Leaderboard Table */
         .leaderboard {
+            background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             overflow: hidden;
-            background: var(--bg-card);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-md);
         }
 
         .leaderboard-header {
             display: grid;
-            grid-template-columns: 50px 1fr 80px 80px 80px 100px;
-            background: #f9fafb;
-            padding: 12px 16px;
+            grid-template-columns: 60px 1fr 90px 90px 90px 110px;
+            background: var(--bg-tertiary);
+            padding: 14px 20px;
             font-size: 11px;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 600;
@@ -130,111 +334,80 @@
 
         .leaderboard-row {
             display: grid;
-            grid-template-columns: 50px 1fr 80px 80px 80px 100px;
-            padding: 12px 16px;
-            font-size: 13px;
-            border-bottom: 1px solid #f3f4f6;
+            grid-template-columns: 60px 1fr 90px 90px 90px 110px;
+            padding: 16px 20px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
             align-items: center;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+        }
+
+        .leaderboard-row:last-child {
+            border-bottom: none;
         }
 
         .leaderboard-row:hover {
-            background: #fdfbf7;
-            transform: scale(1.005);
-        }
-
-        /* Top 3 Styling */
-        .leaderboard-row.rank-1 {
-            background: linear-gradient(to right, #fffbeb, #ffffff);
-            border-left: 4px solid #f59e0b;
-        }
-
-        .leaderboard-row.rank-2 {
-            background: linear-gradient(to right, #f9fafb, #ffffff);
-            border-left: 4px solid #9ca3af;
-        }
-
-        .leaderboard-row.rank-3 {
-            background: linear-gradient(to right, #fff7ed, #ffffff);
-            border-left: 4px solid #ea580c;
+            background: var(--bg-tertiary);
         }
 
         .rank {
             font-weight: 700;
-            color: #9ca3af;
+            color: var(--text-muted);
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-        }
-
-        .rank-1 .rank {
-            background: #fcd34d;
-            color: #78350f;
-        }
-
-        .rank-2 .rank {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .rank-3 .rank {
-            background: #fed7aa;
-            color: #7c2d12;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
         }
 
         .name {
             color: var(--text-primary);
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .stat {
             text-align: center;
+            font-weight: 600;
         }
 
         .stat.accepted {
-            color: #059669;
-            font-weight: 600;
-            background: #ecfdf5;
-            padding: 2px 6px;
-            border-radius: 4px;
-            display: inline-block;
+            color: var(--success);
         }
 
         .stat.rejected {
-            color: #dc2626;
-            background: #fef2f2;
-            padding: 2px 6px;
-            border-radius: 4px;
-            display: inline-block;
+            color: var(--error);
         }
 
         .stat.total {
             color: var(--text-secondary);
-            font-weight: 500;
         }
 
         .stat.balance {
-            color: #2563eb;
+            color: var(--accent);
             font-weight: 700;
         }
 
-        .trophy {
-            display: none;
-        }
-
-        /* Hidden, using rank circles */
-
+        /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 60px;
-            color: var(--text-secondary);
-            font-size: 14px;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            font-size: 15px;
         }
 
-        .feature-list {
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Footer Features */
+        .features {
             margin-top: 32px;
             display: flex;
             justify-content: center;
@@ -242,61 +415,104 @@
             flex-wrap: wrap;
         }
 
-        .feature-item {
+        .feature {
             display: flex;
             gap: 8px;
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
             align-items: center;
+            background: var(--bg-secondary);
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
         }
 
         .feature-icon {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            background: #d1fae5;
-            color: #059669;
+            background: var(--success-light);
+            color: var(--success);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 11px;
+            font-weight: 700;
         }
 
-        @media (max-width: 640px) {
+        /* Responsive */
+        @media (max-width: 768px) {
+            .podium {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .podium-item {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .podium-item.first {
+                order: -1;
+            }
 
             .leaderboard-header,
             .leaderboard-row {
-                grid-template-columns: 30px 1fr 50px 50px 50px 70px;
-                padding: 10px;
-                font-size: 11px;
-            }
-
-            .name {
+                grid-template-columns: 40px 1fr 60px 60px 60px 80px;
+                padding: 12px 14px;
                 font-size: 12px;
             }
 
             .header h1 {
-                font-size: 22px;
+                font-size: 24px;
             }
 
             .container {
-                padding: 16px 8px;
+                padding: 24px 12px;
             }
 
-            .stat.accepted,
-            .stat.rejected {
-                padding: 2px 4px;
+            .features {
+                flex-direction: column;
+                align-items: center;
             }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .podium-item,
+        .leaderboard {
+            animation: fadeIn 0.5s ease-out;
         }
     </style>
 </head>
 
 <body>
     <nav class="navbar">
-        <div class="logo">🏆 STT Leaderboard</div>
-        <div class="live-indicator">
-            <span class="live-dot"></span>
-            <span>LIVE</span>
+        <div class="navbar-left">
+            <div class="logo">
+                <span class="logo-icon">🏆</span>
+                <span>Leaderboard</span>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                <span>LIVE</span>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Dark/Light mode">
+                <span id="theme-icon">🌙</span>
+            </button>
         </div>
     </nav>
 
@@ -304,65 +520,150 @@
         <div class="header">
             <h1>Annotatorlar Reytingi</h1>
             <p>Eng ko'p audio tekshirgan annotatorlar</p>
-            <div class="update-time" id="updateTime">Yuklanmoqda...</div>
+            <div class="update-time" id="updateTime">
+                <span>🔄</span>
+                <span>Yuklanmoqda...</span>
+            </div>
         </div>
 
-        <div class="leaderboard">
-            <div class="leaderboard-header">
-                <div>#</div>
-                <div>Ism</div>
-                <div style="text-align:center">✓ Qabul</div>
-                <div style="text-align:center">✗ Rad</div>
-                <div style="text-align:center">Jami</div>
-                <div style="text-align:center">💰 Balans</div>
+        <% if (leaderboard.length>= 3) { %>
+            <!-- Top 3 Podium -->
+            <div class="podium">
+                <div class="podium-item second">
+                    <div class="podium-card">
+                        <div class="podium-rank">2</div>
+                        <div class="podium-name">
+                            <%= leaderboard[1].name %>
+                        </div>
+                        <div class="podium-stats">
+                            <span class="podium-stat accepted">✓ <%= leaderboard[1].accepted %></span>
+                            <span class="podium-stat rejected">✕ <%= leaderboard[1].rejected %></span>
+                        </div>
+                        <div class="podium-balance">
+                            <%= leaderboard[1].balance.toLocaleString() %> so'm
+                        </div>
+                    </div>
+                </div>
+                <div class="podium-item first">
+                    <div class="podium-card">
+                        <div class="podium-rank">1</div>
+                        <div class="podium-name">
+                            <%= leaderboard[0].name %>
+                        </div>
+                        <div class="podium-stats">
+                            <span class="podium-stat accepted">✓ <%= leaderboard[0].accepted %></span>
+                            <span class="podium-stat rejected">✕ <%= leaderboard[0].rejected %></span>
+                        </div>
+                        <div class="podium-balance">
+                            <%= leaderboard[0].balance.toLocaleString() %> so'm
+                        </div>
+                    </div>
+                </div>
+                <div class="podium-item third">
+                    <div class="podium-card">
+                        <div class="podium-rank">3</div>
+                        <div class="podium-name">
+                            <%= leaderboard[2].name %>
+                        </div>
+                        <div class="podium-stats">
+                            <span class="podium-stat accepted">✓ <%= leaderboard[2].accepted %></span>
+                            <span class="podium-stat rejected">✕ <%= leaderboard[2].rejected %></span>
+                        </div>
+                        <div class="podium-balance">
+                            <%= leaderboard[2].balance.toLocaleString() %> so'm
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="leaderboardBody">
-                <% if (leaderboard.length===0) { %>
-                    <div class="empty-state">Hali hech kim tekshirmagan.</div>
-                    <% } else { %>
-                        <% leaderboard.forEach(user=> { %>
-                            <div class="leaderboard-row rank-<%= user.rank %>">
-                                <div class="rank">
-                                    <%= user.rank %>
-                                </div>
-                                <div class="name">
-                                    <%= user.name %>
-                                </div>
-                                <div class="stat accepted">
-                                    <%= user.accepted %>
-                                </div>
-                                <div class="stat rejected">
-                                    <%= user.rejected %>
-                                </div>
-                                <div class="stat total">
-                                    <%= user.total %>
-                                </div>
-                                <div class="stat balance">
-                                    <%= user.balance.toLocaleString() %> so'm
-                                </div>
+            <% } %>
+
+                <div class="leaderboard">
+                    <div class="leaderboard-header">
+                        <div>#</div>
+                        <div>Ism</div>
+                        <div style="text-align:center">✓ Qabul</div>
+                        <div style="text-align:center">✕ Rad</div>
+                        <div style="text-align:center">Jami</div>
+                        <div style="text-align:center">💰 Balans</div>
+                    </div>
+                    <div id="leaderboardBody">
+                        <% if (leaderboard.length===0) { %>
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div>Hali hech kim tekshirmagan.</div>
                             </div>
-                            <% }); %>
-                                <% } %>
-            </div>
-        </div>
+                            <% } else { %>
+                                <% leaderboard.forEach(user=> { %>
+                                    <div class="leaderboard-row">
+                                        <div class="rank">
+                                            <%= user.rank %>
+                                        </div>
+                                        <div class="name">
+                                            <%= user.name %>
+                                        </div>
+                                        <div class="stat accepted">
+                                            <%= user.accepted %>
+                                        </div>
+                                        <div class="stat rejected">
+                                            <%= user.rejected %>
+                                        </div>
+                                        <div class="stat total">
+                                            <%= user.total %>
+                                        </div>
+                                        <div class="stat balance">
+                                            <%= user.balance.toLocaleString() %>
+                                        </div>
+                                    </div>
+                                    <% }); %>
+                                        <% } %>
+                    </div>
+                </div>
 
-        <div class="feature-list">
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span><strong>Auto-refresh</strong> 5s</span>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span><strong>Real-time</strong> Jonli</span>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span><strong>Top 3</strong> Bonus</span>
-            </div>
-        </div>
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">✓</div>
+                        <span><strong>Auto-refresh</strong> 5s</span>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">✓</div>
+                        <span><strong>Real-time</strong> Jonli</span>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">✓</div>
+                        <span><strong>Top 3</strong> Podium</span>
+                    </div>
+                </div>
     </div>
 
     <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            const currentTheme = html.getAttribute('data-theme');
+
+            if (currentTheme === 'dark') {
+                html.removeAttribute('data-theme');
+                icon.textContent = '🌙';
+                localStorage.setItem('leaderboard-theme', 'light');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                icon.textContent = '☀️';
+                localStorage.setItem('leaderboard-theme', 'dark');
+            }
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function () {
+            const savedTheme = localStorage.getItem('leaderboard-theme');
+            const icon = document.getElementById('theme-icon');
+
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                icon.textContent = '☀️';
+            }
+        });
+
         function updateLeaderboard() {
             fetch('/api/leaderboard')
                 .then(res => res.json())
@@ -379,23 +680,28 @@
                     };
 
                     if (data.leaderboard.length === 0) {
-                        body.innerHTML = '<div class="empty-state">Hali hech kim tekshirmagan.</div>';
+                        body.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div>Hali hech kim tekshirmagan.</div>
+                            </div>
+                        `;
                     } else {
                         body.innerHTML = data.leaderboard.map(user => `
-                            <div class="leaderboard-row rank-${user.rank}">
+                            <div class="leaderboard-row">
                                 <div class="rank">${user.rank}</div>
                                 <div class="name">${escapeHtml(user.name)}</div>
                                 <div class="stat accepted">${user.accepted}</div>
                                 <div class="stat rejected">${user.rejected}</div>
                                 <div class="stat total">${user.total}</div>
-                                <div class="stat balance">${user.balance.toLocaleString()} so'm</div>
+                                <div class="stat balance">${user.balance.toLocaleString()}</div>
                             </div>
                         `).join('');
                     }
 
                     // Update time
                     const time = new Date(data.updatedAt).toLocaleTimeString('uz-UZ');
-                    document.getElementById('updateTime').textContent = 'Oxirgi yangilanish: ' + time;
+                    document.getElementById('updateTime').innerHTML = `<span>🔄</span><span>Oxirgi yangilanish: ${time}</span>`;
                 })
                 .catch(err => console.error('Update error:', err));
         }
@@ -404,7 +710,7 @@
         setInterval(updateLeaderboard, 5000);
 
         // Initial time display
-        document.getElementById('updateTime').textContent = 'Oxirgi yangilanish: ' + new Date().toLocaleTimeString('uz-UZ');
+        document.getElementById('updateTime').innerHTML = `<span>🔄</span><span>Oxirgi yangilanish: ${new Date().toLocaleTimeString('uz-UZ')}</span>`;
     </script>
 </body>
 
