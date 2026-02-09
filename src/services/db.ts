@@ -3,7 +3,7 @@ import { config, pgConfig } from '../config';
 
 const pool = new Pool(pgConfig);
 
-const initTablesQuery = `
+const createUsersTable = `
     CREATE TABLE IF NOT EXISTS users (
         telegram_id BIGINT PRIMARY KEY,
         full_name TEXT,
@@ -12,7 +12,9 @@ const initTablesQuery = `
         joined_at TIMESTAMPTZ DEFAULT NOW(),
         balance INTEGER DEFAULT 0
     );
+`;
 
+const createFilesTable = `
     CREATE TABLE IF NOT EXISTS files (
         file_key TEXT PRIMARY KEY,
         status TEXT DEFAULT 'PENDING',
@@ -25,14 +27,9 @@ const initTablesQuery = `
         original_file_key TEXT,
         transcribed_text TEXT
     );
+`;
 
-    CREATE INDEX IF NOT EXISTS idx_files_status ON files(status);
-    CREATE INDEX IF NOT EXISTS idx_files_assigned ON files(assigned_to) WHERE assigned_to IS NOT NULL;
-    CREATE INDEX IF NOT EXISTS idx_files_processed_at ON files(processed_at) WHERE processed_at IS NOT NULL;
-    CREATE INDEX IF NOT EXISTS idx_files_status_created ON files(status, locked_at);
-    CREATE INDEX IF NOT EXISTS idx_files_locked_by ON files(assigned_to) WHERE assigned_to IS NOT NULL AND status = 'LOCKED';
-    CREATE INDEX IF NOT EXISTS idx_files_synced ON files(synced_at) WHERE synced_at IS NOT NULL;
-
+const createTranscriptionFilesTable = `
     CREATE TABLE IF NOT EXISTS transcription_files (
         file_key TEXT PRIMARY KEY,
         status TEXT DEFAULT 'PENDING',
@@ -42,19 +39,29 @@ const initTablesQuery = `
         transcribed_text TEXT,
         audio_duration_sec INTEGER
     );
+`;
 
-    CREATE INDEX IF NOT EXISTS idx_transcription_status ON transcription_files(status);
-    CREATE INDEX IF NOT EXISTS idx_transcription_assigned ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL;
-    CREATE INDEX IF NOT EXISTS idx_transcription_processed_at ON transcription_files(processed_at) WHERE processed_at IS NOT NULL;
-    CREATE INDEX IF NOT EXISTS idx_transcription_status_created ON transcription_files(status, locked_at);
-    CREATE INDEX IF NOT EXISTS idx_transcription_locked_by ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL AND status = 'LOCKED';
-
+const createBotStateTable = `
     CREATE TABLE IF NOT EXISTS bot_state (
         user_id BIGINT PRIMARY KEY,
         state_type TEXT NOT NULL,
         data JSONB NOT NULL,
         updated_at TIMESTAMPTZ DEFAULT NOW()
     );
+`;
+
+const createIndexes = `
+    CREATE INDEX IF NOT EXISTS idx_files_status ON files(status);
+    CREATE INDEX IF NOT EXISTS idx_files_assigned ON files(assigned_to) WHERE assigned_to IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_files_processed_at ON files(processed_at) WHERE processed_at IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_files_status_created ON files(status, locked_at);
+    CREATE INDEX IF NOT EXISTS idx_files_locked_by ON files(assigned_to) WHERE assigned_to IS NOT NULL AND status = 'LOCKED';
+    CREATE INDEX IF NOT EXISTS idx_files_synced ON files(synced_at) WHERE synced_at IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_transcription_status ON transcription_files(status);
+    CREATE INDEX IF NOT EXISTS idx_transcription_assigned ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_transcription_processed_at ON transcription_files(processed_at) WHERE processed_at IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_transcription_status_created ON transcription_files(status, locked_at);
+    CREATE INDEX IF NOT EXISTS idx_transcription_locked_by ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL AND status = 'LOCKED';
 `;
 
 const withTransaction = async <T>(fn: (client: PoolClient) => Promise<T>): Promise<T> => {
@@ -74,27 +81,65 @@ const withTransaction = async <T>(fn: (client: PoolClient) => Promise<T>): Promi
 
 export const dbService = {
     init: async () => {
-        await pool.query(initTablesQuery);
+        // Create tables one by one
+        const tables = [
+            { name: 'users', query: createUsersTable },
+            { name: 'files', query: createFilesTable },
+            { name: 'transcription_files', query: createTranscriptionFilesTable },
+            { name: 'bot_state', query: createBotStateTable }
+        ];
 
-        // Migration: Add columns if they don't exist
-        try {
-            await pool.query(`
-                ALTER TABLE users ADD COLUMN IF NOT EXISTS balance INTEGER DEFAULT 0;
-                ALTER TABLE files ADD COLUMN IF NOT EXISTS audio_duration_sec INTEGER;
-                ALTER TABLE transcription_files ADD COLUMN IF NOT EXISTS audio_duration_sec INTEGER;
-                ALTER TABLE files ADD COLUMN IF NOT EXISTS synced_at TIMESTAMPTZ;
-                ALTER TABLE files ADD COLUMN IF NOT EXISTS original_file_key TEXT;
-                ALTER TABLE files ADD COLUMN IF NOT EXISTS transcribed_text TEXT;
-            `);
-        } catch (e) {
-            console.log('Migration note: columns check completed');
+        for (const table of tables) {
+            try {
+                await pool.query(table.query);
+                console.log(`Table ${table.name} created or already exists`);
+            } catch (e: any) {
+                console.error(`Error creating table ${table.name}:`, e.message);
+                throw e;
+            }
         }
 
+        // Create indexes
+        try {
+            await pool.query(createIndexes);
+            console.log('Indexes created');
+        } catch (e: any) {
+            console.error('Error creating indexes:', e.message);
+        }
+
+        // Migration: Add columns if they don't exist (one at a time for safety)
+        const migrations = [
+            { table: 'users', column: 'balance', type: 'INTEGER DEFAULT 0' },
+            { table: 'files', column: 'audio_duration_sec', type: 'INTEGER' },
+            { table: 'transcription_files', column: 'audio_duration_sec', type: 'INTEGER' },
+            { table: 'files', column: 'synced_at', type: 'TIMESTAMPTZ' },
+            { table: 'files', column: 'original_file_key', type: 'TEXT' },
+            { table: 'files', column: 'transcribed_text', type: 'TEXT' }
+        ];
+
+        for (const migration of migrations) {
+            try {
+                await pool.query(`
+                    ALTER TABLE ${migration.table} 
+                    ADD COLUMN IF NOT EXISTS ${migration.column} ${migration.type}
+                `);
+                console.log(`Column ${migration.column} added to ${migration.table}`);
+            } catch (e: any) {
+                console.log(`Migration note for ${migration.table}.${migration.column}: ${e.message}`);
+            }
+        }
+
+        // Insert default admins
         for (const adminId of config.ADMIN_IDS) {
-            await pool.query(
-                'INSERT INTO users (telegram_id, full_name, is_admin) VALUES ($1, $2, 1) ON CONFLICT (telegram_id) DO NOTHING',
-                [adminId, 'Admin']
-            );
+            try {
+                await pool.query(
+                    'INSERT INTO users (telegram_id, full_name, is_admin) VALUES ($1, $2, 1) ON CONFLICT (telegram_id) DO NOTHING',
+                    [adminId, 'Admin']
+                );
+                console.log(`Admin ${adminId} added`);
+            } catch (e) {
+                console.log(`Admin insert note for ${adminId}`);
+            }
         }
     },
 
