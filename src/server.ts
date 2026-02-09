@@ -164,10 +164,15 @@ app.get('/dashboard', requireAuth, async (req, res) => {
         // Get Lifetime Stats (Daily) for the new chart
         const lifetimeStats = await dbService.getLifetimeDailyStats();
 
+        // Parse query params for alerts
+        const query: any = {};
+        if (req.query.success) query.success = req.query.success;
+        if (req.query.error) query.error = req.query.error;
+
         res.render('dashboard', {
             users: usersWithStats,
             chartData,
-            lifetimeStats, // Pass lifetime stats to view
+            lifetimeStats,
             stats: {
                 pending: pendingCount,
                 transcriptionPending: transcriptionPendingCount,
@@ -177,11 +182,11 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 checkedDuration: formatDuration(totalCheckedDuration),
                 pendingDuration: formatDuration(pendingDuration)
             },
-            csrfToken: '' // CSRF disabled temporarily for debugging
+            query,
+            csrfToken: ''
         });
     } catch (err: any) {
         console.error('Dashboard error:', err);
-        // Show actual error to the user for debugging
         res.status(500).send(`Server xatosi: ${err.message || err}`);
     }
 });
@@ -251,12 +256,17 @@ app.get('/dashboard-debug', requireAuth, async (req, res) => {
 
 app.post('/users/add', requireAuth, async (req, res) => {
     const { telegram_id, full_name, is_admin } = req.body;
+    console.log('Add user request:', { telegram_id, full_name, is_admin });
     try {
+        if (!telegram_id || !full_name) {
+            throw new Error('Telegram ID va ism kiritilishi shart');
+        }
         await dbService.addUser(Number(telegram_id), full_name, is_admin ? 1 : 0);
-        res.redirect('/dashboard');
-    } catch (err) {
+        console.log('User added successfully');
+        res.redirect('/dashboard?success=user_added');
+    } catch (err: any) {
         console.error('Add user error:', err);
-        res.redirect('/dashboard?error=add_failed');
+        res.redirect(`/dashboard?error=add_failed&message=${encodeURIComponent(err.message)}`);
     }
 });
 
@@ -264,7 +274,7 @@ app.post('/users/payout/:id', requireAuth, async (req, res) => {
     const userId = Number(req.params.id);
     try {
         await dbService.resetBalance(userId);
-        res.redirect('/dashboard');
+        res.redirect('/dashboard?success=payout_complete');
     } catch (err) {
         console.error('Payout error:', err);
         res.redirect('/dashboard?error=payout_failed');
@@ -277,7 +287,7 @@ app.post('/users/add-balance/:id', requireAuth, async (req, res) => {
     const amount = Number(req.body.amount) || 0;
     try {
         await dbService.incrementBalance(userId, amount);
-        res.redirect('/dashboard');
+        res.redirect('/dashboard?success=balance_added');
     } catch (err) {
         console.error('Add balance error:', err);
         res.redirect('/dashboard?error=add_balance_failed');
@@ -295,7 +305,7 @@ app.post('/users/update/:id', requireAuth, async (req, res) => {
             full_name,
             is_admin ? 1 : 0
         );
-        res.redirect('/dashboard');
+        res.redirect('/dashboard?success=user_updated');
     } catch (err) {
         console.error('Update user error:', err);
         res.redirect('/dashboard?error=update_failed');
@@ -307,7 +317,7 @@ app.post('/users/delete/:id', requireAuth, async (req, res) => {
     const userId = Number(req.params.id);
     try {
         await dbService.deleteUser(userId);
-        res.redirect('/dashboard');
+        res.redirect('/dashboard?success=user_deleted');
     } catch (err) {
         console.error('Delete user error:', err);
         res.redirect('/dashboard?error=delete_failed');
@@ -342,7 +352,7 @@ app.post('/review/penalty/:id', requireAuth, async (req, res) => {
     const userId = Number(req.params.id);
     try {
         await dbService.reduceBalanceByPercent(userId, 50);
-        res.redirect('/dashboard');
+        res.redirect('/dashboard?success=penalty_applied');
     } catch (err) {
         console.error('Penalty error:', err);
         res.redirect('/dashboard?error=penalty_failed');

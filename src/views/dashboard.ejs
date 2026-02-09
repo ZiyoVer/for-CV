@@ -24,6 +24,23 @@
             --radius: 8px;
         }
 
+        [data-theme="dark"] {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #252525;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-tertiary: #666666;
+            --border-color: #2a2a2a;
+            --accent-primary: #d97757;
+            --accent-secondary: #e07a5f;
+            --success: #22c55e;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -36,6 +53,7 @@
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         /* Header */
@@ -106,6 +124,23 @@
             gap: 16px;
         }
 
+        /* Theme Toggle */
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+        }
+
+        .theme-toggle:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -122,12 +157,12 @@
         }
 
         .btn-primary {
-            background: var(--text-primary);
+            background: var(--accent-primary);
             color: white;
         }
 
         .btn-primary:hover {
-            background: #333;
+            background: var(--accent-secondary);
             transform: translateY(-1px);
             box-shadow: var(--shadow-hover);
         }
@@ -354,11 +389,12 @@
             text-align: center;
             transition: all 0.2s ease;
             background: var(--bg-tertiary);
+            cursor: pointer;
         }
 
         .upload-area:hover {
             border-color: var(--accent-primary);
-            background: rgba(217, 119, 87, 0.02);
+            background: rgba(217, 119, 87, 0.05);
         }
 
         .upload-icon {
@@ -378,18 +414,37 @@
             color: var(--text-tertiary);
         }
 
-        /* Forms */
+        /* Forms - Updated inline layout */
         .form-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
             gap: 16px;
-            align-items: end;
+            align-items: flex-end;
+            flex-wrap: wrap;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
             gap: 6px;
+        }
+
+        .form-group.input-id {
+            flex: 0 0 180px;
+        }
+
+        .form-group.input-name {
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+        }
+
+        .form-group.input-admin {
+            flex: 0 0 auto;
+            padding-bottom: 8px;
+        }
+
+        .form-group.input-submit {
+            flex: 0 0 auto;
         }
 
         .form-label {
@@ -407,6 +462,7 @@
             color: var(--text-primary);
             font-family: inherit;
             transition: all 0.2s ease;
+            width: 100%;
         }
 
         .form-input:focus {
@@ -422,6 +478,7 @@
             font-size: 14px;
             color: var(--text-primary);
             cursor: pointer;
+            white-space: nowrap;
         }
 
         .form-checkbox input {
@@ -572,6 +629,26 @@
             color: var(--text-secondary);
         }
 
+        /* Alert Messages */
+        .alert {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
         /* Responsive */
         @media (max-width: 1200px) {
             .stats-grid {
@@ -601,7 +678,14 @@
             }
 
             .form-grid {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-group.input-id,
+            .form-group.input-name {
+                flex: 1 1 100%;
+                max-width: none;
             }
 
             .chart-container {
@@ -660,12 +744,23 @@
             </nav>
         </div>
         <div class="header-right">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Dark/Light mode">
+                <span id="theme-icon">🌙</span>
+            </button>
             <a href="/logout" class="btn btn-outline btn-small">Chiqish</a>
         </div>
     </div>
 </header>
 
 <div class="container">
+    <!-- Alert Messages -->
+    <% if (typeof query !== 'undefined' && query.success) { %>
+        <div class="alert alert-success">✅ <%= query.success %></div>
+    <% } %>
+    <% if (typeof query !== 'undefined' && query.error) { %>
+        <div class="alert alert-error">❌ Xatolik yuz berdi</div>
+    <% } %>
+
     <!-- Page Header -->
     <div class="page-header">
         <h1 class="page-title">Dashboard Overview</h1>
@@ -808,30 +903,29 @@
         </div>
     </div>
 
-    <!-- Add User Section -->
+    <!-- Add User Section - Updated inline layout -->
     <div class="section-card">
         <div class="section-header">
             <h2 class="section-title">Yangi Foydalanuvchi Qo'shish</h2>
         </div>
         <div class="section-body">
             <form action="/users/add" method="POST" class="form-grid">
-                <div class="form-group">
+                <div class="form-group input-id">
                     <label class="form-label">Telegram ID</label>
                     <input type="number" name="telegram_id" class="form-input" placeholder="123456789" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group input-name">
                     <label class="form-label">Ism Familiya</label>
                     <input type="text" name="full_name" class="form-input" placeholder="John Doe" required>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Admin huquqi</label>
+                <div class="form-group input-admin">
                     <label class="form-checkbox" style="padding: 10px 0;">
                         <input type="checkbox" name="is_admin">
-                        <span>Admin sifatida qo'shish</span>
+                        <span>Admin</span>
                     </label>
                 </div>
-                <div class="form-group" style="grid-column: 1 / -1; text-align: right;">
-                    <button type="submit" class="btn btn-primary">Foydalanuvchi qo'shish</button>
+                <div class="form-group input-submit">
+                    <button type="submit" class="btn btn-primary btn-small">Qo'shish</button>
                 </div>
             </form>
         </div>
@@ -956,6 +1050,34 @@ function updateFileName(input) {
     }
 }
 
+// Theme Toggle
+function toggleTheme() {
+    const html = document.documentElement;
+    const icon = document.getElementById('theme-icon');
+    const currentTheme = html.getAttribute('data-theme');
+    
+    if (currentTheme === 'dark') {
+        html.removeAttribute('data-theme');
+        icon.textContent = '🌙';
+        localStorage.setItem('theme', 'light');
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        icon.textContent = '☀️';
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+// Load saved theme
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme');
+    const icon = document.getElementById('theme-icon');
+    
+    if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        icon.textContent = '☀️';
+    }
+});
+
 // Chart.js Configuration
 const chartColors = {
     primary: '#d97757',
@@ -966,6 +1088,10 @@ const chartColors = {
     neutral: '#888888',
     background: ['#d97757', '#10b981', '#ef4444', '#f59e0b', '#6366f1', '#8b5cf6', '#ec4899']
 };
+
+const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : '#f0f0f0';
+const textColor = isDarkMode ? '#a0a0a0' : '#888';
 
 const chartOptions = {
     responsive: true,
@@ -980,11 +1106,12 @@ const chartOptions = {
                 font: {
                     size: 12,
                     family: '-apple-system, BlinkMacSystemFont, sans-serif'
-                }
+                },
+                color: textColor
             }
         },
         tooltip: {
-            backgroundColor: '#1a1a1a',
+            backgroundColor: isDarkMode ? '#1a1a1a' : '#1a1a1a',
             padding: 12,
             cornerRadius: 8,
             titleFont: { size: 13, weight: '600' },
@@ -993,13 +1120,13 @@ const chartOptions = {
     },
     scales: {
         x: {
-            grid: { display: false },
-            ticks: { font: { size: 11 }, color: '#888' }
+            grid: { display: false, color: gridColor },
+            ticks: { font: { size: 11 }, color: textColor }
         },
         y: {
             beginAtZero: true,
-            grid: { color: '#f0f0f0' },
-            ticks: { font: { size: 11 }, color: '#888' }
+            grid: { color: gridColor },
+            ticks: { font: { size: 11 }, color: textColor }
         }
     }
 };
@@ -1071,13 +1198,13 @@ new Chart(userActivityCtx, {
         scales: {
             x: {
                 stacked: true,
-                grid: { display: false },
-                ticks: { font: { size: 11 }, color: '#888' }
+                grid: { display: false, color: gridColor },
+                ticks: { font: { size: 11 }, color: textColor }
             },
             y: {
                 stacked: true,
                 grid: { display: false },
-                ticks: { font: { size: 12 }, color: '#666' }
+                ticks: { font: { size: 12 }, color: isDarkMode ? '#ffffff' : '#666' }
             }
         }
     }
@@ -1192,7 +1319,7 @@ new Chart(contributorsCtx, {
             data: contributorData,
             backgroundColor: chartColors.background.slice(0, contributors.length),
             borderWidth: 2,
-            borderColor: '#ffffff'
+            borderColor: isDarkMode ? '#1a1a1a' : '#ffffff'
         }]
     },
     options: {
@@ -1205,7 +1332,8 @@ new Chart(contributorsCtx, {
                     usePointStyle: true,
                     padding: 10,
                     font: { size: 11 },
-                    boxWidth: 10
+                    boxWidth: 10,
+                    color: textColor
                 }
             }
         }
