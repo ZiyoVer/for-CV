@@ -750,10 +750,6 @@
                 </nav>
             </div>
             <div class="header-right">
-                <button id="syncBtn" class="btn btn-small"
-                    style="margin-right: 10px; background: linear-gradient(135deg, #10b981, #059669);">
-                    <span id="syncIcon">🔄</span> Sync
-                </button>
                 <a href="/logout" class="btn btn-outline btn-small">Chiqish</a>
             </div>
         </div>
@@ -1127,47 +1123,6 @@
         function openFilePicker() {
             document.getElementById('audioFiles').click();
         }
-
-        // Sync button click handler (STT only)
-        document.getElementById('syncBtn').addEventListener('click', async function () {
-            var btn = this;
-            var icon = document.getElementById('syncIcon');
-            var originalText = btn.innerHTML;
-
-            btn.disabled = true;
-            btn.innerHTML = '<span style="animation: spin 1s linear infinite; display: inline-block;">⏳</span> Syncing...';
-            btn.style.opacity = '0.7';
-
-            try {
-                var response = await fetch('/api/sync', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                var data = await response.json();
-
-                if (data.success) {
-                    btn.innerHTML = '✅ Sync tugadi!';
-                    btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                    setTimeout(function () {
-                        location.reload();
-                    }, 1500);
-                } else {
-                    btn.innerHTML = '❌ Xatolik';
-                    setTimeout(function () {
-                        btn.innerHTML = originalText;
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                    }, 2000);
-                }
-            } catch (err) {
-                btn.innerHTML = '❌ Xatolik';
-                setTimeout(function () {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                }, 2000);
-            }
-        });
 
         // Chart.js Configuration
         const chartColors = {
