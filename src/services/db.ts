@@ -150,10 +150,18 @@ export const dbService = {
     },
 
     addUser: async (telegram_id: number, full_name: string, is_admin = 0) => {
-        await pool.query(
-            'INSERT INTO users (telegram_id, full_name, is_admin) VALUES ($1, $2, $3) ON CONFLICT (telegram_id) DO NOTHING',
+        console.log('DB addUser called:', { telegram_id, full_name, is_admin });
+        const result = await pool.query(
+            `INSERT INTO users (telegram_id, full_name, is_admin) 
+             VALUES ($1, $2, $3) 
+             ON CONFLICT (telegram_id) DO UPDATE 
+             SET full_name = EXCLUDED.full_name, 
+                 is_admin = EXCLUDED.is_admin
+             RETURNING *`,
             [telegram_id, full_name, is_admin]
         );
+        console.log('DB addUser result:', result.rows[0]);
+        return result.rows[0];
     },
 
     listAdmins: async () => {
