@@ -211,6 +211,8 @@ app.get('/dashboard-simple', requireAuth, async (req, res) => {
             return `${hours}s ${minutes}m`;
         };
 
+        const lifetimeStats = await dbService.getLifetimeDailyStats();
+
         res.render('dashboard-simple', {
             users: usersWithStats,
             stats: {
@@ -221,7 +223,8 @@ app.get('/dashboard-simple', requireAuth, async (req, res) => {
                 totalChecked: totalAccepted + totalRejected,
                 checkedDuration: formatDuration(totalCheckedDuration),
                 pendingDuration: formatDuration(pendingDuration)
-            }
+            },
+            lifetimeStats
         });
     } catch (err: any) {
         console.error('Simple Dashboard error:', err);
@@ -545,6 +548,83 @@ app.get('/api/leaderboard', apiLimiter, async (req, res) => {
             updatedAt: new Date().toISOString()
         });
     } catch (err) {
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
+// API: Get Overview Stats for Dashboard Charts
+app.get('/api/stats/overview', requireAuth, apiLimiter, async (req, res) => {
+    try {
+        const allStats = await dbService.getAllUserStats();
+        const pendingCount = await dbService.getPendingCount();
+        const totalAccepted = allStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+        const totalRejected = allStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
+        const durationStats = await dbService.getDurationStats();
+        const durationByStatus: Record<string, number> = {};
+        durationStats.forEach((s: any) => {
+            durationByStatus[s.status] = Number(s.total_seconds) || 0;
+        });
+
+        const totalCheckedDuration = (durationByStatus['ACCEPTED'] || 0) + (durationByStatus['REJECTED'] || 0);
+        const pendingDuration = durationByStatus['PENDING'] || 0;
+
+        res.json({
+            success: true,
+            data: {
+                totalChecked: totalAccepted + totalRejected,
+                totalAccepted,
+                totalRejected,
+                pending: pendingCount,
+                checkedDuration: totalCheckedDuration,
+                pendingDuration
+            }
+        });
+    } catch (err) {
+        console.error('Overview stats error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
+// API: Get User Stats for User Activity Chart
+app.get('/api/stats/by-user', requireAuth, apiLimiter, async (req, res) => {
+    try {
+        const allStats = await dbService.getAllUserStats();
+        const userStats = allStats
+            .filter((s: any) => s.accepted_count > 0 || s.rejected_count > 0)
+            .map((s: any) => ({
+                name: s.full_name || 'Noma\'lum',
+                accepted_count: s.accepted_count || 0,
+                rejected_count: s.rejected_count || 0,
+                total: (s.accepted_count || 0) + (s.rejected_count || 0)
+            }));
+
+        res.json({
+            success: true,
+            data: userStats
+        });
+    } catch (err) {
+        console.error('User stats error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
+// API: Get Timeline Stats for Last 30 Days Chart
+app.get('/api/stats/timeline', requireAuth, apiLimiter, async (req, res) => {
+    try {
+        const stats = await dbService.getLifetimeDailyStats();
+        const timelineData = stats.map((s: any) => ({
+            date: s.date,
+            accepted: s.accepted || 0,
+            rejected: s.rejected || 0
+        }));
+
+        res.json({
+            success: true,
+            data: timelineData
+        });
+    } catch (err) {
+        console.error('Timeline stats error:', err);
         res.status(500).json({ success: false, error: 'Server error' });
     }
 });

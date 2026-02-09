@@ -286,5 +286,15 @@ export const s3Service = {
 
         console.log(`Uploaded transcription audio: ${key}`);
         return key;
+    },
+
+    // --- XORAZM REGION FUNCTIONS (Placeholder) ---
+
+    // Sync Xorazm region files from S3 'xorazm/' folder
+    async syncXorazmFiles() {
+        console.log("Starting S3 Sync for 'xorazm/' folder...");
+        console.log("⚠️ Xorazm region: Datasetlar tez orada qo'shiladi");
+        // Placeholder - will be implemented when Xorazm datasets are ready
+        return 0;
     }
 };
