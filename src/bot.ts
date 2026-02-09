@@ -159,6 +159,8 @@ bot.command('admin', async (ctx) => {
             .row()
             .text("🔄 STT Sync", "admin_sync")
             .text("📝 Trans. Sync", "admin_transcription_sync")
+            .row()
+            .text("🗑 Tozalash + Sync", "admin_clear_and_sync")
     });
 });
 
@@ -601,6 +603,37 @@ bot.callbackQuery("admin_transcription_sync", async (ctx) => {
         console.error("Transcription Sync error:", err);
         await ctx.reply(`⚠️ Sync xatolik bilan tugadi:\n${err.message}`);
     });
+});
+
+// Clear all PENDING files and re-sync from fresh
+bot.callbackQuery("admin_clear_and_sync", async (ctx) => {
+    const user = await dbService.getUser(ctx.from.id);
+    if (!user?.is_admin) return;
+
+    await ctx.answerCallbackQuery("Tozalash boshlandi...");
+    await ctx.reply("⏳ Barcha PENDING fayllar tozalanmoqda...");
+
+    try {
+        // Clear all PENDING files
+        const clearedSTT = await dbService.clearAllPendingFiles();
+        const clearedTrans = await dbService.clearAllPendingTranscriptionFiles();
+
+        await ctx.reply(`🗑 Tozalandi: ${clearedSTT} STT, ${clearedTrans} transkripsiya fayllar`);
+        await ctx.reply("🔄 Yangidan sync qilinmoqda (2026-02-09 dan)...");
+
+        // Re-sync STT
+        await s3Service.syncFiles();
+        const pendingSTT = await dbService.getPendingCount();
+
+        // Re-sync Transcription
+        await s3Service.syncTranscriptionFiles();
+        const pendingTrans = await dbService.getTranscriptionPendingCount();
+
+        await ctx.reply(`✅ Sync tugadi!\n📁 STT: ${pendingSTT}\n📝 Transkripsiya: ${pendingTrans}`);
+    } catch (err: any) {
+        console.error("Clear and sync error:", err);
+        await ctx.reply(`⚠️ Xatolik: ${err.message}`);
+    }
 });
 
 // --- HELPER FUNCTIONS ---

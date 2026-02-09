@@ -368,6 +368,18 @@ export const dbService = {
         return rows[0]?.count || 0;
     },
 
+    // Clear all PENDING files from database (for fresh start)
+    clearAllPendingFiles: async () => {
+        const result = await pool.query('DELETE FROM files WHERE status = $1', ['PENDING']);
+        return result.rowCount || 0;
+    },
+
+    // Clear all PENDING transcription files from database
+    clearAllPendingTranscriptionFiles: async () => {
+        const result = await pool.query('DELETE FROM transcription_files WHERE status = $1', ['PENDING']);
+        return result.rowCount || 0;
+    },
+
     // --- STATISTICS ---
     getUserStats: async (user_id: number) => {
         const { rows } = await pool.query(
