@@ -750,9 +750,6 @@
                 </nav>
             </div>
             <div class="header-right">
-                <button class="theme-toggle" onclick="toggleTheme()" title="Dark/Light mode">
-                    <span id="theme-icon">🌙</span>
-                </button>
                 <a href="/logout" class="btn btn-outline btn-small">Chiqish</a>
             </div>
         </div>
@@ -1126,34 +1123,6 @@
         function openFilePicker() {
             document.getElementById('audioFiles').click();
         }
-
-        // Theme Toggle
-        function toggleTheme() {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-            const currentTheme = html.getAttribute('data-theme');
-
-            if (currentTheme === 'dark') {
-                html.removeAttribute('data-theme');
-                icon.textContent = '🌙';
-                localStorage.setItem('theme', 'light');
-            } else {
-                html.setAttribute('data-theme', 'dark');
-                icon.textContent = '☀️';
-                localStorage.setItem('theme', 'dark');
-            }
-        }
-
-        // Load saved theme
-        document.addEventListener('DOMContentLoaded', function () {
-            const savedTheme = localStorage.getItem('theme');
-            const icon = document.getElementById('theme-icon');
-
-            if (savedTheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                icon.textContent = '☀️';
-            }
-        });
 
         // Chart.js Configuration
         const chartColors = {
