@@ -54,32 +54,14 @@ const fileCheckKeyboard = new Keyboard()
     .text("⬅️ Asosiy menyu")
     .resized();
 
-// Transcription action keyboard
+// Transcription action keyboard (for skip and menu only)
 const transcriptionKeyboard = new Keyboard()
     .text("⏭️ O'tkazish")
     .text("⬅️ Asosiy menyu")
     .resized();
 
-// Transcription review keyboard (after text input - for gender selection)
-const transcriptionGenderKeyboard = new Keyboard()
-    .text("👨 Erkak")
-    .text("👩 Ayol")
-    .row()
-    .text("✏️ Matnni tahrirlash")
-    .row()
-    .text("⬅️ Asosiy menyu")
-    .resized();
-
-// Transcription confirmation keyboard (after gender selection)
-const transcriptionConfirmKeyboard = new Keyboard()
-    .text("✅ Tasdiqlash")
-    .text("❌ Rad etish")
-    .row()
-    .text("✏️ Matnni tahrirlash")
-    .text("✏️ Jinsni o'zgartirish")
-    .row()
-    .text("⬅️ Asosiy menyu")
-    .resized();
+// NOTE: Gender and confirmation buttons now use InlineKeyboard (callback queries)
+// This is more reliable than Reply Keyboard as it doesn't conflict with text handler
 
 // --- MIDDLEWARE: AUTH CHECK ---
 async function authMiddleware(ctx: Context, next: NextFunction) {
@@ -388,13 +370,12 @@ bot.hears("⏭️ O'tkazish", async (ctx) => {
 
 // --- TEXT INPUT HANDLER FOR EDITING AND TRANSCRIPTION ---
 
-// List of known button texts to ignore in the text handler
+// List of known button texts to ignore in the text handler (STT and navigation only)
 const BUTTON_TEXTS = [
     "🎧 STT Tekshirish", "📝 Transkripsiya", "📋 Anotatsiya qoidalari", "⬅️ Asosiy menyu",
     "📚 Adabiy gaplar", "🌍 Xorazm viloyati",
-    "✅ To'g'ri", "❌ Xato", "✏️ Tahrirlash", "⏭️ O'tkazish", "❌ Bekor qilish",
-    "👨 Erkak", "👩 Ayol", "✏️ Matnni tahrirlash",
-    "✅ Tasdiqlash", "❌ Rad etish", "✏️ Jinsni o'zgartirish"
+    "✅ To'g'ri", "❌ Xato", "✏️ Tahrirlash", "⏭️ O'tkazish", "❌ Bekor qilish"
+    // Note: Transcription buttons now use InlineKeyboard callbacks
 ];
 
 bot.on("message:text", async (ctx) => {
@@ -438,14 +419,17 @@ bot.on("message:text", async (ctx) => {
         }
 
         const fileName = fileKey.split('/').pop()?.replace('.wav', '') || fileKey;
-        const caption = `📝 <b>TRANSKRIPSIYA (Tekshirish)</b>\n\n🆔 <code>${fileName}</code>\n\n<b>Siz yozgan matn:</b>\n<code>${newText}</code>\n\n<i>⬇️ Iltimos, audioni tinglab, so'zlovchi jinsini tanlang:</i>`;
+        const caption = `📝 <b>TRANSKRIPSIYA (Tekshirish)</b>\n\n🆔 <code>${fileName}</code>\n\n<b>Siz yozgan matn:</b>\n<code>${newText}</code>\n\n<i>⬇️ So'zlovchi jinsini tanlang:</i>`;
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
-            parse_mode: "HTML"
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard()
+                .text("👨 Erkak", "trans_gender_male")
+                .text("👩 Ayol", "trans_gender_female")
+                .row()
+                .text("✏️ Matnni tahrirlash", "trans_edit_text")
         });
-
-        await ctx.reply("So'zlovchi jinsini tanlang:", { reply_markup: transcriptionGenderKeyboard });
 
         return;
     }
@@ -487,19 +471,20 @@ bot.on("message:text", async (ctx) => {
     }
 });
 
-// --- TRANSCRIPTION ACTION HANDLERS ---
+// --- TRANSCRIPTION CALLBACK HANDLERS (InlineKeyboard) ---
 
-// Gender selection handlers - now show confirmation screen
-bot.hears("👨 Erkak", async (ctx) => {
-    await selectTranscriptionGender(ctx, 'male');
+// Gender selection callbacks
+bot.callbackQuery("trans_gender_male", async (ctx) => {
+    await handleTranscriptionGender(ctx, 'male');
 });
 
-bot.hears("👩 Ayol", async (ctx) => {
-    await selectTranscriptionGender(ctx, 'female');
+bot.callbackQuery("trans_gender_female", async (ctx) => {
+    await handleTranscriptionGender(ctx, 'female');
 });
 
-async function selectTranscriptionGender(ctx: any, gender: 'male' | 'female') {
-    if (!ctx.from) return;
+async function handleTranscriptionGender(ctx: any, gender: 'male' | 'female') {
+    await ctx.answerCallbackQuery();
+
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
@@ -514,29 +499,31 @@ async function selectTranscriptionGender(ctx: any, gender: 'male' | 'female') {
     stateRow.data.gender = gender;
     await dbService.saveState(userId, 'transcription_confirm', stateRow.data);
 
-    // Show confirmation screen with audio
-    const audioBuffer = await s3Service.getTranscriptionAudioBuffer(fileKey);
+    // Show confirmation screen
     const fileName = fileKey.split('/').pop()?.replace('.wav', '') || fileKey;
 
-    if (audioBuffer) {
-        const caption = `📝 <b>TRANSKRIPSIYA - TASDIQLASH</b>\n\n` +
-            `🆔 <code>${fileName}</code>\n\n` +
-            `<b>Matn:</b>\n<code>${tempText}</code>\n\n` +
-            `<b>Jins:</b> ${gender === 'male' ? '👨 Erkak' : '👩 Ayol'}\n\n` +
-            `<i>⬇️ Tasdiqlaysizmi?</i>`;
-
-        await ctx.replyWithAudio(new InputFile(audioBuffer), {
-            caption: caption,
-            parse_mode: "HTML"
-        });
-    }
-
-    await ctx.reply("Tasdiqlang yoki tahrirlang:", { reply_markup: transcriptionConfirmKeyboard });
+    await ctx.reply(
+        `📝 <b>TRANSKRIPSIYA - TASDIQLASH</b>\n\n` +
+        `🆔 <code>${fileName}</code>\n\n` +
+        `<b>Matn:</b>\n<code>${tempText}</code>\n\n` +
+        `<b>Jins:</b> ${gender === 'male' ? '👨 Erkak' : '👩 Ayol'}\n\n` +
+        `<i>⬇️ Tasdiqlaysizmi?</i>`,
+        {
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard()
+                .text("✅ Tasdiqlash", "trans_confirm")
+                .text("❌ Rad etish", "trans_deny")
+                .row()
+                .text("✏️ Matnni tahrirlash", "trans_edit_text")
+                .text("✏️ Jinsni o'zgartirish", "trans_edit_gender")
+        }
+    );
 }
 
 // CONFIRM - Save transcription to S3
-bot.hears("✅ Tasdiqlash", async (ctx) => {
-    if (!ctx.from) return;
+bot.callbackQuery("trans_confirm", async (ctx) => {
+    await ctx.answerCallbackQuery("Saqlanmoqda...");
+
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
@@ -597,8 +584,9 @@ bot.hears("✅ Tasdiqlash", async (ctx) => {
 });
 
 // DENY - Remove from DB only (don't delete from S3)
-bot.hears("❌ Rad etish", async (ctx) => {
-    if (!ctx.from) return;
+bot.callbackQuery("trans_deny", async (ctx) => {
+    await ctx.answerCallbackQuery("Rad etildi");
+
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
@@ -627,8 +615,9 @@ bot.hears("❌ Rad etish", async (ctx) => {
 });
 
 // EDIT TEXT - Allow re-entering transcription text
-bot.hears("✏️ Matnni tahrirlash", async (ctx) => {
-    if (!ctx.from) return;
+bot.callbackQuery("trans_edit_text", async (ctx) => {
+    await ctx.answerCallbackQuery();
+
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
@@ -654,8 +643,9 @@ bot.hears("✏️ Matnni tahrirlash", async (ctx) => {
 });
 
 // EDIT GENDER - Go back to gender selection
-bot.hears("✏️ Jinsni o'zgartirish", async (ctx) => {
-    if (!ctx.from) return;
+bot.callbackQuery("trans_edit_gender", async (ctx) => {
+    await ctx.answerCallbackQuery();
+
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
@@ -669,7 +659,11 @@ bot.hears("✏️ Jinsni o'zgartirish", async (ctx) => {
     // Switch back to transcription state (keep text)
     await dbService.saveState(userId, 'transcription', { fileKey, tempText });
 
-    await ctx.reply("Jinsni qayta tanlang:", { reply_markup: transcriptionGenderKeyboard });
+    await ctx.reply("Jinsni qayta tanlang:", {
+        reply_markup: new InlineKeyboard()
+            .text("👨 Erkak", "trans_gender_male")
+            .text("👩 Ayol", "trans_gender_female")
+    });
 });
 
 // --- INLINE KEYBOARD HANDLERS (For Admin Only) ---
