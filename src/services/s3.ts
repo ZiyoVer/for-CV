@@ -1,4 +1,4 @@
-import { S3Client, ListObjectsV2Command, GetObjectCommand, CopyObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, ListObjectsV2Command, GetObjectCommand, CopyObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from '../config';
 import { dbService } from './db';
@@ -110,7 +110,8 @@ export const s3Service = {
     },
 
     // Copy to sorted folder with year/month/day structure
-    async copyToSorted(key: string, transcribedText?: string) {
+    // deleteOriginal: if true, delete the original file after successful copy
+    async copyToSorted(key: string, transcribedText?: string, deleteOriginal: boolean = true) {
         // key is something like "stt/file.wav"
         // We want to copy it to "saralangan/2025/02/09/file.wav"
 
@@ -167,6 +168,25 @@ export const s3Service = {
         // Update DB to track the copy
         const originalFileName = fileName.replace('.wav', '');
         await dbService.updateFileCopyInfo(key, destinationKey, transcribedText);
+
+        // Delete original files from S3 to prevent re-syncing
+        if (deleteOriginal) {
+            try {
+                // Delete original audio
+                await s3.send(new DeleteObjectCommand({
+                    Bucket: config.WASABI_BUCKET,
+                    Key: key
+                }));
+                // Delete original JSON
+                await s3.send(new DeleteObjectCommand({
+                    Bucket: config.WASABI_BUCKET,
+                    Key: jsonKey
+                }));
+                console.log(`Deleted original files: ${key}, ${jsonKey}`);
+            } catch (e) {
+                console.warn(`Could not delete original files for ${key}`, e);
+            }
+        }
 
         return destinationKey;
     },
@@ -270,7 +290,7 @@ export const s3Service = {
     },
 
     // Copy transcription to sorted folder with user's transcribed text and metadata
-    async copyTranscriptionToSorted(key: string, transcribedText: string, duration?: number, gender?: string) {
+    async copyTranscriptionToSorted(key: string, transcribedText: string, duration?: number, gender?: string, deleteOriginal: boolean = true) {
         // key is like "transkripsiya/file.wav"
         // Destination: "saralangan/transkripsiya/2025/02/09/file.wav"
 
@@ -315,6 +335,19 @@ export const s3Service = {
         }));
 
         console.log(`Copied transcription to ${destinationKey} with metadata`);
+
+        // Delete original file from S3 to prevent re-syncing
+        if (deleteOriginal) {
+            try {
+                await s3.send(new DeleteObjectCommand({
+                    Bucket: config.WASABI_BUCKET,
+                    Key: key
+                }));
+                console.log(`Deleted original transcription file: ${key}`);
+            } catch (e) {
+                console.warn(`Could not delete original transcription file for ${key}`, e);
+            }
+        }
     },
 
     // Upload transcription audio file to S3
