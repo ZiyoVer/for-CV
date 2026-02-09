@@ -45,8 +45,8 @@ export const s3Service = {
                 await Promise.all(batch.map(async (file) => {
                     if (!file.Key) return;
 
-                    // Check if file already exists in DB
-                    const existingFile = await this.checkFileExists(file.Key);
+                    // Check if file already exists in DB (using dbService)
+                    const existingFile = await dbService.checkFileExists(file.Key);
                     if (existingFile) {
                         skipped++;
                         return; // Skip if already in DB
@@ -69,20 +69,6 @@ export const s3Service = {
             continuationToken = response.NextContinuationToken;
         } while (continuationToken);
         console.log(`Synced ${count} new files from stt/ folder. Skipped ${skipped} existing files.`);
-    },
-
-    // Check if file already exists in DB
-    async checkFileExists(fileKey: string): Promise<boolean> {
-        try {
-            const { Pool } = require('pg');
-            const { pgConfig } = require('../config');
-            const pool = new Pool(pgConfig);
-            const { rows } = await pool.query('SELECT file_key FROM files WHERE file_key = $1 LIMIT 1', [fileKey]);
-            await pool.end();
-            return rows.length > 0;
-        } catch (e) {
-            return false;
-        }
     },
 
     async getJsonContent(audioKey: string): Promise<any> {
@@ -127,18 +113,18 @@ export const s3Service = {
     async copyToSorted(key: string, transcribedText?: string) {
         // key is something like "stt/file.wav"
         // We want to copy it to "saralangan/2025/02/09/file.wav"
-        
+
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
-        
+
         // Extract filename from key
         const fileName = key.split('/').pop() || key;
-        
+
         // Build destination path: saralangan/2025/02/09/file.wav
         const destinationKey = `saralangan/${year}/${month}/${day}/${fileName}`;
-        
+
         console.log(`Copying ${key} to ${destinationKey}`);
 
         // Copy audio file
@@ -158,7 +144,7 @@ export const s3Service = {
                 const existingJson = await this.getJsonContent(key);
                 existingJson.text = transcribedText;
                 existingJson.transcribed_at = now.toISOString();
-                
+
                 // Save updated JSON to destination
                 await s3.send(new PutObjectCommand({
                     Bucket: config.WASABI_BUCKET,
@@ -177,11 +163,11 @@ export const s3Service = {
         } catch (e) {
             console.warn(`Could not copy/update JSON for ${key}`, e);
         }
-        
+
         // Update DB to track the copy
         const originalFileName = fileName.replace('.wav', '');
         await dbService.updateFileCopyInfo(key, destinationKey, transcribedText);
-        
+
         return destinationKey;
     },
 
@@ -226,6 +212,7 @@ export const s3Service = {
         console.log("Starting S3 Sync for 'transkripsiya/' folder...");
         let continuationToken: string | undefined;
         let count = 0;
+        let skipped = 0;
 
         do {
             const command = new ListObjectsV2Command({
@@ -249,14 +236,22 @@ export const s3Service = {
                 const batch = wavFiles.slice(i, i + BATCH_SIZE);
                 await Promise.all(batch.map(async (file) => {
                     if (!file.Key) return;
+
+                    // Check if file already exists in DB (prevent duplicates)
+                    const existingFile = await dbService.checkTranscriptionFileExists(file.Key);
+                    if (existingFile) {
+                        skipped++;
+                        return; // Skip if already in DB
+                    }
+
                     await dbService.addTranscriptionFile(file.Key);
+                    count++;
                 }));
-                count += batch.length;
             }
 
             continuationToken = response.NextContinuationToken;
         } while (continuationToken);
-        console.log(`Synced ${count} transcription files from transkripsiya/ folder.`);
+        console.log(`Synced ${count} new transcription files. Skipped ${skipped} existing files.`);
     },
 
     // Get transcription audio buffer (audio only, no text)
@@ -278,14 +273,14 @@ export const s3Service = {
     async copyTranscriptionToSorted(key: string, transcribedText: string, duration?: number, gender?: string) {
         // key is like "transkripsiya/file.wav"
         // Destination: "saralangan/transkripsiya/2025/02/09/file.wav"
-        
+
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
-        
+
         const fileName = key.split('/').pop() || 'unknown';
-        
+
         let destinationKey = '';
         if (key.startsWith('transkripsiya/')) {
             destinationKey = key.replace('transkripsiya/', `saralangan/transkripsiya/${year}/${month}/${day}/`);

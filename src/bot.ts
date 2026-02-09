@@ -5,6 +5,7 @@ import { dbService } from './services/db';
 import { statsService } from './services/stats';
 import { parseBuffer } from 'music-metadata';
 import { Logger } from './utils/logger';
+import path from 'path';
 
 export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
@@ -197,7 +198,9 @@ bot.hears("📝 Transkripsiya", async (ctx) => {
 bot.hears("📋 Anotatsiya qoidalari", async (ctx) => {
     if (!ctx.from) return;
     try {
-        await ctx.replyWithDocument(new InputFile("/Users/abc/Desktop/gravity/STT bot/UzDataLab_STT_Anonations_2026.pdf"), {
+        // Use relative path for production compatibility
+        const pdfPath = path.join(__dirname, '..', 'UzDataLab_STT_Anotations_2026.pdf');
+        await ctx.replyWithDocument(new InputFile(pdfPath), {
             caption: "📋 Anotatsiya qoidalari"
         });
     } catch (e) {
@@ -234,11 +237,11 @@ bot.hears("✅ To'g'ri", async (ctx) => {
         // 3. Clear state
         await dbService.deleteState(userId);
 
-        // PAYMENT LOGIC
+        // PAYMENT LOGIC - Reward for work done beyond free limit
         const checksToday = await dbService.get24hCheckCount(userId);
         if (checksToday > config.FREE_CHECKS_LIMIT) {
             await dbService.incrementBalance(userId, config.CHECK_PRICE);
-            await ctx.reply(`💳 ${config.CHECK_PRICE} so'm hisobdan yechildi. Kunlik bepul limit: ${config.FREE_CHECKS_LIMIT}`);
+            await ctx.reply(`💰 ${config.CHECK_PRICE} so'm hisobingizga qo'shildi! (Bepul limit: ${config.FREE_CHECKS_LIMIT})`);
         }
 
         // 4. Ask to continue

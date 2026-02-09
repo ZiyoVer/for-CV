@@ -166,6 +166,24 @@ export const dbService = {
         return rows;
     },
 
+    // Check if file exists in files table
+    checkFileExists: async (fileKey: string): Promise<boolean> => {
+        const { rows } = await pool.query(
+            'SELECT file_key FROM files WHERE file_key = $1 LIMIT 1',
+            [fileKey]
+        );
+        return rows.length > 0;
+    },
+
+    // Check if file exists in transcription_files table
+    checkTranscriptionFileExists: async (fileKey: string): Promise<boolean> => {
+        const { rows } = await pool.query(
+            'SELECT file_key FROM transcription_files WHERE file_key = $1 LIMIT 1',
+            [fileKey]
+        );
+        return rows.length > 0;
+    },
+
     // Optimized Dashboard Query (N+1 Fix)
     getDashboardUsers: async () => {
         const { rows } = await pool.query(`
@@ -208,19 +226,19 @@ export const dbService = {
 
     deleteUser: async (telegramId: number): Promise<void> => {
         return withTransaction<void>(async (client) => {
-            // Release all files (LOCKED, ACCEPTED, REJECTED) back to PENDING
+            // Only release LOCKED files back to PENDING (not ACCEPTED/REJECTED - those are done)
             await client.query(
                 `UPDATE files
                  SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
-                 WHERE assigned_to = $1 AND status IN ('LOCKED', 'ACCEPTED', 'REJECTED')`,
+                 WHERE assigned_to = $1 AND status = 'LOCKED'`,
                 [telegramId]
             );
 
-            // Do same for transcription_files
+            // Same for transcription_files - only release LOCKED
             await client.query(
                 `UPDATE transcription_files
                  SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
-                 WHERE assigned_to = $1 AND status IN ('LOCKED', 'ACCEPTED', 'REJECTED')`,
+                 WHERE assigned_to = $1 AND status = 'LOCKED'`,
                 [telegramId]
             );
 

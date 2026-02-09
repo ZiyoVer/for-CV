@@ -583,7 +583,7 @@ app.get('/api/stats/timeline', requireAuth, apiLimiter, async (req, res) => {
     try {
         const stats = await dbService.getLifetimeDailyStats();
         const timelineData = stats.map((s: any) => ({
-            date: s.date,
+            date: s.day,  // Fixed: was s.date but query returns 'day'
             accepted: s.accepted || 0,
             rejected: s.rejected || 0
         }));
