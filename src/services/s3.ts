@@ -15,12 +15,17 @@ const s3 = new S3Client({
 });
 
 export const s3Service = {
-    // Populate DB with files from S3 ("stt/" folder) - only adds new files, doesn't update existing
+    // Minimum date for syncing files - only sync files modified on or after this date
+    // This prevents old/already-checked files from being re-synced
+    SYNC_START_DATE: new Date('2026-02-09T00:00:00Z'),
+
+    // Populate DB with files from S3 ("stt/" folder) - only adds new files from SYNC_START_DATE onwards
     async syncFiles() {
-        console.log("Starting S3 Sync for 'stt/' folder...");
+        console.log(`Starting S3 Sync for 'stt/' folder (from ${this.SYNC_START_DATE.toISOString()})...`);
         let continuationToken: string | undefined;
         let count = 0;
         let skipped = 0;
+        let tooOld = 0;
 
         do {
             const command = new ListObjectsV2Command({
@@ -45,7 +50,13 @@ export const s3Service = {
                 await Promise.all(batch.map(async (file) => {
                     if (!file.Key) return;
 
-                    // Check if file already exists in DB (using dbService)
+                    // Filter by date: only sync files from SYNC_START_DATE onwards
+                    if (file.LastModified && file.LastModified < this.SYNC_START_DATE) {
+                        tooOld++;
+                        return; // Skip old files
+                    }
+
+                    // Check if file already exists in DB (any status: PENDING, ACCEPTED, REJECTED)
                     const existingFile = await dbService.checkFileExists(file.Key);
                     if (existingFile) {
                         skipped++;
@@ -68,7 +79,7 @@ export const s3Service = {
 
             continuationToken = response.NextContinuationToken;
         } while (continuationToken);
-        console.log(`Synced ${count} new files from stt/ folder. Skipped ${skipped} existing files.`);
+        console.log(`Synced ${count} new files. Skipped: ${skipped} existing, ${tooOld} too old.`);
     },
 
     async getJsonContent(audioKey: string): Promise<any> {
