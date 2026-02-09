@@ -224,12 +224,13 @@ bot.hears("✅ To'g'ri", async (ctx) => {
     }
 
     const key = stateRow.data.fileKey;
+    const editedText = stateRow.data.editedText; // Get edited text if available
 
     try {
-        // 1. Copy S3
-        await s3Service.copyToSorted(key);
-        // 2. DB Update
-        await dbService.updateFileStatus(userId, key, 'ACCEPTED');
+        // 1. Copy S3 with edited text
+        await s3Service.copyToSorted(key, editedText);
+        // 2. DB Update with transcribed text
+        await dbService.updateFileStatus(userId, key, 'ACCEPTED', editedText);
         // 3. Clear state
         await dbService.deleteState(userId);
 
@@ -425,8 +426,8 @@ bot.on("message:text", async (ctx) => {
             const success = await s3Service.updateJsonText(fileKey, newText);
 
             if (success) {
-                // Done editing, switch to checking state
-                await dbService.saveState(userId, 'checking', { fileKey });
+                // Done editing, switch to checking state WITH the edited text
+                await dbService.saveState(userId, 'checking', { fileKey, editedText: newText });
 
                 // Fetch audio again
                 const audioBuffer = await s3Service.getFileBuffer(fileKey);

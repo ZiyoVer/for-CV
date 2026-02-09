@@ -20,7 +20,10 @@ const initTablesQuery = `
         locked_at TIMESTAMPTZ,
         processed_at TIMESTAMPTZ,
         processing_duration_sec INTEGER,
-        audio_duration_sec INTEGER
+        audio_duration_sec INTEGER,
+        synced_at TIMESTAMPTZ,
+        original_file_key TEXT,
+        transcribed_text TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_files_status ON files(status);
@@ -28,6 +31,7 @@ const initTablesQuery = `
     CREATE INDEX IF NOT EXISTS idx_files_processed_at ON files(processed_at) WHERE processed_at IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_files_status_created ON files(status, locked_at);
     CREATE INDEX IF NOT EXISTS idx_files_locked_by ON files(assigned_to) WHERE assigned_to IS NOT NULL AND status = 'LOCKED';
+    CREATE INDEX IF NOT EXISTS idx_files_synced ON files(synced_at) WHERE synced_at IS NOT NULL;
 
     CREATE TABLE IF NOT EXISTS transcription_files (
         file_key TEXT PRIMARY KEY,
@@ -72,12 +76,15 @@ export const dbService = {
     init: async () => {
         await pool.query(initTablesQuery);
 
-        // Migration: Add balance column if it doesn't exist (for existing databases)
+        // Migration: Add columns if they don't exist
         try {
             await pool.query(`
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS balance INTEGER DEFAULT 0;
                 ALTER TABLE files ADD COLUMN IF NOT EXISTS audio_duration_sec INTEGER;
                 ALTER TABLE transcription_files ADD COLUMN IF NOT EXISTS audio_duration_sec INTEGER;
+                ALTER TABLE files ADD COLUMN IF NOT EXISTS synced_at TIMESTAMPTZ;
+                ALTER TABLE files ADD COLUMN IF NOT EXISTS original_file_key TEXT;
+                ALTER TABLE files ADD COLUMN IF NOT EXISTS transcribed_text TEXT;
             `);
         } catch (e) {
             console.log('Migration note: columns check completed');
@@ -187,9 +194,6 @@ export const dbService = {
     },
 
     reduceBalanceByPercent: async (user_id: number, percent: number) => {
-        // e.g. percent=50 -> balance = balance * 0.5
-        // Use integer math carefully or cast. We'll verify it's integer result via floor logic if needed.
-        // Or simply: balance = floor(balance * (100 - percent) / 100)
         const factor = (100 - percent) / 100;
         await pool.query('UPDATE users SET balance = FLOOR(balance * $1) WHERE telegram_id = $2', [factor, user_id]);
     },
@@ -242,14 +246,15 @@ export const dbService = {
         });
     },
 
-    updateFileStatus: async (user_id: number, file_key: string, status: 'ACCEPTED' | 'REJECTED') => {
+    updateFileStatus: async (user_id: number, file_key: string, status: 'ACCEPTED' | 'REJECTED', transcribedText?: string) => {
         await pool.query(
             `UPDATE files
              SET status = $1,
                  processed_at = NOW(),
-                 processing_duration_sec = EXTRACT(EPOCH FROM (NOW() - locked_at))::int
+                 processing_duration_sec = EXTRACT(EPOCH FROM (NOW() - locked_at))::int,
+                 transcribed_text = COALESCE($4, transcribed_text)
              WHERE file_key = $2 AND assigned_to = $3`,
-            [status, file_key, user_id]
+            [status, file_key, user_id, transcribedText || null]
         );
     },
 
@@ -263,9 +268,34 @@ export const dbService = {
         );
     },
 
+    // Mark file as synced from S3
+    markFileSynced: async (file_key: string) => {
+        await pool.query(
+            'UPDATE files SET synced_at = NOW() WHERE file_key = $1',
+            [file_key]
+        );
+    },
+
+    // Update file copy information
+    updateFileCopyInfo: async (originalKey: string, copiedToKey: string, transcribedText?: string) => {
+        await pool.query(
+            `UPDATE files 
+             SET original_file_key = $2,
+                 transcribed_text = COALESCE($3, transcribed_text),
+                 processed_at = COALESCE(processed_at, NOW())
+             WHERE file_key = $1`,
+            [originalKey, copiedToKey, transcribedText || null]
+        );
+    },
+
+    // Add file with sync tracking
     addFile: async (key: string, duration?: number) => {
         await pool.query(
-            'INSERT INTO files (file_key, audio_duration_sec) VALUES ($1, $2) ON CONFLICT (file_key) DO UPDATE SET audio_duration_sec = COALESCE(files.audio_duration_sec, EXCLUDED.audio_duration_sec)',
+            `INSERT INTO files (file_key, audio_duration_sec, synced_at) 
+             VALUES ($1, $2, NOW()) 
+             ON CONFLICT (file_key) DO UPDATE 
+             SET synced_at = COALESCE(files.synced_at, NOW()),
+                 audio_duration_sec = COALESCE(files.audio_duration_sec, EXCLUDED.audio_duration_sec)`,
             [key, duration || null]
         );
     },
@@ -330,14 +360,12 @@ export const dbService = {
 
     lockNextTranscriptionFile: async (user_id: number): Promise<string | null> => {
         return withTransaction<string | null>(async (client) => {
-            // Check if user already has a locked file
             const existing = await client.query(
                 'SELECT file_key FROM transcription_files WHERE status = $1 AND assigned_to = $2 LIMIT 1 FOR UPDATE',
                 ['LOCKED', user_id]
             );
             if (existing.rowCount) return existing.rows[0].file_key;
 
-            // Get next pending file
             const pending = await client.query(
                 'SELECT file_key FROM transcription_files WHERE status = $1 ORDER BY file_key LIMIT 1 FOR UPDATE SKIP LOCKED',
                 ['PENDING']
@@ -435,8 +463,8 @@ export const dbService = {
              JOIN users u ON f.assigned_to = u.telegram_id
              WHERE f.status IN ('ACCEPTED', 'REJECTED')
                AND f.processed_at > NOW() - INTERVAL '24 hours'
-              GROUP BY u.full_name, u.telegram_id, DATE_TRUNC('hour', f.processed_at)
-              ORDER BY hour ASC`
+               GROUP BY u.full_name, u.telegram_id, DATE_TRUNC('hour', f.processed_at)
+               ORDER BY hour ASC`
         );
         return rows;
     },

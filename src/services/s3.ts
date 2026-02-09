@@ -15,11 +15,12 @@ const s3 = new S3Client({
 });
 
 export const s3Service = {
-    // Populate DB with files from S3 ("stt/" folder)
+    // Populate DB with files from S3 ("stt/" folder) - only adds new files, doesn't update existing
     async syncFiles() {
         console.log("Starting S3 Sync for 'stt/' folder...");
         let continuationToken: string | undefined;
         let count = 0;
+        let skipped = 0;
 
         do {
             const command = new ListObjectsV2Command({
@@ -44,6 +45,13 @@ export const s3Service = {
                 await Promise.all(batch.map(async (file) => {
                     if (!file.Key) return;
 
+                    // Check if file already exists in DB
+                    const existingFile = await this.checkFileExists(file.Key);
+                    if (existingFile) {
+                        skipped++;
+                        return; // Skip if already in DB
+                    }
+
                     // Try to get duration from JSON first
                     let duration = 0;
                     try {
@@ -54,13 +62,27 @@ export const s3Service = {
                     } catch (e) { }
 
                     await dbService.addFile(file.Key, duration);
+                    count++;
                 }));
-                count += batch.length;
             }
 
             continuationToken = response.NextContinuationToken;
         } while (continuationToken);
-        console.log(`Synced ${count} files from stt/ folder.`);
+        console.log(`Synced ${count} new files from stt/ folder. Skipped ${skipped} existing files.`);
+    },
+
+    // Check if file already exists in DB
+    async checkFileExists(fileKey: string): Promise<boolean> {
+        try {
+            const { Pool } = require('pg');
+            const { pgConfig } = require('../config');
+            const pool = new Pool(pgConfig);
+            const { rows } = await pool.query('SELECT file_key FROM files WHERE file_key = $1 LIMIT 1', [fileKey]);
+            await pool.end();
+            return rows.length > 0;
+        } catch (e) {
+            return false;
+        }
     },
 
     async getJsonContent(audioKey: string): Promise<any> {
@@ -101,43 +123,66 @@ export const s3Service = {
         }
     },
 
-    async copyToSorted(key: string) {
+    // Copy to sorted folder with year/month/day structure
+    async copyToSorted(key: string, transcribedText?: string) {
         // key is something like "stt/file.wav"
-        // We want to move it to "saralangan/file.wav" (OUTSIDE stt)
+        // We want to copy it to "saralangan/2025/02/09/file.wav"
+        
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        
+        // Extract filename from key
+        const fileName = key.split('/').pop() || key;
+        
+        // Build destination path: saralangan/2025/02/09/file.wav
+        const destinationKey = `saralangan/${year}/${month}/${day}/${fileName}`;
+        
+        console.log(`Copying ${key} to ${destinationKey}`);
 
-        let destinationKey = '';
-        if (key.startsWith('stt/')) {
-            // Remove "stt/" prefix and prepend "saralangan/"
-            destinationKey = key.replace('stt/', 'saralangan/');
-        } else {
-            // Fallback: just put it in saralangan/
-            destinationKey = `saralangan/${key}`;
-        }
-
+        // Copy audio file
         await s3.send(new CopyObjectCommand({
             Bucket: config.WASABI_BUCKET,
             CopySource: `${config.WASABI_BUCKET}/${key}`,
             Key: destinationKey
         }));
 
-        // Also copy JSON
+        // Also copy JSON with updated text if provided
         const jsonKey = key.replace('.wav', '.json');
-        let jsonDest = '';
-        if (jsonKey.startsWith('stt/')) {
-            jsonDest = jsonKey.replace('stt/', 'saralangan/');
-        } else {
-            jsonDest = `saralangan/${jsonKey}`;
-        }
+        const jsonDest = destinationKey.replace('.wav', '.json');
 
         try {
-            await s3.send(new CopyObjectCommand({
-                Bucket: config.WASABI_BUCKET,
-                CopySource: `${config.WASABI_BUCKET}/${jsonKey}`,
-                Key: jsonDest
-            }));
+            if (transcribedText) {
+                // If text was edited, update JSON before copying
+                const existingJson = await this.getJsonContent(key);
+                existingJson.text = transcribedText;
+                existingJson.transcribed_at = now.toISOString();
+                
+                // Save updated JSON to destination
+                await s3.send(new PutObjectCommand({
+                    Bucket: config.WASABI_BUCKET,
+                    Key: jsonDest,
+                    Body: JSON.stringify(existingJson, null, 2),
+                    ContentType: 'application/json'
+                }));
+            } else {
+                // Just copy the JSON as-is
+                await s3.send(new CopyObjectCommand({
+                    Bucket: config.WASABI_BUCKET,
+                    CopySource: `${config.WASABI_BUCKET}/${jsonKey}`,
+                    Key: jsonDest
+                }));
+            }
         } catch (e) {
-            console.warn(`Could not copy JSON for ${key}`, e);
+            console.warn(`Could not copy/update JSON for ${key}`, e);
         }
+        
+        // Update DB to track the copy
+        const originalFileName = fileName.replace('.wav', '');
+        await dbService.updateFileCopyInfo(key, destinationKey, transcribedText);
+        
+        return destinationKey;
     },
 
     // Update text in JSON file
@@ -155,6 +200,7 @@ export const s3Service = {
 
             // Update the text field
             json.text = newText;
+            json.edited_at = new Date().toISOString();
 
             // Save back to S3
             const putCommand = new PutObjectCommand({
@@ -231,13 +277,20 @@ export const s3Service = {
     // Copy transcription to sorted folder with user's transcribed text and metadata
     async copyTranscriptionToSorted(key: string, transcribedText: string, duration?: number, gender?: string) {
         // key is like "transkripsiya/file.wav"
-        // Destination: "saralangan/transkripsiya/file.wav"
-
+        // Destination: "saralangan/transkripsiya/2025/02/09/file.wav"
+        
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        
+        const fileName = key.split('/').pop() || 'unknown';
+        
         let destinationKey = '';
         if (key.startsWith('transkripsiya/')) {
-            destinationKey = key.replace('transkripsiya/', 'saralangan/transkripsiya/');
+            destinationKey = key.replace('transkripsiya/', `saralangan/transkripsiya/${year}/${month}/${day}/`);
         } else {
-            destinationKey = `saralangan/transkripsiya/${key}`;
+            destinationKey = `saralangan/transkripsiya/${year}/${month}/${day}/${key}`;
         }
 
         // Copy audio file
@@ -249,12 +302,11 @@ export const s3Service = {
 
         // Create JSON with transcribed text and metadata
         const jsonDest = destinationKey.replace('.wav', '.json');
-        const fileName = key.split('/').pop() || 'unknown';
 
         const jsonContent: any = {
             audio_name: fileName,
             text: transcribedText,
-            transcribed_at: new Date().toISOString()
+            transcribed_at: now.toISOString()
         };
 
         if (duration) jsonContent.duration = duration;
