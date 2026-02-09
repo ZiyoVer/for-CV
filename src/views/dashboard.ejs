@@ -750,6 +750,10 @@
                 </nav>
             </div>
             <div class="header-right">
+                <button id="syncBtn" class="btn btn-small"
+                    style="margin-right: 10px; background: linear-gradient(135deg, #10b981, #059669);">
+                    <span id="syncIcon">🔄</span> Sync
+                </button>
                 <a href="/logout" class="btn btn-outline btn-small">Chiqish</a>
             </div>
         </div>
@@ -1124,6 +1128,47 @@
             document.getElementById('audioFiles').click();
         }
 
+        // Sync button click handler (STT only)
+        document.getElementById('syncBtn').addEventListener('click', async function () {
+            var btn = this;
+            var icon = document.getElementById('syncIcon');
+            var originalText = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span style="animation: spin 1s linear infinite; display: inline-block;">⏳</span> Syncing...';
+            btn.style.opacity = '0.7';
+
+            try {
+                var response = await fetch('/api/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                var data = await response.json();
+
+                if (data.success) {
+                    btn.innerHTML = '✅ Sync tugadi!';
+                    btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    setTimeout(function () {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    btn.innerHTML = '❌ Xatolik';
+                    setTimeout(function () {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                    }, 2000);
+                }
+            } catch (err) {
+                btn.innerHTML = '❌ Xatolik';
+                setTimeout(function () {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                }, 2000);
+            }
+        });
+
         // Chart.js Configuration
         const chartColors = {
             primary: '#d97757',
@@ -1212,7 +1257,7 @@
 
         // 2. User Activity Chart (Horizontal Bar Chart)
         const userActivityCtx = document.getElementById('userActivityChart').getContext('2d');
-        const userData = <%- JSON.stringify(users || []) %>;
+        const userData = <% - JSON.stringify(users || []) %>;
         const topUsers = userData.slice(0, 8).sort((a, b) => (b.total_accepted + b.total_rejected) - (a.total_accepted + a.total_rejected));
 
         new Chart(userActivityCtx, {
@@ -1258,7 +1303,7 @@
 
         // 3. Timeline Chart (Line Chart with REAL data from database)
         const timelineCtx = document.getElementById('timelineChart').getContext('2d');
-        const lifetimeData = <%- JSON.stringify(lifetimeStats || []) %>;
+        const lifetimeData = <% - JSON.stringify(lifetimeStats || []) %>;
 
         // Format dates and prepare data
         const timelineLabels = lifetimeData.map(d => {

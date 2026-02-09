@@ -329,14 +329,13 @@ export const s3Service = {
         // Create JSON with transcribed text and metadata
         const jsonDest = destinationKey.replace('.wav', '.json');
 
+        // JSON format as requested by user
         const jsonContent: any = {
-            audio_name: fileName,
-            text: transcribedText,
-            transcribed_at: now.toISOString()
+            audio: fileName.replace('.wav', ''),  // audio name/id without extension
+            text: transcribedText,                 // transcription text
+            ms: duration || 0,                     // duration in milliseconds
+            jinsi: gender === 'male' ? 'erkak' : 'ayol'  // gender in Uzbek
         };
-
-        if (duration) jsonContent.duration = duration;
-        if (gender) jsonContent.gender = gender;
 
         await s3.send(new PutObjectCommand({
             Bucket: config.WASABI_BUCKET,

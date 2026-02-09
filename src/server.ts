@@ -122,6 +122,20 @@ app.get('/logout', (req, res) => {
     });
 });
 
+// API: Sync STT files from S3 (for dashboard sync button)
+app.post('/api/sync', requireAuth, async (req, res) => {
+    try {
+        console.log('Manual STT sync triggered from dashboard...');
+        await s3Service.syncFiles();
+        const pendingCount = await dbService.getPendingCount();
+        console.log(`Manual sync completed. Pending files: ${pendingCount}`);
+        res.json({ success: true, pending: pendingCount });
+    } catch (err: any) {
+        console.error('Sync error:', err);
+        res.json({ success: false, error: err.message });
+    }
+});
+
 app.get('/dashboard', requireAuth, async (req, res) => {
     try {
         // OPTIMIZED: Get all user stats in one query
