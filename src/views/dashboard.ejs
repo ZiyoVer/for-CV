@@ -1210,20 +1210,26 @@ new Chart(userActivityCtx, {
     }
 });
 
-// 3. Timeline Chart (Line Chart with sample data)
+// 3. Timeline Chart (Line Chart with REAL data from database)
 const timelineCtx = document.getElementById('timelineChart').getContext('2d');
-const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const sampleAccepted = [45, 52, 38, 65, 71, 43, 58];
-const sampleRejected = [12, 15, 8, 22, 18, 10, 14];
+const lifetimeData = <%- JSON.stringify(lifetimeStats || []) %>;
+
+// Format dates and prepare data
+const timelineLabels = lifetimeData.map(d => {
+    const date = new Date(d.date || d.day);
+    return date.toLocaleDateString('uz-UZ', { weekday: 'short', day: 'numeric' });
+});
+const timelineAccepted = lifetimeData.map(d => d.accepted || 0);
+const timelineRejected = lifetimeData.map(d => d.rejected || 0);
 
 new Chart(timelineCtx, {
     type: 'line',
     data: {
-        labels: days,
+        labels: timelineLabels.length > 0 ? timelineLabels : ['Ma\'lumot yo\'q'],
         datasets: [
             {
                 label: 'Accepted',
-                data: sampleAccepted,
+                data: timelineAccepted.length > 0 ? timelineAccepted : [0],
                 borderColor: chartColors.success,
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
                 fill: true,
@@ -1233,7 +1239,7 @@ new Chart(timelineCtx, {
             },
             {
                 label: 'Rejected',
-                data: sampleRejected,
+                data: timelineRejected.length > 0 ? timelineRejected : [0],
                 borderColor: chartColors.error,
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
                 fill: true,
