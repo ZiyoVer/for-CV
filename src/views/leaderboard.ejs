@@ -32,31 +32,6 @@
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        [data-theme="dark"] {
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #141414;
-            --bg-tertiary: #1f1f1f;
-            --text-primary: #fafafa;
-            --text-secondary: #a1a1aa;
-            --text-muted: #71717a;
-            --border-color: #27272a;
-            --accent: #d97757;
-            --accent-light: rgba(217, 119, 87, 0.15);
-            --success: #22c55e;
-            --success-light: rgba(34, 197, 94, 0.15);
-            --error: #ef4444;
-            --error-light: rgba(239, 68, 68, 0.15);
-            --gold: #fbbf24;
-            --gold-light: rgba(251, 191, 36, 0.15);
-            --silver: #a1a1aa;
-            --silver-light: rgba(161, 161, 170, 0.15);
-            --bronze: #fb923c;
-            --bronze-light: rgba(251, 146, 60, 0.15);
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -68,7 +43,6 @@
             background: var(--bg-primary);
             min-height: 100vh;
             color: var(--text-primary);
-            transition: background 0.3s ease, color 0.3s ease;
         }
 
         /* Navbar */
@@ -82,7 +56,6 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            backdrop-filter: blur(12px);
         }
 
         .navbar-left {
@@ -98,17 +71,13 @@
             letter-spacing: -0.5px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .logo-icon {
-            font-size: 24px;
-        }
-
-        .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
+            width: 28px;
+            height: 28px;
+            color: var(--gold);
         }
 
         .live-indicator {
@@ -145,22 +114,6 @@
             }
         }
 
-        .theme-toggle {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.2s ease;
-            color: var(--text-secondary);
-        }
-
-        .theme-toggle:hover {
-            background: var(--border-color);
-            color: var(--text-primary);
-        }
-
         /* Container */
         .container {
             max-width: 900px;
@@ -195,6 +148,11 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
+        }
+
+        .update-time svg {
+            width: 14px;
+            height: 14px;
         }
 
         /* Top 3 Podium */
@@ -292,6 +250,14 @@
             font-weight: 600;
             padding: 4px 8px;
             border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .podium-stat svg {
+            width: 12px;
+            height: 12px;
         }
 
         .podium-stat.accepted {
@@ -330,6 +296,18 @@
             letter-spacing: 0.5px;
             font-weight: 600;
             border-bottom: 1px solid var(--border-color);
+        }
+
+        .leaderboard-header .col-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .leaderboard-header svg {
+            width: 12px;
+            height: 12px;
         }
 
         .leaderboard-row {
@@ -401,8 +379,10 @@
         }
 
         .empty-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 16px;
+            color: var(--text-muted);
             opacity: 0.5;
         }
 
@@ -436,8 +416,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
-            font-weight: 700;
+        }
+
+        .feature-icon svg {
+            width: 12px;
+            height: 12px;
         }
 
         /* Responsive */
@@ -501,18 +484,16 @@
     <nav class="navbar">
         <div class="navbar-left">
             <div class="logo">
-                <span class="logo-icon">🏆</span>
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                </svg>
                 <span>Leaderboard</span>
             </div>
         </div>
-        <div class="navbar-right">
-            <div class="live-indicator">
-                <span class="live-dot"></span>
-                <span>LIVE</span>
-            </div>
-            <button class="theme-toggle" onclick="toggleTheme()" title="Dark/Light mode">
-                <span id="theme-icon">🌙</span>
-            </button>
+        <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span>LIVE</span>
         </div>
     </nav>
 
@@ -521,7 +502,10 @@
             <h1>Annotatorlar Reytingi</h1>
             <p>Eng ko'p audio tekshirgan annotatorlar</p>
             <div class="update-time" id="updateTime">
-                <span>🔄</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                </svg>
                 <span>Yuklanmoqda...</span>
             </div>
         </div>
@@ -536,8 +520,19 @@
                             <%= leaderboard[1].name %>
                         </div>
                         <div class="podium-stats">
-                            <span class="podium-stat accepted">✓ <%= leaderboard[1].accepted %></span>
-                            <span class="podium-stat rejected">✕ <%= leaderboard[1].rejected %></span>
+                            <span class="podium-stat accepted">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                <%= leaderboard[1].accepted %>
+                            </span>
+                            <span class="podium-stat rejected">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                                <%= leaderboard[1].rejected %>
+                            </span>
                         </div>
                         <div class="podium-balance">
                             <%= leaderboard[1].balance.toLocaleString() %> so'm
@@ -551,8 +546,19 @@
                             <%= leaderboard[0].name %>
                         </div>
                         <div class="podium-stats">
-                            <span class="podium-stat accepted">✓ <%= leaderboard[0].accepted %></span>
-                            <span class="podium-stat rejected">✕ <%= leaderboard[0].rejected %></span>
+                            <span class="podium-stat accepted">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                <%= leaderboard[0].accepted %>
+                            </span>
+                            <span class="podium-stat rejected">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                                <%= leaderboard[0].rejected %>
+                            </span>
                         </div>
                         <div class="podium-balance">
                             <%= leaderboard[0].balance.toLocaleString() %> so'm
@@ -566,8 +572,19 @@
                             <%= leaderboard[2].name %>
                         </div>
                         <div class="podium-stats">
-                            <span class="podium-stat accepted">✓ <%= leaderboard[2].accepted %></span>
-                            <span class="podium-stat rejected">✕ <%= leaderboard[2].rejected %></span>
+                            <span class="podium-stat accepted">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                <%= leaderboard[2].accepted %>
+                            </span>
+                            <span class="podium-stat rejected">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                                <%= leaderboard[2].rejected %>
+                            </span>
                         </div>
                         <div class="podium-balance">
                             <%= leaderboard[2].balance.toLocaleString() %> so'm
@@ -581,19 +598,40 @@
                     <div class="leaderboard-header">
                         <div>#</div>
                         <div>Ism</div>
-                        <div style="text-align:center">✓ Qabul</div>
-                        <div style="text-align:center">✕ Rad</div>
+                        <div class="col-icon" style="text-align:center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            Qabul
+                        </div>
+                        <div class="col-icon" style="text-align:center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                            Rad
+                        </div>
                         <div style="text-align:center">Jami</div>
-                        <div style="text-align:center">💰 Balans</div>
+                        <div class="col-icon" style="text-align:center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 6v6l4 2" />
+                            </svg>
+                            Balans
+                        </div>
                     </div>
                     <div id="leaderboardBody">
                         <% if (leaderboard.length===0) { %>
                             <div class="empty-state">
-                                <div class="empty-icon">📊</div>
+                                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <path d="M3 3v18h18" />
+                                    <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
+                                </svg>
                                 <div>Hali hech kim tekshirmagan.</div>
                             </div>
                             <% } else { %>
-                                <% leaderboard.forEach(user=> { %>
+                                <% leaderboard.forEach(function(user) { %>
                                     <div class="leaderboard-row">
                                         <div class="rank">
                                             <%= user.rank %>
@@ -621,96 +659,68 @@
 
                 <div class="features">
                     <div class="feature">
-                        <div class="feature-icon">✓</div>
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </div>
                         <span><strong>Auto-refresh</strong> 5s</span>
                     </div>
                     <div class="feature">
-                        <div class="feature-icon">✓</div>
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </div>
                         <span><strong>Real-time</strong> Jonli</span>
                     </div>
                     <div class="feature">
-                        <div class="feature-icon">✓</div>
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </div>
                         <span><strong>Top 3</strong> Podium</span>
                     </div>
                 </div>
     </div>
 
     <script>
-        // Theme Toggle
-        function toggleTheme() {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-            const currentTheme = html.getAttribute('data-theme');
-
-            if (currentTheme === 'dark') {
-                html.removeAttribute('data-theme');
-                icon.textContent = '🌙';
-                localStorage.setItem('leaderboard-theme', 'light');
-            } else {
-                html.setAttribute('data-theme', 'dark');
-                icon.textContent = '☀️';
-                localStorage.setItem('leaderboard-theme', 'dark');
-            }
-        }
-
-        // Load saved theme
-        document.addEventListener('DOMContentLoaded', function () {
-            const savedTheme = localStorage.getItem('leaderboard-theme');
-            const icon = document.getElementById('theme-icon');
-
-            if (savedTheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                icon.textContent = '☀️';
-            }
-        });
-
         function updateLeaderboard() {
             fetch('/api/leaderboard')
-                .then(res => res.json())
-                .then(data => {
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
                     if (!data.success) return;
 
-                    const body = document.getElementById('leaderboardBody');
+                    var body = document.getElementById('leaderboardBody');
 
                     // Helper function to escape HTML
-                    const escapeHtml = (text) => {
-                        const div = document.createElement('div');
+                    var escapeHtml = function (text) {
+                        var div = document.createElement('div');
                         div.textContent = text;
                         return div.innerHTML;
                     };
 
                     if (data.leaderboard.length === 0) {
-                        body.innerHTML = `
-                            <div class="empty-state">
-                                <div class="empty-icon">📊</div>
-                                <div>Hali hech kim tekshirmagan.</div>
-                            </div>
-                        `;
+                        body.innerHTML = '<div class="empty-state"><svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg><div>Hali hech kim tekshirmagan.</div></div>';
                     } else {
-                        body.innerHTML = data.leaderboard.map(user => `
-                            <div class="leaderboard-row">
-                                <div class="rank">${user.rank}</div>
-                                <div class="name">${escapeHtml(user.name)}</div>
-                                <div class="stat accepted">${user.accepted}</div>
-                                <div class="stat rejected">${user.rejected}</div>
-                                <div class="stat total">${user.total}</div>
-                                <div class="stat balance">${user.balance.toLocaleString()}</div>
-                            </div>
-                        `).join('');
+                        body.innerHTML = data.leaderboard.map(function (user) {
+                            return '<div class="leaderboard-row"><div class="rank">' + user.rank + '</div><div class="name">' + escapeHtml(user.name) + '</div><div class="stat accepted">' + user.accepted + '</div><div class="stat rejected">' + user.rejected + '</div><div class="stat total">' + user.total + '</div><div class="stat balance">' + user.balance.toLocaleString() + '</div></div>';
+                        }).join('');
                     }
 
                     // Update time
-                    const time = new Date(data.updatedAt).toLocaleTimeString('uz-UZ');
-                    document.getElementById('updateTime').innerHTML = `<span>🔄</span><span>Oxirgi yangilanish: ${time}</span>`;
+                    var time = new Date(data.updatedAt).toLocaleTimeString('uz-UZ');
+                    document.getElementById('updateTime').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg><span>Oxirgi yangilanish: ' + time + '</span>';
                 })
-                .catch(err => console.error('Update error:', err));
+                .catch(function (err) { console.error('Update error:', err); });
         }
 
         // Auto-refresh every 5 seconds
         setInterval(updateLeaderboard, 5000);
 
         // Initial time display
-        document.getElementById('updateTime').innerHTML = `<span>🔄</span><span>Oxirgi yangilanish: ${new Date().toLocaleTimeString('uz-UZ')}</span>`;
+        document.getElementById('updateTime').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg><span>Oxirgi yangilanish: ' + new Date().toLocaleTimeString('uz-UZ') + '</span>';
     </script>
 </body>
 
