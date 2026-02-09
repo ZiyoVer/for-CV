@@ -36,10 +36,12 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+            scriptSrcAttr: ["'unsafe-inline'"], // Allow inline onclick handlers
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "https://*"],
             mediaSrc: ["'self'", "https://*"], // Allow audio from S3
+            connectSrc: ["'self'", "https://cdn.jsdelivr.net"], // Allow Chart.js source map
         },
     },
 }));
