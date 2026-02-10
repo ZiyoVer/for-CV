@@ -179,9 +179,8 @@ bot.hears("📚 Adabiy gaplar", async (ctx) => {
 
 bot.hears("🌍 Xorazm viloyati", async (ctx) => {
     if (!ctx.from) return;
-    await ctx.reply("📋 Datasetlar tez orada qo'shiladi", {
-        reply_markup: sttSubmenuKeyboard
-    });
+    await ctx.reply("Fayl yuklanmoqda...", { reply_markup: sttSubmenuKeyboard });
+    await sendNextXorazmFile(ctx);
 });
 
 bot.hears("📝 Transkripsiya", async (ctx) => {
@@ -396,6 +395,33 @@ bot.on("message:text", async (ctx) => {
 
     const { state_type: type, data } = stateRow;
     const newText = messageText;
+
+    // Handle XORAZM EDIT text input
+    if (type === 'xorazm_edit') {
+        const { xorazmId, audioPath, originalText } = data;
+
+        // Save edited text to DB and state
+        await dbService.updateXorazmText(xorazmId, newText);
+        await dbService.saveState(userId, 'xorazm', { xorazmId, audioPath, originalText, editedText: newText });
+
+        await ctx.reply(
+            `✅ <b>Matn tahrirlandi!</b>\n\n` +
+            `🆔 <code>${xorazmId}</code>\n\n` +
+            `<b>Original:</b>\n<code>${originalText.substring(0, 200)}</code>\n\n` +
+            `<b>Tahrirlangan:</b>\n<code>${newText.substring(0, 200)}</code>\n\n` +
+            `<i>Tasdiqlaysizmi?</i>`,
+            {
+                parse_mode: "HTML",
+                reply_markup: new InlineKeyboard()
+                    .text("✅ To'g'ri", "xrz_accept")
+                    .text("❌ Xato", "xrz_deny")
+                    .row()
+                    .text("✏️ Qayta tahrirlash", "xrz_edit")
+                    .text("⏭️ O'tkazish", "xrz_skip")
+            }
+        );
+        return;
+    }
 
     // Handle TRANSCRIPTION text input
     if (type === 'transcription') {
@@ -666,6 +692,124 @@ bot.callbackQuery("trans_edit_gender", async (ctx) => {
     });
 });
 
+// --- XORAZM DIALECT CALLBACK HANDLERS ---
+
+// Accept - copy to xorazm_sheva/
+bot.callbackQuery("xrz_accept", async (ctx) => {
+    await ctx.answerCallbackQuery("Saqlanmoqda...");
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || stateRow.state_type !== 'xorazm' || !stateRow.data?.xorazmId) {
+        await ctx.reply("❌ Vazifa topilmadi.");
+        return;
+    }
+
+    const { xorazmId, audioPath, originalText, editedText } = stateRow.data;
+    const finalText = editedText || originalText;
+
+    try {
+        await s3Service.copyXorazmToAccepted(xorazmId, audioPath, finalText);
+        await dbService.updateXorazmFileStatus(userId, xorazmId, 'ACCEPTED', editedText);
+        await dbService.deleteState(userId);
+
+        await ctx.reply(
+            `✅ <b>Qabul qilindi!</b>\n\n` +
+            `🆔 <code>${xorazmId}</code>\n` +
+            `📝 <code>${finalText.substring(0, 100)}${finalText.length > 100 ? '...' : ''}</code>\n\n` +
+            `Davom etamizmi?`,
+            {
+                parse_mode: "HTML",
+                reply_markup: new Keyboard()
+                    .text("🌍 Xorazm viloyati")
+                    .text("⬅️ Asosiy menyu")
+                    .resized()
+            }
+        );
+    } catch (e) {
+        Logger.error('Error accepting xorazm file', e, { userId, xorazmId });
+        await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
+// Deny - mark as rejected
+bot.callbackQuery("xrz_deny", async (ctx) => {
+    await ctx.answerCallbackQuery("Rad etildi");
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || stateRow.state_type !== 'xorazm' || !stateRow.data?.xorazmId) {
+        await ctx.reply("❌ Vazifa topilmadi.");
+        return;
+    }
+
+    try {
+        await dbService.updateXorazmFileStatus(userId, stateRow.data.xorazmId, 'REJECTED');
+        await dbService.deleteState(userId);
+
+        await ctx.reply("❌ Rad etildi! Davom etamizmi?", {
+            reply_markup: new Keyboard()
+                .text("🌍 Xorazm viloyati")
+                .text("⬅️ Asosiy menyu")
+                .resized()
+        });
+    } catch (e) {
+        Logger.error('Error denying xorazm file', e, { userId });
+        await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
+// Edit - enter text editing mode
+bot.callbackQuery("xrz_edit", async (ctx) => {
+    await ctx.answerCallbackQuery();
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || stateRow.state_type !== 'xorazm' || !stateRow.data?.xorazmId) {
+        await ctx.reply("❌ Vazifa topilmadi.");
+        return;
+    }
+
+    const { xorazmId, originalText, editedText } = stateRow.data;
+    const currentText = editedText || originalText;
+
+    // Switch to edit mode
+    await dbService.saveState(userId, 'xorazm_edit', stateRow.data);
+
+    await ctx.reply(
+        `✏️ <b>Matnni tahrirlash</b>\n\n` +
+        `🆔 <code>${xorazmId}</code>\n\n` +
+        `<b>Hozirgi matn:</b>\n<code>${currentText}</code>\n\n` +
+        `<i>Yangi matnni yozib yuboring:</i>`,
+        { parse_mode: "HTML" }
+    );
+});
+
+// Skip - release and get next
+bot.callbackQuery("xrz_skip", async (ctx) => {
+    await ctx.answerCallbackQuery("O'tkazildi");
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || stateRow.state_type !== 'xorazm' || !stateRow.data?.xorazmId) {
+        await ctx.reply("❌ Vazifa topilmadi.");
+        return;
+    }
+
+    try {
+        await dbService.releaseXorazmFile(userId, stateRow.data.xorazmId);
+        await dbService.deleteState(userId);
+        await sendNextXorazmFile(ctx);
+    } catch (e) {
+        Logger.error('Error skipping xorazm file', e, { userId });
+        await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
 // --- INLINE KEYBOARD HANDLERS (For Admin Only) ---
 
 // Admin Stats
@@ -887,6 +1031,74 @@ async function sendNextTranscriptionFile(ctx: any) {
     }
 }
 
+async function sendNextXorazmFile(ctx: any) {
+    if (!ctx.from) return;
+    const userId = ctx.from.id;
+
+    try {
+        // First ensure metadata is loaded
+        const pending = await dbService.getXorazmPendingCount();
+        if (pending === 0) {
+            // Try loading metadata
+            const added = await s3Service.loadXorazmMetadata();
+            if (added === 0) {
+                await ctx.reply("Hozircha Xorazm vazifalari yo'q.", { reply_markup: sttSubmenuKeyboard });
+                return;
+            }
+        }
+
+        const xorazmFile = await dbService.lockNextXorazmFile(userId);
+
+        if (!xorazmFile) {
+            await ctx.reply("Hozircha barcha Xorazm fayllar band yoki tugagan. Birozdan so'ng urinib ko'ring.", { reply_markup: sttSubmenuKeyboard });
+            return;
+        }
+
+        // Get audio from S3
+        const audioBuffer = await s3Service.getXorazmAudioBuffer(xorazmFile.audio_path);
+
+        if (!audioBuffer) {
+            await ctx.reply("Audio faylni yuklab bo'lmadi.", { reply_markup: sttSubmenuKeyboard });
+            await dbService.releaseXorazmFile(userId, xorazmFile.id);
+            return;
+        }
+
+        // Save state
+        await dbService.saveState(userId, 'xorazm', {
+            xorazmId: xorazmFile.id,
+            audioPath: xorazmFile.audio_path,
+            originalText: xorazmFile.original_text
+        });
+
+        // Send audio with text
+        let text = xorazmFile.original_text;
+        if (text.length > 800) text = text.substring(0, 800) + "...";
+
+        const caption = `🌍 <b>XORAZM SHEVA</b>\n\n🆔 <code>${xorazmFile.id}</code>\n\n📝 ${text}`;
+
+        await ctx.replyWithAudio(new InputFile(audioBuffer), {
+            caption: caption,
+            parse_mode: "HTML"
+        });
+
+        // Show InlineKeyboard for actions
+        await ctx.reply("Faylni tekshiring:", {
+            reply_markup: new InlineKeyboard()
+                .text("✅ To'g'ri", "xrz_accept")
+                .text("❌ Xato", "xrz_deny")
+                .row()
+                .text("✏️ Tahrirlash", "xrz_edit")
+                .text("⏭️ O'tkazish", "xrz_skip")
+        });
+
+    } catch (e: any) {
+        console.error("Error in sendNextXorazmFile:", e);
+        let msg = "Faylni olishda xatolik.";
+        if (e.message) msg += `\n(${e.message})`;
+        await ctx.reply(msg, { reply_markup: sttSubmenuKeyboard });
+    }
+}
+
 // Start
 bot.catch((err) => console.error(err));
 
@@ -909,6 +1121,13 @@ export async function launchBot() {
                 if (count > 0) console.log(`Released ${count} timed out transcription files.`);
             })
             .catch((err) => Logger.error('Error releasing transcription locks', err));
+
+        dbService.releaseTimedOutXorazmFiles(config.LOCK_TIMEOUT_MS)
+            .then((released) => {
+                const count = released ?? 0;
+                if (count > 0) console.log(`Released ${count} timed out xorazm files.`);
+            })
+            .catch((err) => Logger.error('Error releasing xorazm locks', err));
     }, config.LOCK_TIMEOUT_MS);
     intervals.push(lockReleaseInterval);
 
@@ -922,6 +1141,11 @@ export async function launchBot() {
     s3Service.syncTranscriptionFiles()
         .then(() => console.log("Initial Transcription sync completed."))
         .catch((err) => Logger.error("Initial Transcription sync error", err));
+
+    console.log("Loading Xorazm metadata...");
+    s3Service.loadXorazmMetadata()
+        .then(() => console.log("Xorazm metadata loaded."))
+        .catch((err) => Logger.error("Xorazm metadata load error", err));
 
     // Periodic auto-sync
     const autoSyncInterval = setInterval(() => {

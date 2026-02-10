@@ -378,13 +378,99 @@ export const s3Service = {
         return key;
     },
 
-    // --- XORAZM REGION FUNCTIONS (Placeholder) ---
+    // --- XORAZM DIALECT FUNCTIONS ---
 
-    // Sync Xorazm region files from S3 'xorazm/' folder
-    async syncXorazmFiles() {
-        console.log("Starting S3 Sync for 'xorazm/' folder...");
-        console.log("⚠️ Xorazm region: Datasetlar tez orada qo'shiladi");
-        // Placeholder - will be implemented when Xorazm datasets are ready
-        return 0;
+    // Load metadata.jsonl from 3_ASOSIY_DATASET and insert into DB
+    async loadXorazmMetadata() {
+        console.log("Loading Xorazm metadata from 3_ASOSIY_DATASET/metadata.jsonl...");
+        try {
+            const response = await s3.send(new GetObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: '3_ASOSIY_DATASET/metadata.jsonl'
+            }));
+
+            const body = await response.Body?.transformToString();
+            if (!body) {
+                console.log("No metadata.jsonl content found");
+                return 0;
+            }
+
+            // Parse JSONL (one JSON per line)
+            const entries: Array<{ id: string, audio: string, text: string }> = [];
+            const lines = body.split('\n').filter(line => line.trim());
+            for (const line of lines) {
+                try {
+                    const entry = JSON.parse(line);
+                    if (entry.id && entry.audio && entry.text) {
+                        entries.push({ id: entry.id, audio: entry.audio, text: entry.text });
+                    }
+                } catch (e) {
+                    // Skip malformed lines
+                }
+            }
+
+            console.log(`Parsed ${entries.length} entries from metadata.jsonl`);
+            const added = await dbService.initXorazmFiles(entries);
+            console.log(`Added ${added} new Xorazm files to DB`);
+            return added;
+        } catch (e: any) {
+            console.error('Error loading Xorazm metadata:', e.message);
+            return 0;
+        }
+    },
+
+    // Get audio buffer from 3_ASOSIY_DATASET/{audioPath}
+    async getXorazmAudioBuffer(audioPath: string): Promise<Uint8Array | undefined> {
+        try {
+            const key = `3_ASOSIY_DATASET/${audioPath}`;
+            const response = await s3.send(new GetObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: key
+            }));
+            return response.Body ? new Uint8Array(await response.Body.transformToByteArray()) : undefined;
+        } catch (e: any) {
+            console.error(`Error getting Xorazm audio ${audioPath}:`, e.message);
+            return undefined;
+        }
+    },
+
+    // Copy accepted file to xorazm_sheva/ folder with JSON metadata
+    async copyXorazmToAccepted(id: string, audioPath: string, text: string) {
+        try {
+            const audioFileName = audioPath.split('/').pop() || `${id}.wav`;
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+
+            // Copy audio to xorazm_sheva/YYYY/MM/DD/
+            const destAudioKey = `xorazm_sheva/${dateStr}/${audioFileName}`;
+            const srcKey = `3_ASOSIY_DATASET/${audioPath}`;
+
+            await s3.send(new CopyObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                CopySource: `${config.WASABI_BUCKET}/${srcKey}`,
+                Key: destAudioKey
+            }));
+
+            // Create JSON metadata file
+            const jsonKey = destAudioKey.replace('.wav', '.json');
+            const metadata = {
+                id: id,
+                audio: audioFileName,
+                text: text
+            };
+
+            await s3.send(new PutObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: jsonKey,
+                Body: JSON.stringify(metadata, null, 2),
+                ContentType: 'application/json'
+            }));
+
+            console.log(`Xorazm file ${id} copied to ${destAudioKey}`);
+            return destAudioKey;
+        } catch (e: any) {
+            console.error(`Error copying Xorazm file ${id}:`, e.message);
+            throw e;
+        }
     }
 };

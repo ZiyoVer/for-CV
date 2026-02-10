@@ -185,6 +185,12 @@ app.get('/dashboard', requireAuth, async (req, res) => {
         const transAccepted = transStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
         const transRejected = transStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
 
+        // Xorazm stats
+        const xorazmPending = await dbService.getXorazmPendingCount();
+        const xorazmStats = await dbService.getAllXorazmStats();
+        const xorazmAccepted = xorazmStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+        const xorazmRejected = xorazmStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
         // Parse query params for alerts
         const query: any = {};
         if (req.query.success) query.success = req.query.success;
@@ -195,9 +201,11 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             chartData,
             lifetimeStats,
             transStats,
+            xorazmStats,
             stats: {
                 pending: pendingCount,
                 transcriptionPending: transcriptionPendingCount,
+                xorazmPending,
                 totalAccepted,
                 totalRejected,
                 totalChecked: totalAccepted + totalRejected,
@@ -205,7 +213,10 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 pendingDuration: formatDuration(pendingDuration),
                 transAccepted,
                 transRejected,
-                transTotal: transAccepted + transRejected
+                transTotal: transAccepted + transRejected,
+                xorazmAccepted,
+                xorazmRejected,
+                xorazmTotal: xorazmAccepted + xorazmRejected
             },
             query,
             csrfToken: ''

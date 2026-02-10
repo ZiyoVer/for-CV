@@ -41,6 +41,19 @@ const createTranscriptionFilesTable = `
     );
 `;
 
+const createXorazmFilesTable = `
+    CREATE TABLE IF NOT EXISTS xorazm_files (
+        id TEXT PRIMARY KEY,
+        audio_path TEXT NOT NULL,
+        original_text TEXT NOT NULL,
+        edited_text TEXT,
+        status TEXT DEFAULT 'PENDING',
+        assigned_to BIGINT,
+        locked_at TIMESTAMPTZ,
+        processed_at TIMESTAMPTZ
+    );
+`;
+
 const createBotStateTable = `
     CREATE TABLE IF NOT EXISTS bot_state (
         user_id BIGINT PRIMARY KEY,
@@ -62,6 +75,8 @@ const createIndexes = `
     CREATE INDEX IF NOT EXISTS idx_transcription_processed_at ON transcription_files(processed_at) WHERE processed_at IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_transcription_status_created ON transcription_files(status, locked_at);
     CREATE INDEX IF NOT EXISTS idx_transcription_locked_by ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL AND status = 'LOCKED';
+    CREATE INDEX IF NOT EXISTS idx_xorazm_status ON xorazm_files(status);
+    CREATE INDEX IF NOT EXISTS idx_xorazm_assigned ON xorazm_files(assigned_to) WHERE assigned_to IS NOT NULL;
 `;
 
 const withTransaction = async <T>(fn: (client: PoolClient) => Promise<T>): Promise<T> => {
@@ -86,6 +101,7 @@ export const dbService = {
             { name: 'users', query: createUsersTable },
             { name: 'files', query: createFilesTable },
             { name: 'transcription_files', query: createTranscriptionFilesTable },
+            { name: 'xorazm_files', query: createXorazmFilesTable },
             { name: 'bot_state', query: createBotStateTable }
         ];
 
@@ -596,6 +612,115 @@ export const dbService = {
 
     deleteState: async (user_id: number) => {
         await pool.query('DELETE FROM bot_state WHERE user_id = $1', [user_id]);
+    },
+
+    // --- XORAZM DIALECT FUNCTIONS ---
+
+    initXorazmFiles: async (entries: Array<{ id: string, audio: string, text: string }>) => {
+        let added = 0;
+        for (const entry of entries) {
+            try {
+                const result = await pool.query(
+                    `INSERT INTO xorazm_files (id, audio_path, original_text) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
+                    [entry.id, entry.audio, entry.text]
+                );
+                if (result.rowCount && result.rowCount > 0) added++;
+            } catch (e) {
+                // skip duplicates
+            }
+        }
+        return added;
+    },
+
+    getXorazmPendingCount: async () => {
+        const { rows } = await pool.query(`SELECT COUNT(*)::int as count FROM xorazm_files WHERE status = 'PENDING'`);
+        return rows[0]?.count || 0;
+    },
+
+    lockNextXorazmFile: async (user_id: number) => {
+        return withTransaction(async (client) => {
+            // First release any timed-out locks for this user
+            await client.query(
+                `UPDATE xorazm_files SET status = 'PENDING', assigned_to = NULL, locked_at = NULL WHERE assigned_to = $1 AND status = 'LOCKED'`,
+                [user_id]
+            );
+
+            // Lock next available file
+            const { rows } = await client.query(
+                `UPDATE xorazm_files SET status = 'LOCKED', assigned_to = $1, locked_at = NOW()
+                 WHERE id = (
+                     SELECT id FROM xorazm_files
+                     WHERE status = 'PENDING'
+                     ORDER BY id ASC
+                     LIMIT 1
+                     FOR UPDATE SKIP LOCKED
+                 )
+                 RETURNING *`,
+                [user_id]
+            );
+            return rows[0] || null;
+        });
+    },
+
+    updateXorazmFileStatus: async (user_id: number, id: string, status: 'ACCEPTED' | 'REJECTED', editedText?: string) => {
+        await pool.query(
+            `UPDATE xorazm_files SET status = $3, processed_at = NOW(), edited_text = COALESCE($4, edited_text)
+             WHERE id = $2 AND assigned_to = $1`,
+            [user_id, id, status, editedText || null]
+        );
+    },
+
+    updateXorazmText: async (id: string, editedText: string) => {
+        await pool.query(
+            `UPDATE xorazm_files SET edited_text = $2 WHERE id = $1`,
+            [id, editedText]
+        );
+    },
+
+    releaseXorazmFile: async (user_id: number, id: string) => {
+        await pool.query(
+            `UPDATE xorazm_files SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
+             WHERE id = $2 AND assigned_to = $1 AND status = 'LOCKED'`,
+            [user_id, id]
+        );
+    },
+
+    getUserXorazmStats: async (user_id: number) => {
+        const { rows } = await pool.query(
+            `SELECT 
+                COUNT(*) FILTER (WHERE status = 'ACCEPTED')::int AS accepted,
+                COUNT(*) FILTER (WHERE status = 'REJECTED')::int AS rejected
+             FROM xorazm_files WHERE assigned_to = $1 AND status IN ('ACCEPTED', 'REJECTED')`,
+            [user_id]
+        );
+        return rows[0] || { accepted: 0, rejected: 0 };
+    },
+
+    getAllXorazmStats: async () => {
+        const { rows } = await pool.query(
+            `SELECT 
+                u.telegram_id,
+                u.full_name,
+                COUNT(xf.id)::int as total_processed,
+                COALESCE(SUM(CASE WHEN xf.status = 'ACCEPTED' THEN 1 ELSE 0 END), 0)::int as accepted_count,
+                COALESCE(SUM(CASE WHEN xf.status = 'REJECTED' THEN 1 ELSE 0 END), 0)::int as rejected_count
+             FROM users u
+             LEFT JOIN xorazm_files xf ON u.telegram_id = xf.assigned_to AND xf.status IN ('ACCEPTED', 'REJECTED')
+             GROUP BY u.telegram_id, u.full_name
+             ORDER BY accepted_count DESC`
+        );
+        return rows;
+    },
+
+    releaseTimedOutXorazmFiles: async (timeoutMs: number) => {
+        const cutoff = new Date(Date.now() - timeoutMs);
+        const result = await pool.query(
+            `UPDATE xorazm_files 
+             SET status = 'PENDING', assigned_to = NULL, locked_at = NULL 
+             WHERE status = 'LOCKED' AND locked_at < $1`,
+            [cutoff]
+        );
+        return result.rowCount;
     },
 
     // --- CLEANUP ---
