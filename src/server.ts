@@ -180,6 +180,11 @@ app.get('/dashboard', requireAuth, async (req, res) => {
         // Get Lifetime Stats (Daily) for the new chart
         const lifetimeStats = await dbService.getLifetimeDailyStats();
 
+        // Get Transcription Stats
+        const transStats = await dbService.getAllTranscriptionStats();
+        const transAccepted = transStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+        const transRejected = transStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
         // Parse query params for alerts
         const query: any = {};
         if (req.query.success) query.success = req.query.success;
@@ -189,6 +194,7 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             users: usersWithStats,
             chartData,
             lifetimeStats,
+            transStats,
             stats: {
                 pending: pendingCount,
                 transcriptionPending: transcriptionPendingCount,
@@ -196,7 +202,10 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 totalRejected,
                 totalChecked: totalAccepted + totalRejected,
                 checkedDuration: formatDuration(totalCheckedDuration),
-                pendingDuration: formatDuration(pendingDuration)
+                pendingDuration: formatDuration(pendingDuration),
+                transAccepted,
+                transRejected,
+                transTotal: transAccepted + transRejected
             },
             query,
             csrfToken: ''
