@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "rm -rf dist && tsc && cp -r src/views dist/views",
+    "build": "npm run fix-ejs && rm -rf dist && tsc && cp -r src/views dist/views",
+    "fix-ejs": "sed -i 's/<% - JSON/<%- JSON/g' src/views/*.ejs 2>/dev/null || true",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
