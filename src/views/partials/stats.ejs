@@ -1,0 +1,58 @@
+                        <!-- Stats Grid -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-label">Total Checked</div>
+                                    </div>
+                                    <div class="stat-icon">📊</div>
+                                </div>
+                                <div class="stat-value">
+                                    <%= stats.totalChecked.toLocaleString() %>
+                                </div>
+                                <div class="stat-subtext">ta fayl tekshirildi</div>
+                            </div>
+
+                            <div class="stat-card success">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-label">Accepted</div>
+                                    </div>
+                                    <div class="stat-icon">✓</div>
+                                </div>
+                                <div class="stat-value">
+                                    <%= stats.totalAccepted.toLocaleString() %>
+                                </div>
+                                <div class="stat-subtext">
+                                    <%= stats.checkedDuration %>
+                                </div>
+                            </div>
+
+                            <div class="stat-card error">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-label">Rejected</div>
+                                    </div>
+                                    <div class="stat-icon">✕</div>
+                                </div>
+                                <div class="stat-value">
+                                    <%= stats.totalRejected.toLocaleString() %>
+                                </div>
+                                <div class="stat-subtext">ta fayl rad etildi</div>
+                            </div>
+
+                            <div class="stat-card warning">
+                                <div class="stat-header">
+                                    <div>
+                                        <div class="stat-label">Pending</div>
+                                    </div>
+                                    <div class="stat-icon">⏱</div>
+                                </div>
+                                <div class="stat-value">
+                                    <%= stats.pending.toLocaleString() %>
+                                </div>
+                                <div class="stat-subtext">
+                                    <%= stats.pendingDuration %>
+                                </div>
+                            </div>
+                        </div>

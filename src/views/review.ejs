@@ -279,6 +279,7 @@
                             <p>Agar yuqoridagi tekshiruvlarda xatolar bo'lsa, foydalanuvchi balansini 50% ga
                                 kamaytiring.</p>
                             <form method="POST" action="/review/penalty/<%= user.telegram_id %>">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                 <button type="submit" class="btn btn-danger"
                                     onclick="return confirm('Balansni 50% ga kamaytirishni tasdiqlaysizmi?')">
                                     50% Jarima Qo'llash

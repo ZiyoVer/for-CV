@@ -270,11 +270,7 @@
             color: var(--error);
         }
 
-        .podium-balance {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--accent);
-        }
+
 
         /* Leaderboard Table */
         .leaderboard {
@@ -287,7 +283,7 @@
 
         .leaderboard-header {
             display: grid;
-            grid-template-columns: 60px 1fr 90px 90px 90px 110px;
+            grid-template-columns: 60px 1fr 90px 90px 90px;
             background: var(--bg-tertiary);
             padding: 14px 20px;
             font-size: 11px;
@@ -312,7 +308,7 @@
 
         .leaderboard-row {
             display: grid;
-            grid-template-columns: 60px 1fr 90px 90px 90px 110px;
+            grid-template-columns: 60px 1fr 90px 90px 90px;
             padding: 16px 20px;
             font-size: 14px;
             border-bottom: 1px solid var(--border-color);
@@ -365,10 +361,7 @@
             color: var(--text-secondary);
         }
 
-        .stat.balance {
-            color: var(--accent);
-            font-weight: 700;
-        }
+
 
         /* Empty State */
         .empty-state {
@@ -441,7 +434,7 @@
 
             .leaderboard-header,
             .leaderboard-row {
-                grid-template-columns: 40px 1fr 60px 60px 60px 80px;
+                grid-template-columns: 40px 1fr 60px 60px 60px;
                 padding: 12px 14px;
                 font-size: 12px;
             }
@@ -534,9 +527,7 @@
                                 <%= leaderboard[1].rejected %>
                             </span>
                         </div>
-                        <div class="podium-balance">
-                            <%= leaderboard[1].balance.toLocaleString() %> so'm
-                        </div>
+
                     </div>
                 </div>
                 <div class="podium-item first">
@@ -560,9 +551,7 @@
                                 <%= leaderboard[0].rejected %>
                             </span>
                         </div>
-                        <div class="podium-balance">
-                            <%= leaderboard[0].balance.toLocaleString() %> so'm
-                        </div>
+
                     </div>
                 </div>
                 <div class="podium-item third">
@@ -586,9 +575,7 @@
                                 <%= leaderboard[2].rejected %>
                             </span>
                         </div>
-                        <div class="podium-balance">
-                            <%= leaderboard[2].balance.toLocaleString() %> so'm
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -612,13 +599,6 @@
                             Rad
                         </div>
                         <div style="text-align:center">Jami</div>
-                        <div class="col-icon" style="text-align:center">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M12 6v6l4 2" />
-                            </svg>
-                            Balans
-                        </div>
                     </div>
                     <div id="leaderboardBody">
                         <% if (leaderboard.length===0) { %>
@@ -648,9 +628,7 @@
                                         <div class="stat total">
                                             <%= user.total %>
                                         </div>
-                                        <div class="stat balance">
-                                            <%= user.balance.toLocaleString() %>
-                                        </div>
+
                                     </div>
                                     <% }); %>
                                         <% } %>
@@ -705,7 +683,7 @@
                         body.innerHTML = '<div class="empty-state"><svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg><div>Hali hech kim tekshirmagan.</div></div>';
                     } else {
                         body.innerHTML = data.leaderboard.map(function (user) {
-                            return '<div class="leaderboard-row"><div class="rank">' + user.rank + '</div><div class="name">' + escapeHtml(user.name) + '</div><div class="stat accepted">' + user.accepted + '</div><div class="stat rejected">' + user.rejected + '</div><div class="stat total">' + user.total + '</div><div class="stat balance">' + user.balance.toLocaleString() + '</div></div>';
+                            return '<div class="leaderboard-row"><div class="rank">' + user.rank + '</div><div class="name">' + escapeHtml(user.name) + '</div><div class="stat accepted">' + user.accepted + '</div><div class="stat rejected">' + user.rejected + '</div><div class="stat total">' + user.total + '</div></div>';
                         }).join('');
                     }
 

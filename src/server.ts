@@ -6,10 +6,17 @@ import multer from 'multer';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import csrf from 'csurf';
+import crypto from 'crypto';
 import path from 'path';
-import { config } from './config';
+import connectPgSimple from 'connect-pg-simple';
+import { Pool } from 'pg';
+import { config, pgConfig } from './config';
 import { dbService } from './services/db';
 import { s3Service } from './services/s3';
+
+// PostgreSQL session store
+const PgSession = connectPgSimple(session);
+const sessionPool = new Pool(pgConfig);
 
 // Configure multer for memory storage (for S3 upload)
 const upload = multer({
@@ -53,16 +60,22 @@ app.use(cookieParser()); // Required for CSRF with cookies
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(session({
-    secret: config.SESSION_SECRET, // Usage of strong secret
+    store: new PgSession({
+        pool: sessionPool,
+        tableName: 'user_sessions',
+        createTableIfMissing: true,
+        pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 min
+    }),
+    secret: config.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 60 * 60 * 1000, // 1 hour (improved from 24h)
+        maxAge: 60 * 60 * 1000, // 1 hour
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Secure cookies in prod
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax'
     },
-    rolling: true // Reset expiry on each request
+    rolling: true
 }));
 
 // CSRF Protection (must come after session and body parser)
@@ -72,7 +85,16 @@ const csrfProtection = csrf({
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production'
     }
-}); // Use cookie-based tokens for better reliability
+});
+
+// Apply CSRF protection globally to all routes that need it
+app.use(csrfProtection);
+
+// Make CSRF token available to all views
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    res.locals.csrfToken = req.csrfToken();
+    next();
+});
 
 // Rate limiting for login
 const loginLimiter = rateLimit({
@@ -108,7 +130,12 @@ app.get('/login', (req, res) => {
 
 app.post('/login', loginLimiter, (req, res) => {
     const { password } = req.body;
-    if (password === config.ADMIN_PASSWORD) {
+    // Timing-safe comparison to prevent timing attacks
+    const inputBuf = Buffer.from(String(password || ''));
+    const correctBuf = Buffer.from(String(config.ADMIN_PASSWORD || ''));
+    const isValid = inputBuf.length === correctBuf.length &&
+        crypto.timingSafeEqual(inputBuf, correctBuf);
+    if (isValid) {
         (req.session as any).isAdmin = true;
         res.redirect('/dashboard');
     } else {
@@ -218,8 +245,7 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 xorazmRejected,
                 xorazmTotal: xorazmAccepted + xorazmRejected
             },
-            query,
-            csrfToken: ''
+            query
         });
     } catch (err: any) {
         console.error('Dashboard error:', err);
@@ -462,8 +488,8 @@ app.get('/leaderboard', async (req, res) => {
                 name: s.full_name || 'Noma\'lum',
                 accepted: s.accepted_count || 0,
                 rejected: s.rejected_count || 0,
-                total: (s.accepted_count || 0) + (s.rejected_count || 0),
-                balance: s.balance || 0
+                total: (s.accepted_count || 0) + (s.rejected_count || 0)
+                // balance removed from public leaderboard for privacy
             }));
 
         res.render('leaderboard', { leaderboard });
@@ -547,8 +573,8 @@ app.get('/api/leaderboard', apiLimiter, async (req, res) => {
                 name: s.full_name || 'Noma\'lum',
                 accepted: s.accepted_count || 0,
                 rejected: s.rejected_count || 0,
-                total: (s.accepted_count || 0) + (s.rejected_count || 0),
-                balance: s.balance || 0
+                total: (s.accepted_count || 0) + (s.rejected_count || 0)
+                // balance removed from public API for privacy
             }));
 
         res.json({

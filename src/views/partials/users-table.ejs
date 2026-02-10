@@ -1,0 +1,173 @@
+<!-- Upload Section -->
+<div class="section-card" id="upload">
+    <div class="section-header">
+        <h2 class="section-title">Audio Yuklash</h2>
+    </div>
+    <div class="section-body">
+        <form action="/transcription/upload" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="upload-area" onclick="openFilePicker()" style="cursor: pointer;">
+                <div class="upload-icon">🎵</div>
+                <div class="upload-text">Audio fayllarni yuklash uchun bosing</div>
+                <div class="upload-hint">Yoki fayllarni bu yerga tashlang (MP3, WAV, OGG)</div>
+                <input type="file" id="audioFiles" name="audioFiles" multiple accept="audio/*" required
+                    style="display: none;" onchange="updateFileName(this)">
+                <div id="fileName"
+                    style="margin-top: 16px; font-weight: 500; color: var(--accent-primary); display: none;">
+                </div>
+            </div>
+            <div style="margin-top: 16px; text-align: right;">
+                <button type="submit" class="btn btn-primary">Yuklash</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add User Section - Updated inline layout -->
+<div class="section-card">
+    <div class="section-header">
+        <h2 class="section-title">Yangi Foydalanuvchi Qo'shish</h2>
+    </div>
+    <div class="section-body">
+        <form action="/users/add" method="POST" class="form-grid">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="form-group input-id">
+                <label class="form-label">Telegram ID</label>
+                <input type="number" name="telegram_id" class="form-input" placeholder="123456789" required>
+            </div>
+            <div class="form-group input-name">
+                <label class="form-label">Ism Familiya</label>
+                <input type="text" name="full_name" class="form-input" placeholder="John Doe" required>
+            </div>
+            <div class="form-group input-admin">
+                <label class="form-checkbox" style="padding: 10px 0;">
+                    <input type="checkbox" name="is_admin">
+                    <span>Admin</span>
+                </label>
+            </div>
+            <div class="form-group input-submit">
+                <button type="submit" class="btn btn-primary btn-small">Qo'shish</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="section-card" id="users">
+    <div class="section-header">
+        <h2 class="section-title">Foydalanuvchilar</h2>
+        <span style="font-size: 14px; color: var(--text-secondary);">
+            <%= users.length %> ta foydalanuvchi
+        </span>
+    </div>
+    <div class="table-container">
+        <% if (users && users.length> 0) { %>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Foydalanuvchi</th>
+                        <th>Bugun</th>
+                        <th>Jami OK</th>
+                        <th>Jami NO</th>
+                        <th>Balans</th>
+                        <th>Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(user=> { %>
+                        <tr>
+                            <td class="user-id">
+                                <%= user.telegram_id %>
+                            </td>
+                            <td>
+                                <div class="user-name">
+                                    <%= user.full_name %>
+                                        <% if(user.is_admin) { %>
+                                            <span class="admin-badge">Admin</span>
+                                            <% } %>
+                                </div>
+                            </td>
+                            <td>
+                                <% if(user.checks_today> 0) { %>
+                                    <span class="stat-badge success">+<%= user.checks_today %>
+                                    </span>
+                                    <% } else { %>
+                                        <span style="color: var(--text-tertiary);">—</span>
+                                        <% } %>
+                            </td>
+                            <td><span class="stat-badge success">
+                                    <%= user.total_accepted || 0 %>
+                                </span></td>
+                            <td><span class="stat-badge error">
+                                    <%= user.total_rejected || 0 %>
+                                </span></td>
+                            <td class="balance">
+                                <%= user.balance.toLocaleString() %> so'm
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <a href="/review/<%= user.telegram_id %>"
+                                        class="btn btn-outline btn-small">Review</a>
+                                    <button type="button" class="btn btn-outline btn-small"
+                                        onclick="toggle('balance-<%= user.telegram_id %>')">Balans</button>
+                                    <form action="/users/payout/<%= user.telegram_id %>" method="POST"
+                                        style="display: inline; margin: 0;"
+                                        onsubmit="return confirm('To\'lov tasdiqlaysizmi?')">
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                        <button type="submit" class="btn btn-outline btn-small">To'lov</button>
+                                    </form>
+                                    <button type="button" class="btn btn-outline btn-small"
+                                        onclick="toggle('edit-<%= user.telegram_id %>')">Edit</button>
+                                    <form action="/users/delete/<%= user.telegram_id %>" method="POST"
+                                        style="display: inline; margin: 0;" onsubmit="return confirm('O\'chirish?')">
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                        <button type="submit" class="btn btn-small"
+                                            style="background: var(--error); color: white;">Delete</button>
+                                    </form>
+                                </div>
+
+                                <!-- Balance Form -->
+                                <div id="balance-<%= user.telegram_id %>" class="expandable-form">
+                                    <form action="/users/add-balance/<%= user.telegram_id %>" method="POST"
+                                        class="form-inline">
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                        <input type="number" name="amount" class="form-input" placeholder="Summa (so'm)"
+                                            required style="flex: 1;">
+                                        <button type="submit" class="btn btn-primary btn-small">Qo'shish</button>
+                                        <button type="button" class="btn btn-outline btn-small"
+                                            onclick="toggle('balance-<%= user.telegram_id %>')">Bekor</button>
+                                    </form>
+                                </div>
+
+                                <!-- Edit Form -->
+                                <div id="edit-<%= user.telegram_id %>" class="expandable-form">
+                                    <form action="/users/update/<%= user.telegram_id %>" method="POST"
+                                        class="form-inline">
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                        <input type="text" name="full_name" value="<%= user.full_name %>"
+                                            class="form-input" required style="flex: 1;">
+                                        <label class="form-checkbox">
+                                            <input type="checkbox" name="is_admin" <%=user.is_admin ? 'checked' : '' %>>
+                                            <span>Admin</span>
+                                        </label>
+                                        <button type="submit" class="btn btn-primary btn-small">Saqlash</button>
+                                        <button type="button" class="btn btn-outline btn-small"
+                                            onclick="toggle('edit-<%= user.telegram_id %>')">Bekor</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }) %>
+                </tbody>
+            </table>
+            <% } else { %>
+                <div class="empty-state">
+                    <div class="empty-icon">👥</div>
+                    <div class="empty-title">Foydalanuvchilar yo'q</div>
+                    <div class="empty-text">Yangi foydalanuvchi qo'shish uchun yuqoridagi
+                        formani ishlating</div>
+                </div>
+                <% } %>
+    </div>
+</div>

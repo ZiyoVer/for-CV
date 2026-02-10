@@ -1,0 +1,109 @@
+                        <!-- Charts Section -->
+                        <div class="charts-section" id="analytics">
+                            <!-- Overall Statistics Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">Overall Statistics</div>
+                                        <div class="chart-subtitle">Accepted vs Rejected comparison</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="statsChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- User Activity Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">User Activity</div>
+                                        <div class="chart-subtitle">Annotators performance comparison</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="userActivityChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Timeline Chart -->
+                            <div class="chart-card full-width">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">Activity Timeline</div>
+                                        <div class="chart-subtitle">Files checked over time (last 7 days)</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="timelineChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Pie Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">Accept/Reject Ratio</div>
+                                        <div class="chart-subtitle">Distribution of review decisions</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container small">
+                                    <canvas id="ratioChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- User Stats Pie Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">Top Contributors</div>
+                                        <div class="chart-subtitle">Files reviewed by top users</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container small">
+                                    <canvas id="contributorsChart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Transcription Overview Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">📝 Transkripsiya</div>
+                                        <div class="chart-subtitle">Qabul qilingan: <%= stats.transAccepted %> |
+                                                Kutilmoqda: <%= stats.transcriptionPending %>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chart-container small">
+                                    <canvas id="transChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Transcription Contributors Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">📝 Trans. Contributors</div>
+                                        <div class="chart-subtitle">Transkripsiya bo'yicha top foydalanuvchilar</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container small">
+                                    <canvas id="transContributorsChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Xorazm Dialect Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">🌍 Xorazm sheva</div>
+                                        <div class="chart-subtitle">Qabul qilingan: <%= stats.xorazmAccepted %> |
+                                                Kutilmoqda: <%= stats.xorazmPending %>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chart-container small">
+                                    <canvas id="xorazmChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
