@@ -532,6 +532,67 @@ app.get('/api/leaderboard', apiLimiter, async (req, res) => {
     }
 });
 
+// API: Combined Dashboard Data (for live auto-refresh)
+app.get('/api/dashboard', requireAuth, apiLimiter, async (req, res) => {
+    try {
+        const usersWithStats = await dbService.getDashboardUsers();
+        const pendingCount = await dbService.getPendingCount();
+        const transcriptionPendingCount = await dbService.getTranscriptionPendingCount();
+        const allStats = await dbService.getAllUserStats();
+        const totalAccepted = allStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+        const totalRejected = allStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
+        const durationStats = await dbService.getDurationStats();
+        const durationByStatus: Record<string, number> = {};
+        durationStats.forEach((s: any) => {
+            durationByStatus[s.status] = Number(s.total_seconds) || 0;
+        });
+        const totalCheckedDuration = (durationByStatus['ACCEPTED'] || 0) + (durationByStatus['REJECTED'] || 0);
+        const pendingDuration = durationByStatus['PENDING'] || 0;
+
+        const formatDuration = (sec: number) => {
+            const hours = Math.floor(sec / 3600);
+            const minutes = Math.floor((sec % 3600) / 60);
+            return `${hours}s ${minutes}m`;
+        };
+
+        const lifetimeStats = await dbService.getLifetimeDailyStats();
+        const transStats = await dbService.getAllTranscriptionStats();
+        const transAccepted = transStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+        const transRejected = transStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
+        const xorazmPending = await dbService.getXorazmPendingCount();
+        const xorazmStats = await dbService.getAllXorazmStats();
+        const xorazmAccepted = xorazmStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+        const xorazmRejected = xorazmStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
+        res.json({
+            success: true,
+            users: usersWithStats,
+            lifetimeStats,
+            transStats,
+            stats: {
+                pending: pendingCount,
+                transcriptionPending: transcriptionPendingCount,
+                xorazmPending,
+                totalAccepted,
+                totalRejected,
+                totalChecked: totalAccepted + totalRejected,
+                checkedDuration: formatDuration(totalCheckedDuration),
+                pendingDuration: formatDuration(pendingDuration),
+                transAccepted,
+                transRejected,
+                xorazmAccepted,
+                xorazmRejected
+            },
+            updatedAt: new Date().toISOString()
+        });
+    } catch (err) {
+        console.error('Dashboard API error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
 // API: Get Overview Stats for Dashboard Charts
 app.get('/api/stats/overview', requireAuth, apiLimiter, async (req, res) => {
     try {

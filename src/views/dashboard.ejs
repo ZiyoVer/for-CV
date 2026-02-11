@@ -780,7 +780,7 @@
                                     </div>
                                     <div class="stat-icon">📊</div>
                                 </div>
-                                <div class="stat-value">
+                                <div class="stat-value" id="stat-total-checked">
                                     <%= stats.totalChecked.toLocaleString() %>
                                 </div>
                                 <div class="stat-subtext">ta fayl tekshirildi</div>
@@ -793,10 +793,10 @@
                                     </div>
                                     <div class="stat-icon">✓</div>
                                 </div>
-                                <div class="stat-value">
+                                <div class="stat-value" id="stat-accepted">
                                     <%= stats.totalAccepted.toLocaleString() %>
                                 </div>
-                                <div class="stat-subtext">
+                                <div class="stat-subtext" id="stat-accepted-sub">
                                     <%= stats.checkedDuration %>
                                 </div>
                             </div>
@@ -808,7 +808,7 @@
                                     </div>
                                     <div class="stat-icon">✕</div>
                                 </div>
-                                <div class="stat-value">
+                                <div class="stat-value" id="stat-rejected">
                                     <%= stats.totalRejected.toLocaleString() %>
                                 </div>
                                 <div class="stat-subtext">ta fayl rad etildi</div>
@@ -821,10 +821,10 @@
                                     </div>
                                     <div class="stat-icon">⏱</div>
                                 </div>
-                                <div class="stat-value">
+                                <div class="stat-value" id="stat-pending">
                                     <%= stats.pending.toLocaleString() %>
                                 </div>
-                                <div class="stat-subtext">
+                                <div class="stat-subtext" id="stat-pending-sub">
                                     <%= stats.pendingDuration %>
                                 </div>
                             </div>
@@ -901,7 +901,7 @@
                                 <div class="chart-header">
                                     <div>
                                         <div class="chart-title">📝 Transkripsiya</div>
-                                        <div class="chart-subtitle">Qabul qilingan: <%= stats.transAccepted %> |
+                                        <div class="chart-subtitle" id="trans-subtitle">Qabul qilingan: <%= stats.transAccepted %> |
                                                 Kutilmoqda: <%= stats.transcriptionPending %>
                                         </div>
                                     </div>
@@ -929,7 +929,7 @@
                                 <div class="chart-header">
                                     <div>
                                         <div class="chart-title">🌍 Xorazm sheva</div>
-                                        <div class="chart-subtitle">Qabul qilingan: <%= stats.xorazmAccepted %> |
+                                        <div class="chart-subtitle" id="xorazm-subtitle">Qabul qilingan: <%= stats.xorazmAccepted %> |
                                                 Kutilmoqda: <%= stats.xorazmPending %>
                                         </div>
                                     </div>
@@ -1228,7 +1228,7 @@
 
         // 1. Overall Statistics Chart (Bar Chart)
         const statsCtx = document.getElementById('statsChart').getContext('2d');
-        new Chart(statsCtx, {
+        const chartStats = new Chart(statsCtx, {
             type: 'bar',
             data: {
                 labels: ['Pending', 'Transcription', 'Accepted', 'Rejected'],
@@ -1264,7 +1264,7 @@
         const userData = <%- JSON.stringify(users || []).replace(/</g, '\\u003c') %>;
         const topUsers = userData.slice(0, 8).sort((a, b) => (b.total_accepted + b.total_rejected) - (a.total_accepted + a.total_rejected));
 
-        new Chart(userActivityCtx, {
+        const chartUserActivity = new Chart(userActivityCtx, {
             type: 'bar',
             data: {
                 labels: topUsers.map(u => u.full_name.split(' ')[0]),
@@ -1317,7 +1317,7 @@
         const timelineAccepted = lifetimeData.map(d => d.accepted || 0);
         const timelineRejected = lifetimeData.map(d => d.rejected || 0);
 
-        new Chart(timelineCtx, {
+        const chartTimeline = new Chart(timelineCtx, {
             type: 'line',
             data: {
                 labels: timelineLabels.length > 0 ? timelineLabels : ['Ma\'lumot yo\'q'],
@@ -1363,7 +1363,7 @@
         const acceptedPct = <%= stats.totalAccepted || 0 %>;
         const rejectedPct = <%= stats.totalRejected || 0 %>;
 
-        new Chart(ratioCtx, {
+        const chartRatio = new Chart(ratioCtx, {
             type: 'doughnut',
             data: {
                 labels: ['Accepted', 'Rejected'],
@@ -1412,7 +1412,7 @@
         const contributorData = contributors.map(u => (u.total_accepted || 0) + (u.total_rejected || 0));
         const contributorLabels = contributors.map(u => u.full_name.split(' ')[0]);
 
-        new Chart(contributorsCtx, {
+        const chartContributors = new Chart(contributorsCtx, {
             type: 'pie',
             data: {
                 labels: contributorLabels,
@@ -1443,7 +1443,7 @@
 
         // 6. Transcription Overview (Doughnut Chart)
         var transCtx = document.getElementById('transChart').getContext('2d');
-        new Chart(transCtx, {
+        const chartTrans = new Chart(transCtx, {
             type: 'doughnut',
             data: {
                 labels: ['Qabul qilingan', 'Rad etilgan', 'Kutilmoqda'],
@@ -1476,7 +1476,7 @@
         var transContributorsCtx = document.getElementById('transContributorsChart').getContext('2d');
         var transStatsData = <%- JSON.stringify(transStats || []).replace(/</g, '\\u003c') %>;
         var transUsers = transStatsData.filter(function (u) { return u.accepted_count > 0; }).slice(0, 10);
-        new Chart(transContributorsCtx, {
+        const chartTransContributors = new Chart(transContributorsCtx, {
             type: 'bar',
             data: {
                 labels: transUsers.map(function (u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; }),
@@ -1509,7 +1509,7 @@
 
         // 8. Xorazm Dialect Chart (Doughnut)
         var xorazmCtx = document.getElementById('xorazmChart').getContext('2d');
-        new Chart(xorazmCtx, {
+        const chartXorazm = new Chart(xorazmCtx, {
             type: 'doughnut',
             data: {
                 labels: ['Qabul qilingan', 'Rad etilgan', 'Kutilmoqda'],
@@ -1531,6 +1531,85 @@
                 }
             }
         });
+        // ========== LIVE AUTO-REFRESH ==========
+        async function updateDashboard() {
+            try {
+                const res = await fetch('/api/dashboard');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.success) return;
+
+                const s = data.stats;
+
+                // Update stat cards
+                document.getElementById('stat-total-checked').textContent = s.totalChecked.toLocaleString();
+                document.getElementById('stat-accepted').textContent = s.totalAccepted.toLocaleString();
+                document.getElementById('stat-accepted-sub').textContent = s.checkedDuration;
+                document.getElementById('stat-rejected').textContent = s.totalRejected.toLocaleString();
+                document.getElementById('stat-pending').textContent = s.pending.toLocaleString();
+                document.getElementById('stat-pending-sub').textContent = s.pendingDuration;
+
+                // Update transcription/xorazm subtitles
+                document.getElementById('trans-subtitle').textContent =
+                    'Qabul qilingan: ' + s.transAccepted + ' | Kutilmoqda: ' + s.transcriptionPending;
+                document.getElementById('xorazm-subtitle').textContent =
+                    'Qabul qilingan: ' + s.xorazmAccepted + ' | Kutilmoqda: ' + s.xorazmPending;
+
+                // Update Chart 1: Overall Statistics (Bar)
+                chartStats.data.datasets[0].data = [
+                    s.pending || 0, s.transcriptionPending || 0, s.totalAccepted || 0, s.totalRejected || 0
+                ];
+                chartStats.update();
+
+                // Update Chart 2: User Activity (Horizontal Bar)
+                var freshUsers = (data.users || []).slice(0, 8)
+                    .sort(function(a, b) { return (b.total_accepted + b.total_rejected) - (a.total_accepted + a.total_rejected); });
+                chartUserActivity.data.labels = freshUsers.map(function(u) { return u.full_name.split(' ')[0]; });
+                chartUserActivity.data.datasets[0].data = freshUsers.map(function(u) { return u.total_accepted || 0; });
+                chartUserActivity.data.datasets[1].data = freshUsers.map(function(u) { return u.total_rejected || 0; });
+                chartUserActivity.update();
+
+                // Update Chart 3: Timeline (Line)
+                var freshTimeline = data.lifetimeStats || [];
+                chartTimeline.data.labels = freshTimeline.map(function(d) {
+                    var dt = new Date(d.date || d.day);
+                    return dt.toLocaleDateString('uz-UZ', { weekday: 'short', day: 'numeric' });
+                });
+                chartTimeline.data.datasets[0].data = freshTimeline.map(function(d) { return d.accepted || 0; });
+                chartTimeline.data.datasets[1].data = freshTimeline.map(function(d) { return d.rejected || 0; });
+                chartTimeline.update();
+
+                // Update Chart 4: Accept/Reject Ratio (Doughnut)
+                chartRatio.data.datasets[0].data = [s.totalAccepted || 0, s.totalRejected || 0];
+                chartRatio.update();
+
+                // Update Chart 5: Top Contributors (Pie)
+                var freshContributors = freshUsers.slice(0, 5);
+                chartContributors.data.labels = freshContributors.map(function(u) { return u.full_name.split(' ')[0]; });
+                chartContributors.data.datasets[0].data = freshContributors.map(function(u) { return (u.total_accepted || 0) + (u.total_rejected || 0); });
+                chartContributors.update();
+
+                // Update Chart 6: Transcription (Doughnut)
+                chartTrans.data.datasets[0].data = [s.transAccepted || 0, s.transRejected || 0, s.transcriptionPending || 0];
+                chartTrans.update();
+
+                // Update Chart 7: Trans Contributors (Bar)
+                var freshTransUsers = (data.transStats || []).filter(function(u) { return u.accepted_count > 0; }).slice(0, 10);
+                chartTransContributors.data.labels = freshTransUsers.map(function(u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; });
+                chartTransContributors.data.datasets[0].data = freshTransUsers.map(function(u) { return u.accepted_count || 0; });
+                chartTransContributors.update();
+
+                // Update Chart 8: Xorazm (Doughnut)
+                chartXorazm.data.datasets[0].data = [s.xorazmAccepted || 0, s.xorazmRejected || 0, s.xorazmPending || 0];
+                chartXorazm.update();
+
+            } catch (err) {
+                console.error('Dashboard refresh error:', err);
+            }
+        }
+
+        // Auto-refresh every 10 seconds
+        setInterval(updateDashboard, 10000);
     </script>
 
 </body>
