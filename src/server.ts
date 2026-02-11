@@ -181,7 +181,8 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             durationByStatus[s.status] = Number(s.total_seconds) || 0;
         });
 
-        const totalCheckedDuration = (durationByStatus['ACCEPTED'] || 0) + (durationByStatus['REJECTED'] || 0);
+        const acceptedDuration = durationByStatus['ACCEPTED'] || 0;
+        const rejectedDuration = durationByStatus['REJECTED'] || 0;
         const pendingDuration = durationByStatus['PENDING'] || 0;
 
         const formatDuration = (sec: number) => {
@@ -235,7 +236,8 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 totalAccepted,
                 totalRejected,
                 totalChecked: totalAccepted + totalRejected,
-                checkedDuration: formatDuration(totalCheckedDuration),
+                acceptedDuration: formatDuration(acceptedDuration),
+                rejectedDuration: formatDuration(rejectedDuration),
                 pendingDuration: formatDuration(pendingDuration),
                 transAccepted,
                 transRejected,
@@ -547,7 +549,8 @@ app.get('/api/dashboard', requireAuth, apiLimiter, async (req, res) => {
         durationStats.forEach((s: any) => {
             durationByStatus[s.status] = Number(s.total_seconds) || 0;
         });
-        const totalCheckedDuration = (durationByStatus['ACCEPTED'] || 0) + (durationByStatus['REJECTED'] || 0);
+        const acceptedDuration = durationByStatus['ACCEPTED'] || 0;
+        const rejectedDuration = durationByStatus['REJECTED'] || 0;
         const pendingDuration = durationByStatus['PENDING'] || 0;
 
         const formatDuration = (sec: number) => {
@@ -578,7 +581,8 @@ app.get('/api/dashboard', requireAuth, apiLimiter, async (req, res) => {
                 totalAccepted,
                 totalRejected,
                 totalChecked: totalAccepted + totalRejected,
-                checkedDuration: formatDuration(totalCheckedDuration),
+                acceptedDuration: formatDuration(acceptedDuration),
+                rejectedDuration: formatDuration(rejectedDuration),
                 pendingDuration: formatDuration(pendingDuration),
                 transAccepted,
                 transRejected,

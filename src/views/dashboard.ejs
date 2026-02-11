@@ -797,7 +797,7 @@
                                     <%= stats.totalAccepted.toLocaleString() %>
                                 </div>
                                 <div class="stat-subtext" id="stat-accepted-sub">
-                                    <%= stats.checkedDuration %>
+                                    <%= stats.acceptedDuration %>
                                 </div>
                             </div>
 
@@ -811,7 +811,9 @@
                                 <div class="stat-value" id="stat-rejected">
                                     <%= stats.totalRejected.toLocaleString() %>
                                 </div>
-                                <div class="stat-subtext">ta fayl rad etildi</div>
+                                <div class="stat-subtext" id="stat-rejected-sub">
+                                    <%= stats.rejectedDuration %>
+                                </div>
                             </div>
 
                             <div class="stat-card warning">
@@ -1544,8 +1546,9 @@
                 // Update stat cards
                 document.getElementById('stat-total-checked').textContent = s.totalChecked.toLocaleString();
                 document.getElementById('stat-accepted').textContent = s.totalAccepted.toLocaleString();
-                document.getElementById('stat-accepted-sub').textContent = s.checkedDuration;
+                document.getElementById('stat-accepted-sub').textContent = s.acceptedDuration;
                 document.getElementById('stat-rejected').textContent = s.totalRejected.toLocaleString();
+                document.getElementById('stat-rejected-sub').textContent = s.rejectedDuration;
                 document.getElementById('stat-pending').textContent = s.pending.toLocaleString();
                 document.getElementById('stat-pending-sub').textContent = s.pendingDuration;
 
