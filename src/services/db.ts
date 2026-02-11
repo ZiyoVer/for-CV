@@ -241,6 +241,14 @@ export const dbService = {
                 'UPDATE files SET assigned_to = $1 WHERE assigned_to = $2',
                 [newTelegramId, oldTelegramId]
             );
+            await pool.query(
+                'UPDATE transcription_files SET assigned_to = $1 WHERE assigned_to = $2',
+                [newTelegramId, oldTelegramId]
+            );
+            await pool.query(
+                'UPDATE xorazm_files SET assigned_to = $1 WHERE assigned_to = $2',
+                [newTelegramId, oldTelegramId]
+            );
         }
         await pool.query(
             'UPDATE users SET telegram_id = $1, full_name = $2, is_admin = $3 WHERE telegram_id = $4',
@@ -261,6 +269,14 @@ export const dbService = {
             // Same for transcription_files - only release LOCKED
             await client.query(
                 `UPDATE transcription_files
+                 SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
+                 WHERE assigned_to = $1 AND status = 'LOCKED'`,
+                [telegramId]
+            );
+
+            // Same for xorazm_files - only release LOCKED
+            await client.query(
+                `UPDATE xorazm_files
                  SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
                  WHERE assigned_to = $1 AND status = 'LOCKED'`,
                 [telegramId]

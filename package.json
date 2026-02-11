@@ -23,7 +23,6 @@
     "@types/multer": "^2.0.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
-    "body-parser": "^2.2.2",
     "chart.js": "^4.5.1",
     "chartjs-node-canvas": "^5.0.0",
     "connect-pg-simple": "^10.0.0",

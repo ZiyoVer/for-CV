@@ -101,10 +101,10 @@ bot.command('menu', async (ctx) => {
 
 // Helper function to show main menu
 async function showMainMenu(ctx: any) {
+    if (!ctx.from) return;
+
     // Clear any existing state when going to main menu
-    if (ctx.from) {
-        await dbService.deleteState(ctx.from.id);
-    }
+    await dbService.deleteState(ctx.from.id);
 
     const user = await dbService.getUser(ctx.from.id);
     const stats = await dbService.getUserStats(ctx.from.id);

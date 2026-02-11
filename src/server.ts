@@ -1,6 +1,5 @@
 import express from 'express';
 import session from 'express-session';
-import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import helmet from 'helmet';
@@ -57,8 +56,8 @@ app.use(helmet({
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(cookieParser()); // Required for CSRF with cookies
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(session({
     store: new PgSession({
         pool: sessionPool,
@@ -249,7 +248,7 @@ app.get('/dashboard', requireAuth, async (req, res) => {
         });
     } catch (err: any) {
         console.error('Dashboard error:', err);
-        res.status(500).send(`Server xatosi: ${err.message || err}`);
+        res.status(500).send('Server xatosi yuz berdi.');
     }
 });
 
@@ -258,63 +257,6 @@ app.get('/dashboard-simple', requireAuth, (req, res) => {
     res.redirect('/dashboard');
 });
 
-// DEBUG DASHBOARD - Remove after testing
-app.get('/dashboard-debug', requireAuth, async (req, res) => {
-    try {
-        const usersWithStats = await dbService.getDashboardUsers();
-        const pendingCount = await dbService.getPendingCount();
-        const transcriptionPendingCount = await dbService.getTranscriptionPendingCount();
-        const allStats = await dbService.getAllUserStats();
-        const totalAccepted = allStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
-        const totalRejected = allStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
-
-        const durationStats = await dbService.getDurationStats();
-        const durationByStatus: Record<string, number> = {};
-        durationStats.forEach((s: any) => {
-            durationByStatus[s.status] = Number(s.total_seconds) || 0;
-        });
-
-        const totalCheckedDuration = (durationByStatus['ACCEPTED'] || 0) + (durationByStatus['REJECTED'] || 0);
-        const pendingDuration = durationByStatus['PENDING'] || 0;
-
-        const formatDuration = (sec: number) => {
-            const hours = Math.floor(sec / 3600);
-            const minutes = Math.floor((sec % 3600) / 60);
-            return `${hours}s ${minutes}m`;
-        };
-
-        const hourlyStats = await dbService.get24hHourlyStats();
-        const hourlyMap = new Map<string, number>();
-        hourlyStats.forEach((s: any) => {
-            const h = new Date(s.hour).toISOString();
-            hourlyMap.set(h, (hourlyMap.get(h) || 0) + Number(s.count));
-        });
-
-        const chartData = Array.from(hourlyMap.entries())
-            .map(([hour, count]) => ({ hour, count }))
-            .sort((a, b) => a.hour.localeCompare(b.hour));
-
-        const lifetimeStats = await dbService.getLifetimeDailyStats();
-
-        res.render('dashboard-debug', {
-            users: usersWithStats,
-            chartData,
-            lifetimeStats,
-            stats: {
-                pending: pendingCount,
-                transcriptionPending: transcriptionPendingCount,
-                totalAccepted,
-                totalRejected,
-                totalChecked: totalAccepted + totalRejected,
-                checkedDuration: formatDuration(totalCheckedDuration),
-                pendingDuration: formatDuration(pendingDuration)
-            }
-        });
-    } catch (err: any) {
-        console.error('Debug Dashboard error:', err);
-        res.status(500).send(`Server xatosi: ${err.message || err}`);
-    }
-});
 
 app.post('/users/add', requireAuth, async (req, res) => {
     const { telegram_id, full_name, is_admin } = req.body;
@@ -347,6 +289,9 @@ app.post('/users/payout/:id', requireAuth, async (req, res) => {
 app.post('/users/add-balance/:id', requireAuth, async (req, res) => {
     const userId = Number(req.params.id);
     const amount = Number(req.body.amount) || 0;
+    if (amount <= 0) {
+        return res.redirect('/dashboard?error=invalid_amount');
+    }
     try {
         await dbService.incrementBalance(userId, amount);
         res.redirect('/dashboard?success=balance_added');
