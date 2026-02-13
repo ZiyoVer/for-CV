@@ -952,7 +952,12 @@ async function sendNextFile(ctx: any) {
         const audioBuffer = await s3Service.getFileBuffer(fileKey);
 
         if (!audioBuffer) {
-            await ctx.reply("Audio faylni yuklab bo'lmadi (S3 error).", { reply_markup: sttSubmenuKeyboard });
+            await ctx.reply("❌ Audio fayl serverda topilmadi (S3 error). U o'tkazib yuborildi.", { reply_markup: sttSubmenuKeyboard });
+
+            // Mark as REJECTED so it doesn't block the user
+            await dbService.updateFileStatus(userId, fileKey, 'REJECTED');
+            await dbService.deleteState(userId);
+
             return;
         }
 
@@ -1003,10 +1008,16 @@ async function sendNextTranscriptionFile(ctx: any) {
             return;
         }
 
+        // Get audio
         const audioBuffer = await s3Service.getTranscriptionAudioBuffer(fileKey);
 
         if (!audioBuffer) {
-            await ctx.reply("Audio faylni yuklab bo'lmadi (S3 error).", { reply_markup: mainMenuKeyboard });
+            await ctx.reply("❌ Audio fayl serverda topilmadi (S3 error). U o'tkazib yuborildi.", { reply_markup: mainMenuKeyboard });
+
+            // Mark as REJECTED so it doesn't block the user
+            await dbService.updateTranscriptionFileStatus(userId, fileKey, 'REJECTED');
+            await dbService.deleteState(userId);
+
             return;
         }
 
@@ -1058,8 +1069,12 @@ async function sendNextXorazmFile(ctx: any) {
         const audioBuffer = await s3Service.getXorazmAudioBuffer(xorazmFile.audio_path);
 
         if (!audioBuffer) {
-            await ctx.reply("Audio faylni yuklab bo'lmadi.", { reply_markup: sttSubmenuKeyboard });
-            await dbService.releaseXorazmFile(userId, xorazmFile.id);
+            await ctx.reply("❌ Audio fayl serverda topilmadi (S3 error). U o'tkazib yuborildi.", { reply_markup: sttSubmenuKeyboard });
+
+            // Mark as REJECTED to skip
+            await dbService.updateXorazmFileStatus(userId, xorazmFile.id, 'REJECTED');
+            await dbService.deleteState(userId);
+
             return;
         }
 
