@@ -22,6 +22,7 @@ export const s3Service = {
     // Populate DB with files from S3 ("stt/" folder) - only adds new files from SYNC_START_DATE onwards
     async syncFiles() {
         console.log(`Starting S3 Sync for 'stt/' folder (from ${this.SYNC_START_DATE.toISOString()})...`);
+        const startDate = this.SYNC_START_DATE;
         let continuationToken: string | undefined;
         let count = 0;
         let skipped = 0;
@@ -50,9 +51,13 @@ export const s3Service = {
                 await Promise.all(batch.map(async (file) => {
                     if (!file.Key) return;
 
+                    // Detailed logging for debugging
+                    console.log(`Processing file: ${file.Key} (LastModified: ${file.LastModified?.toISOString()})`);
+
                     // Filter by date: only sync files from SYNC_START_DATE onwards
-                    if (file.LastModified && file.LastModified < this.SYNC_START_DATE) {
+                    if (file.LastModified && file.LastModified < startDate) {
                         tooOld++;
+                        // console.log(`Skipping old file: ${file.Key}`);
                         return; // Skip old files
                     }
 
@@ -60,6 +65,7 @@ export const s3Service = {
                     const existingFile = await dbService.checkFileExists(file.Key);
                     if (existingFile) {
                         skipped++;
+                        console.log(`Skipping existing file: ${file.Key}`);
                         return; // Skip if already in DB
                     }
 
@@ -70,8 +76,11 @@ export const s3Service = {
                         if (json && json.duration) {
                             duration = Math.round(json.duration / 1000); // ms to sec
                         }
-                    } catch (e) { }
+                    } catch (e) {
+                        console.warn(`Failed to get duration for ${file.Key}`, e);
+                    }
 
+                    console.log(`Adding new file to DB: ${file.Key}, Duration: ${duration}s`);
                     await dbService.addFile(file.Key, duration);
                     count++;
                 }));
@@ -92,9 +101,16 @@ export const s3Service = {
             const response = await s3.send(command);
             const str = await response.Body?.transformToString();
             return str ? JSON.parse(str) : {};
-        } catch (error) {
+        } catch (error: any) {
+            // Check for NoSuchKey error (standard AWS/minio error code)
+            if (error.Code === 'NoSuchKey' || error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
+                // Suppress full error stack for missing JSON, it's expected sometimes
+                console.warn(`JSON file missing for ${audioKey} (Key: ${jsonKey}) - proceeding without metadata.`);
+                return {};
+            }
             console.error(`Error fetching JSON for ${audioKey}:`, error);
-            return { text: "[JSON fayli topilmadi]" };
+            // Return empty object on error to prevent crash
+            return {};
         }
     },
 
