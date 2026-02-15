@@ -130,7 +130,8 @@ export const dbService = {
             { table: 'transcription_files', column: 'audio_duration_sec', type: 'INTEGER' },
             { table: 'files', column: 'synced_at', type: 'TIMESTAMPTZ' },
             { table: 'files', column: 'original_file_key', type: 'TEXT' },
-            { table: 'files', column: 'transcribed_text', type: 'TEXT' }
+            { table: 'files', column: 'transcribed_text', type: 'TEXT' },
+            { table: 'xorazm_files', column: 'gemini_text', type: 'TEXT' }
         ];
 
         for (const migration of migrations) {
@@ -690,6 +691,13 @@ export const dbService = {
         await pool.query(
             `UPDATE xorazm_files SET edited_text = $2 WHERE id = $1`,
             [id, editedText]
+        );
+    },
+
+    updateXorazmGeminiText: async (id: string, geminiText: string) => {
+        await pool.query(
+            `UPDATE xorazm_files SET gemini_text = $2 WHERE id = $1`,
+            [id, geminiText]
         );
     },
 

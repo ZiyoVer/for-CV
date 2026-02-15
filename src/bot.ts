@@ -398,28 +398,36 @@ bot.on("message:text", async (ctx) => {
 
     // Handle XORAZM EDIT text input
     if (type === 'xorazm_edit') {
-        const { xorazmId, audioPath, originalText } = data;
+        const { xorazmId, audioPath, originalText, geminiText } = data;
 
         // Save edited text to DB and state
         await dbService.updateXorazmText(xorazmId, newText);
-        await dbService.saveState(userId, 'xorazm', { xorazmId, audioPath, originalText, editedText: newText });
+        await dbService.saveState(userId, 'xorazm', { 
+            xorazmId, 
+            audioPath, 
+            originalText, 
+            geminiText,
+            editedText: newText 
+        });
 
-        await ctx.reply(
-            `✅ <b>Matn tahrirlandi!</b>\n\n` +
-            `🆔 <code>${xorazmId}</code>\n\n` +
-            `<b>Original:</b>\n<code>${originalText.substring(0, 200)}</code>\n\n` +
-            `<b>Tahrirlangan:</b>\n<code>${newText.substring(0, 200)}</code>\n\n` +
-            `<i>Tasdiqlaysizmi?</i>`,
-            {
-                parse_mode: "HTML",
-                reply_markup: new InlineKeyboard()
-                    .text("✅ To'g'ri", "xrz_accept")
-                    .text("❌ Xato", "xrz_deny")
-                    .row()
-                    .text("✏️ Qayta tahrirlash", "xrz_edit")
-                    .text("⏭️ O'tkazish", "xrz_skip")
-            }
-        );
+        let msg = `✅ <b>Matn tahrirlandi!</b>\n\n`;
+        msg += `🆔 <code>${xorazmId}</code>\n\n`;
+        msg += `<b>Original:</b>\n<code>${originalText.substring(0, 200)}</code>\n\n`;
+        if (geminiText) {
+            msg += `<b>Gemini:</b>\n<code>${geminiText.substring(0, 200)}</code>\n\n`;
+        }
+        msg += `<b>Tahrirlangan:</b>\n<code>${newText.substring(0, 200)}</code>\n\n`;
+        msg += `<i>Tasdiqlaysizmi?</i>`;
+
+        await ctx.reply(msg, {
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard()
+                .text("✅ To'g'ri", "xrz_accept")
+                .text("❌ Xato", "xrz_deny")
+                .row()
+                .text("✏️ Qayta tahrirlash", "xrz_edit")
+                .text("⏭️ O'tkazish", "xrz_skip")
+        });
         return;
     }
 
@@ -694,7 +702,7 @@ bot.callbackQuery("trans_edit_gender", async (ctx) => {
 
 // --- XORAZM DIALECT CALLBACK HANDLERS ---
 
-// Accept - copy to xorazm_sheva/
+// Accept - copy to xorazm_saralangan/
 bot.callbackQuery("xrz_accept", async (ctx) => {
     await ctx.answerCallbackQuery("Saqlanmoqda...");
 
@@ -733,7 +741,7 @@ bot.callbackQuery("xrz_accept", async (ctx) => {
     }
 });
 
-// Deny - mark as rejected
+// Deny - mark as REJECTED (NO deletion from S3)
 bot.callbackQuery("xrz_deny", async (ctx) => {
     await ctx.answerCallbackQuery("Rad etildi");
 
@@ -749,7 +757,7 @@ bot.callbackQuery("xrz_deny", async (ctx) => {
         await dbService.updateXorazmFileStatus(userId, stateRow.data.xorazmId, 'REJECTED');
         await dbService.deleteState(userId);
 
-        await ctx.reply("❌ Rad etildi! Davom etamizmi?", {
+        await ctx.reply("❌ Rad etildi! (Original fayl o'zgartirilmadi)\n\nDavom etamizmi?", {
             reply_markup: new Keyboard()
                 .text("🌍 Xorazm viloyati")
                 .text("⬅️ Asosiy menyu")
@@ -773,19 +781,20 @@ bot.callbackQuery("xrz_edit", async (ctx) => {
         return;
     }
 
-    const { xorazmId, originalText, editedText } = stateRow.data;
+    const { xorazmId, originalText, geminiText, editedText } = stateRow.data;
     const currentText = editedText || originalText;
 
-    // Switch to edit mode
     await dbService.saveState(userId, 'xorazm_edit', stateRow.data);
 
-    await ctx.reply(
-        `✏️ <b>Matnni tahrirlash</b>\n\n` +
-        `🆔 <code>${xorazmId}</code>\n\n` +
-        `<b>Hozirgi matn:</b>\n<code>${currentText}</code>\n\n` +
-        `<i>Yangi matnni yozib yuboring:</i>`,
-        { parse_mode: "HTML" }
-    );
+    let prompt = `✏️ <b>Matnni tahrirlash</b>\n\n`;
+    prompt += `🆔 <code>${xorazmId}</code>\n\n`;
+    prompt += `<b>📝 Asl matn (metadata):</b>\n<code>${originalText.substring(0, 300)}</code>\n\n`;
+    if (geminiText) {
+        prompt += `<b>🤖 Gemini transkripsiya:</b>\n<code>${geminiText.substring(0, 300)}</code>\n\n`;
+    }
+    prompt += `<i>Yangi matnni yozib yuboring:</i>`;
+
+    await ctx.reply(prompt, { parse_mode: "HTML" });
 });
 
 // Skip - release and get next
@@ -1050,7 +1059,6 @@ async function sendNextXorazmFile(ctx: any) {
         // First ensure metadata is loaded
         const pending = await dbService.getXorazmPendingCount();
         if (pending === 0) {
-            // Try loading metadata
             const added = await s3Service.loadXorazmMetadata();
             if (added === 0) {
                 await ctx.reply("Hozircha Xorazm vazifalari yo'q.", { reply_markup: sttSubmenuKeyboard });
@@ -1070,26 +1078,56 @@ async function sendNextXorazmFile(ctx: any) {
 
         if (!audioBuffer) {
             await ctx.reply("❌ Audio fayl serverda topilmadi (S3 error). U o'tkazib yuborildi.", { reply_markup: sttSubmenuKeyboard });
-
-            // Mark as REJECTED to skip
             await dbService.updateXorazmFileStatus(userId, xorazmFile.id, 'REJECTED');
             await dbService.deleteState(userId);
-
             return;
+        }
+
+        // Get Gemini transcription
+        let geminiText: string | null = null;
+        if (config.GEMINI_API_KEY) {
+            await ctx.reply("🤖 Gemini transkripsiya qilinmoqda... (bu biroz vaqt olishi mumkin)");
+            try {
+                geminiText = await s3Service.transcribeXorazmWithGemini(xorazmFile.audio_path);
+                if (geminiText) {
+                    await dbService.updateXorazmGeminiText(xorazmFile.id, geminiText);
+                }
+            } catch (e) {
+                console.warn('Gemini transcription failed for xorazm file:', xorazmFile.id, e);
+            }
         }
 
         // Save state
         await dbService.saveState(userId, 'xorazm', {
             xorazmId: xorazmFile.id,
             audioPath: xorazmFile.audio_path,
-            originalText: xorazmFile.original_text
+            originalText: xorazmFile.original_text,
+            geminiText: geminiText,
+            editedText: null
         });
 
         // Send audio with text
-        let text = xorazmFile.original_text;
-        if (text.length > 800) text = text.substring(0, 800) + "...";
+        let caption = `🌍 <b>XORAZM SHEVA</b>\n\n`;
+        caption += `🆔 <code>${xorazmFile.id}</code>\n\n`;
 
-        const caption = `🌍 <b>XORAZM SHEVA</b>\n\n🆔 <code>${xorazmFile.id}</code>\n\n📝 ${text}`;
+        // Show original text
+        const origText = xorazmFile.original_text;
+        if (origText.length > 400) {
+            caption += `<b>📝 Asl matn:</b>\n<code>${origText.substring(0, 400)}...</code>\n\n`;
+        } else {
+            caption += `<b>📝 Asl matn:</b>\n<code>${origText}</code>\n\n`;
+        }
+
+        // Show Gemini text if available
+        if (geminiText) {
+            if (geminiText.length > 400) {
+                caption += `<b>🤖 Gemini:</b>\n<code>${geminiText.substring(0, 400)}...</code>\n\n`;
+            } else {
+                caption += `<b>🤖 Gemini:</b>\n<code>${geminiText}</code>\n\n`;
+            }
+        }
+
+        caption += `<i>Pastdagi tugmalardan birini tanlang:</i>`;
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,

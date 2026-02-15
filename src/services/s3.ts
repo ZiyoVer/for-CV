@@ -3,6 +3,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from '../config';
 import { dbService } from './db';
 import { parseBuffer } from 'music-metadata';
+import { geminiService } from './gemini';
 
 const s3 = new S3Client({
     region: config.WASABI_REGION,
@@ -396,24 +397,33 @@ export const s3Service = {
 
     // --- XORAZM DIALECT FUNCTIONS ---
 
-    // Load metadata.jsonl from 3_ASOSIY_DATASET and insert into DB
+    // Load metadata.jsonl from xorazm1 folder and insert into DB
     async loadXorazmMetadata() {
-        console.log("Loading Xorazm metadata from 3_ASOSIY_DATASET/metadata.jsonl...");
+        console.log("[XORAZM] Loading metadata from xorazm1/metadata.jsonl...");
         try {
             const response = await s3.send(new GetObjectCommand({
                 Bucket: config.WASABI_BUCKET,
-                Key: '3_ASOSIY_DATASET/metadata.jsonl'
+                Key: 'xorazm1/metadata.jsonl'
             }));
 
             const body = await response.Body?.transformToString();
             if (!body) {
-                console.log("No metadata.jsonl content found");
+                console.log("[XORAZM] No metadata.jsonl content found");
                 return 0;
             }
 
             // Parse JSONL (one JSON per line)
             const entries: Array<{ id: string, audio: string, text: string }> = [];
             const lines = body.split('\n').filter(line => line.trim());
+            
+            // Log first few entries to see the format
+            if (lines.length > 0) {
+                try {
+                    const firstEntry = JSON.parse(lines[0]);
+                    console.log("[XORAZM] First entry audio path:", firstEntry.audio);
+                } catch (e) {}
+            }
+            
             for (const line of lines) {
                 try {
                     const entry = JSON.parse(line);
@@ -425,41 +435,67 @@ export const s3Service = {
                 }
             }
 
-            console.log(`Parsed ${entries.length} entries from metadata.jsonl`);
+            console.log(`[XORAZM] Parsed ${entries.length} entries from metadata.jsonl`);
+            if (entries.length > 0) {
+                console.log("[XORAZM] Sample audio paths:", entries.slice(0, 3).map(e => e.audio));
+            }
             const added = await dbService.initXorazmFiles(entries);
-            console.log(`Added ${added} new Xorazm files to DB`);
+            console.log(`[XORAZM] Added ${added} new Xorazm files to DB`);
             return added;
         } catch (e: any) {
-            console.error('Error loading Xorazm metadata:', e.message);
+            console.error('[XORAZM] Error loading metadata:', e.message);
             return 0;
         }
     },
 
-    // Get audio buffer from 3_ASOSIY_DATASET/{audioPath}
+    // Get audio buffer from xorazm1/{audioPath}
     async getXorazmAudioBuffer(audioPath: string): Promise<Uint8Array | undefined> {
         try {
-            const key = `3_ASOSIY_DATASET/${audioPath}`;
+            const key = `xorazm1/${audioPath}`;
+            console.log(`[XORAZM] Trying to get audio: ${key}`);
             const response = await s3.send(new GetObjectCommand({
                 Bucket: config.WASABI_BUCKET,
                 Key: key
             }));
             return response.Body ? new Uint8Array(await response.Body.transformToByteArray()) : undefined;
         } catch (e: any) {
-            console.error(`Error getting Xorazm audio ${audioPath}:`, e.message);
-            return undefined;
+            console.error(`[XORAZM] Error getting audio ${audioPath}:`, e.message);
+            // Try without xorazm1/ prefix (maybe audioPath already includes full path)
+            try {
+                console.log(`[XORAZM] Trying without prefix: ${audioPath}`);
+                const response = await s3.send(new GetObjectCommand({
+                    Bucket: config.WASABI_BUCKET,
+                    Key: audioPath
+                }));
+                return response.Body ? new Uint8Array(await response.Body.transformToByteArray()) : undefined;
+            } catch (e2: any) {
+                console.error(`[XORAZM] Error also without prefix:`, e2.message);
+                return undefined;
+            }
         }
     },
 
-    // Copy accepted file to xorazm_sheva/ folder with JSON metadata
+    // Transcribe Xorazm audio with Gemini
+    async transcribeXorazmWithGemini(audioPath: string): Promise<string | null> {
+        const audioBuffer = await this.getXorazmAudioBuffer(audioPath);
+        if (!audioBuffer) {
+            console.error(`Could not load audio for Gemini: ${audioPath}`);
+            return null;
+        }
+        const fileName = audioPath.split('/').pop() || 'audio.wav';
+        return await geminiService.transcribeAudio(audioBuffer, fileName);
+    },
+
+    // Copy accepted file to xorazm_saralangan/ folder with JSON metadata
     async copyXorazmToAccepted(id: string, audioPath: string, text: string) {
         try {
             const audioFileName = audioPath.split('/').pop() || `${id}.wav`;
             const now = new Date();
             const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
 
-            // Copy audio to xorazm_sheva/YYYY/MM/DD/
-            const destAudioKey = `xorazm_sheva/${dateStr}/${audioFileName}`;
-            const srcKey = `3_ASOSIY_DATASET/${audioPath}`;
+            // Copy audio to xorazm_saralangan/YYYY/MM/DD/
+            const destAudioKey = `xorazm_saralangan/${dateStr}/${audioFileName}`;
+            const srcKey = `xorazm1/${audioPath}`;
 
             await s3.send(new CopyObjectCommand({
                 Bucket: config.WASABI_BUCKET,
@@ -472,7 +508,8 @@ export const s3Service = {
             const metadata = {
                 id: id,
                 audio: audioFileName,
-                text: text
+                text: text,
+                checked_at: now.toISOString()
             };
 
             await s3.send(new PutObjectCommand({

@@ -33,6 +33,9 @@ export const config = {
     MAX_UPLOAD_SIZE: Number(process.env.MAX_UPLOAD_SIZE || '52428800'), // 50MB
     MAX_FILES_PER_UPLOAD: Number(process.env.MAX_FILES_PER_UPLOAD || '100'),
 
+    // Gemini API for Xorazm transcription
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+
     // Web UI
     PORT: Number(process.env.PORT) || 3000,
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
@@ -54,6 +57,10 @@ function validateConfig() {
     if (!config.WASABI_ACCESS_KEY || !config.WASABI_SECRET_KEY || !config.WASABI_BUCKET) {
         warnings.push('Wasabi S3 credentials are incomplete');
         if (isProduction) errors.push('Wasabi S3 credentials are required in production');
+    }
+
+    if (!config.GEMINI_API_KEY) {
+        warnings.push('GEMINI_API_KEY is missing - Xorazm AI transcription will not work');
     }
 
     if (!config.DATABASE_URL && (!config.PGUSER || !config.PGDATABASE)) {
