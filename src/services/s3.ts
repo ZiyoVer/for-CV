@@ -319,6 +319,8 @@ export const s3Service = {
 
     // Copy transcription to sorted folder with user's transcribed text and metadata
     async copyTranscriptionToSorted(key: string, transcribedText: string, duration?: number, gender?: string, deleteOriginal: boolean = true) {
+        console.log(`[TRANSCRIBE] copyTranscriptionToSorted called: ${key}, text length: ${transcribedText.length}`);
+
         // key is like "transkripsiya/file.wav"
         // Destination: "saralangan/transkripsiya/2025/02/09/file.wav"
 
@@ -335,6 +337,8 @@ export const s3Service = {
         } else {
             destinationKey = `saralangan/transkripsiya/${year}/${month}/${day}/${key}`;
         }
+
+        console.log(`[TRANSCRIBE] Copying to: ${destinationKey}`);
 
         // Copy audio file
         await s3.send(new CopyObjectCommand({

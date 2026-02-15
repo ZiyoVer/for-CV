@@ -591,7 +591,12 @@ bot.callbackQuery("trans_confirm", async (ctx) => {
         }
 
         // Copy S3 with metadata
-        await s3Service.copyTranscriptionToSorted(fileKey, tempText, Math.round(duration), gender);
+        try {
+            await s3Service.copyTranscriptionToSorted(fileKey, tempText, Math.round(duration), gender);
+            console.log('[TRANSCRIBE] Successfully copied to sorted folder');
+        } catch (err) {
+            console.error('[TRANSCRIBE] Error copying to sorted folder:', err);
+        }
 
         // Update DB
         await dbService.updateTranscriptionFileStatus(userId, fileKey, 'ACCEPTED', tempText);
