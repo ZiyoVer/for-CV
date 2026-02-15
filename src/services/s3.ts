@@ -3,7 +3,6 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from '../config';
 import { dbService } from './db';
 import { parseBuffer } from 'music-metadata';
-import { geminiService } from './gemini';
 import { speechService } from './speech';
 
 const s3 = new S3Client({
@@ -476,7 +475,7 @@ export const s3Service = {
         }
     },
 
-    // Transcribe Xorazm audio with Speech-to-Text (Google) or Gemini
+    // Transcribe Xorazm audio with Google Speech-to-Text
     async transcribeXorazmAudio(audioPath: string): Promise<string | null> {
         const audioBuffer = await this.getXorazmAudioBuffer(audioPath);
         if (!audioBuffer) {
@@ -486,21 +485,11 @@ export const s3Service = {
 
         const fileName = audioPath.split('/').pop() || 'audio.wav';
 
-        // Try Google Speech-to-Text first
-        const speechKey = (config as any).GOOGLE_SPEECH_API_KEY;
-        if (speechKey) {
-            console.log('[STT] Using Google Speech-to-Text...');
-            const result = await speechService.transcribeAudio(audioBuffer, fileName);
-            if (result) {
-                console.log('[STT] Google STT success:', result.substring(0, 50));
-                return result;
-            }
-        }
-
-        // Fallback to Gemini
-        if (config.GEMINI_API_KEY) {
-            console.log('[STT] Falling back to Gemini...');
-            return await geminiService.transcribeAudio(audioBuffer, fileName);
+        console.log('[STT] Using Google Speech-to-Text...');
+        const result = await speechService.transcribeAudio(audioBuffer, fileName);
+        if (result) {
+            console.log('[STT] Success:', result.substring(0, 50));
+            return result;
         }
 
         console.warn('[STT] No STT API configured');

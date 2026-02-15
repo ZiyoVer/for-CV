@@ -1106,18 +1106,16 @@ async function sendNextXorazmFile(ctx: any) {
             return;
         }
 
-        // Get Gemini transcription
+        // Get STT transcription
         let geminiText: string | null = null;
-        if (config.GEMINI_API_KEY) {
-            await ctx.reply("🤖 Gemini transkripsiya qilinmoqda... (bu biroz vaqt olishi mumkin)");
-            try {
-                geminiText = await s3Service.transcribeXorazmAudio(xorazmFile.audio_path);
-                if (geminiText) {
-                    await dbService.updateXorazmGeminiText(xorazmFile.id, geminiText);
-                }
-            } catch (e) {
-                console.warn('Gemini transcription failed for xorazm file:', xorazmFile.id, e);
+        await ctx.reply("🎙 STT transkripsiya qilinmoqda... (bu biroz vaqt olishi mumkin)");
+        try {
+            geminiText = await s3Service.transcribeXorazmAudio(xorazmFile.audio_path);
+            if (geminiText) {
+                await dbService.updateXorazmGeminiText(xorazmFile.id, geminiText);
             }
+        } catch (e) {
+            console.warn('STT transcription failed for xorazm file:', xorazmFile.id, e);
         }
 
         // Save state
