@@ -362,13 +362,20 @@ export const s3Service = {
         };
 
         console.log(`[TRANSCRIBE] Saving JSON to: ${jsonDest}`);
-        await s3.send(new PutObjectCommand({
-            Bucket: config.WASABI_BUCKET,
-            Key: jsonDest,
-            Body: JSON.stringify(jsonContent, null, 2),
-            ContentType: 'application/json'
-        }));
-        console.log(`[TRANSCRIBE] JSON saved successfully`);
+        console.log(`[TRANSCRIBE] JSON content:`, JSON.stringify(jsonContent));
+        
+        try {
+            await s3.send(new PutObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: jsonDest,
+                Body: JSON.stringify(jsonContent, null, 2),
+                ContentType: 'application/json'
+            }));
+            console.log(`[TRANSCRIBE] JSON saved successfully`);
+        } catch (jsonErr: any) {
+            console.error(`[TRANSCRIBE] ERROR saving JSON:`, jsonErr.message);
+            throw jsonErr;
+        }
 
         // Delete original file from S3 to prevent re-syncing
         if (deleteOriginal) {
