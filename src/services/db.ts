@@ -747,6 +747,12 @@ export const dbService = {
         return result.rowCount;
     },
 
+    // Clear all Xorazm files (for fresh start)
+    clearAllXorazmFiles: async () => {
+        const result = await pool.query('DELETE FROM xorazm_files');
+        return result.rowCount;
+    },
+
     // --- CLEANUP ---
     close: async () => {
         await pool.end();

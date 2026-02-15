@@ -18,8 +18,10 @@ export const geminiService = {
                     {
                         parts: [
                             {
-                                mime_type: 'audio/wav',
-                                data: base64Audio
+                                inline_data: {
+                                    mime_type: 'audio/wav',
+                                    data: base64Audio
+                                }
                             },
                             {
                                 text: 'Bu O\'zbekcha ovozli yozuv. Iltimos, uni matn ko\'rinishida transkripsiya qiling. Faqat transkripsiya matnini qaytaring, boshqa hech narsa yozmang.'
@@ -52,7 +54,7 @@ export const geminiService = {
             return null;
         } catch (error: any) {
             if (error.response?.data?.error) {
-                console.error('Gemini API error:', error.response.data.error);
+                console.error('Gemini API error:', JSON.stringify(error.response.data.error));
             } else {
                 console.error('Gemini transcription error:', error.message);
             }
