@@ -381,20 +381,41 @@ export const s3Service = {
     async uploadTranscriptionAudio(buffer: Buffer, filename: string, mimeType: string = 'audio/wav'): Promise<string> {
         const key = `transkripsiya/${filename}`;
 
-        console.log(`[UPLOAD] Uploading transcription audio: ${filename}, type: ${mimeType}, size: ${buffer.length}`);
+        // Determine content type
+        let contentType = mimeType;
+        if (filename.toLowerCase().endsWith('.mp3')) {
+            contentType = 'audio/mpeg';
+        } else if (filename.toLowerCase().endsWith('.ogg') || filename.toLowerCase().endsWith('.oga')) {
+            contentType = 'audio/ogg';
+        } else if (filename.toLowerCase().endsWith('.wav')) {
+            contentType = 'audio/wav';
+        } else if (filename.toLowerCase().endsWith('.m4a') || filename.toLowerCase().endsWith('.mp4')) {
+            contentType = 'audio/mp4';
+        } else if (filename.toLowerCase().endsWith('.webm')) {
+            contentType = 'audio/webm';
+        } else if (filename.toLowerCase().endsWith('.flac')) {
+            contentType = 'audio/flac';
+        }
 
-        await s3.send(new PutObjectCommand({
-            Bucket: config.WASABI_BUCKET,
-            Key: key,
-            Body: buffer,
-            ContentType: mimeType
-        }));
+        console.log(`[UPLOAD] Uploading: ${filename}, type: ${contentType}, size: ${buffer.length}`);
 
-        // Add to DB
-        await dbService.addTranscriptionFile(key);
+        try {
+            await s3.send(new PutObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: key,
+                Body: buffer,
+                ContentType: contentType
+            }));
 
-        console.log(`[UPLOAD] Uploaded transcription audio: ${key}`);
-        return key;
+            // Add to DB
+            await dbService.addTranscriptionFile(key);
+
+            console.log(`[UPLOAD] Success: ${key}`);
+            return key;
+        } catch (err: any) {
+            console.error(`[UPLOAD] Error uploading ${filename}:`, err.message);
+            throw err;
+        }
     },
 
     // --- XORAZM DIALECT FUNCTIONS ---

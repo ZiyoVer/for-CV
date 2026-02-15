@@ -69,7 +69,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 60 * 60 * 1000, // 1 hour
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours - longer session
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax'
@@ -77,13 +77,10 @@ app.use(session({
     rolling: true
 }));
 
-// CSRF Protection (must come after session and body parser)
+// CSRF Protection - use session-based instead of cookie-based for better compatibility
 const csrfProtection = csrf({
-    cookie: {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production'
-    }
+    cookie: false,
+    sessionKey: 'csrfToken'
 });
 
 // Apply CSRF protection globally to all routes that need it
@@ -678,9 +675,14 @@ app.get('/api/stats/timeline', requireAuth, apiLimiter, async (req, res) => {
 // CSRF Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err.code === 'EBADCSRFTOKEN') {
-        // CSRF token validation failed
-        console.error('CSRF token validation failed');
-        return res.status(403).send('Formani qayta yuklang va qayta urinib ko\'ring.');
+        console.error('[CSRF] Token validation failed:', {
+            method: req.method,
+            url: req.url,
+            sessionID: req.sessionID,
+            cookies: req.cookies,
+            headers: req.headers['user-agent']
+        });
+        return res.status(403).send('CSRF xatolik: Formani qayta yuklang (session tugagan bo\'lishi mumkin).');
     }
     next(err);
 });
