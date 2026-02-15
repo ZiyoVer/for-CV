@@ -77,16 +77,13 @@ app.use(session({
     rolling: true
 }));
 
-// CSRF Protection
+// CSRF Protection - use session-based
 const csrfProtection = csrf({
-    cookie: {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production'
-    }
+    cookie: false,
+    sessionKey: 'csrf_token'
 });
 
-// Apply CSRF protection globally to all routes that need it
+// Apply CSRF protection globally
 app.use(csrfProtection);
 
 // Make CSRF token available to all views
@@ -260,6 +257,7 @@ app.get('/dashboard-simple', requireAuth, (req, res) => {
 });
 
 
+// POST routes without CSRF for now (simpler approach)
 app.post('/users/add', requireAuth, async (req, res) => {
     const { telegram_id, full_name, is_admin } = req.body;
     console.log('Add user request:', { telegram_id, full_name, is_admin });
@@ -375,7 +373,7 @@ app.post('/review/penalty/:id', requireAuth, async (req, res) => {
 // ========== TRANSCRIPTION AUDIO UPLOAD ==========
 
 // Upload transcription audio files
-app.post('/transcription/upload', requireAuth, upload.array('audioFiles', 100), async (req, res) => {
+app.post('/transcription/upload', requireAuth, csrfProtection, upload.array('audioFiles', 100), async (req, res) => {
     try {
         const files = req.files as Express.Multer.File[];
         if (!files || files.length === 0) {
