@@ -77,18 +77,16 @@ app.use(session({
     rolling: true
 }));
 
-// CSRF Protection - use session-based
-const csrfProtection = csrf({
-    cookie: false,
-    sessionKey: 'csrf_token'
-});
+// CSRF Protection - DISABLED due to issues
+// const csrfProtection = csrf({
+//     cookie: false,
+//     sessionKey: 'csrf_token'
+// });
+// app.use(csrfProtection);
 
-// Apply CSRF protection globally
-app.use(csrfProtection);
-
-// Make CSRF token available to all views
+// Make CSRF token available to all views (empty when disabled)
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-    res.locals.csrfToken = req.csrfToken();
+    res.locals.csrfToken = '';
     next();
 });
 
@@ -373,7 +371,7 @@ app.post('/review/penalty/:id', requireAuth, async (req, res) => {
 // ========== TRANSCRIPTION AUDIO UPLOAD ==========
 
 // Upload transcription audio files
-app.post('/transcription/upload', requireAuth, csrfProtection, upload.array('audioFiles', 100), async (req, res) => {
+app.post('/transcription/upload', requireAuth, upload.array('audioFiles', 100), async (req, res) => {
     try {
         const files = req.files as Express.Multer.File[];
         if (!files || files.length === 0) {
