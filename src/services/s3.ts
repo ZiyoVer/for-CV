@@ -319,7 +319,7 @@ export const s3Service = {
 
     // Copy transcription to sorted folder with user's transcribed text and metadata
     async copyTranscriptionToSorted(key: string, transcribedText: string, duration?: number, gender?: string, deleteOriginal: boolean = true) {
-        console.log(`[TRANSCRIBE] copyTranscriptionToSorted called: ${key}, text length: ${transcribedText.length}`);
+        console.log(`[TRANSCRIBE] START copyTranscriptionToSorted: ${key}`);
 
         // key is like "transkripsiya/file.wav"
         // Destination: "saralangan/transkripsiya/2025/02/09/file.wav"
@@ -330,6 +330,7 @@ export const s3Service = {
         const day = String(now.getDate()).padStart(2, '0');
 
         const fileName = key.split('/').pop() || 'unknown';
+        console.log(`[TRANSCRIBE] filename: ${fileName}`);
 
         let destinationKey = '';
         if (key.startsWith('transkripsiya/')) {
@@ -338,14 +339,16 @@ export const s3Service = {
             destinationKey = `saralangan/transkripsiya/${year}/${month}/${day}/${key}`;
         }
 
-        console.log(`[TRANSCRIBE] Copying to: ${destinationKey}`);
+        console.log(`[TRANSCRIBE] destination: ${destinationKey}`);
 
         // Copy audio file
+        console.log(`[TRANSCRIBE] Copying audio...`);
         await s3.send(new CopyObjectCommand({
             Bucket: config.WASABI_BUCKET,
             CopySource: `${config.WASABI_BUCKET}/${key}`,
             Key: destinationKey
         }));
+        console.log(`[TRANSCRIBE] Audio copied`);
 
         // Create JSON with transcribed text and metadata
         const jsonDest = destinationKey.replace('.wav', '.json');
@@ -358,14 +361,14 @@ export const s3Service = {
             jinsi: gender === 'male' ? 'erkak' : 'ayol'  // gender in Uzbek
         };
 
+        console.log(`[TRANSCRIBE] Saving JSON to: ${jsonDest}`);
         await s3.send(new PutObjectCommand({
             Bucket: config.WASABI_BUCKET,
             Key: jsonDest,
             Body: JSON.stringify(jsonContent, null, 2),
             ContentType: 'application/json'
         }));
-
-        console.log(`Copied transcription to ${destinationKey} with metadata`);
+        console.log(`[TRANSCRIBE] JSON saved successfully`);
 
         // Delete original file from S3 to prevent re-syncing
         if (deleteOriginal) {
@@ -374,11 +377,13 @@ export const s3Service = {
                     Bucket: config.WASABI_BUCKET,
                     Key: key
                 }));
-                console.log(`Deleted original transcription file: ${key}`);
+                console.log(`[TRANSCRIBE] Deleted original: ${key}`);
             } catch (e) {
-                console.warn(`Could not delete original transcription file for ${key}`, e);
+                console.warn(`[TRANSCRIBE] Could not delete original: ${key}`, e);
             }
         }
+        
+        console.log(`[TRANSCRIBE] DONE - all complete`);
     },
 
     // Upload transcription audio file to S3
