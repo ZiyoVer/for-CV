@@ -1111,7 +1111,7 @@ async function sendNextXorazmFile(ctx: any) {
         if (config.GEMINI_API_KEY) {
             await ctx.reply("🤖 Gemini transkripsiya qilinmoqda... (bu biroz vaqt olishi mumkin)");
             try {
-                geminiText = await s3Service.transcribeXorazmWithGemini(xorazmFile.audio_path);
+                geminiText = await s3Service.transcribeXorazmAudio(xorazmFile.audio_path);
                 if (geminiText) {
                     await dbService.updateXorazmGeminiText(xorazmFile.id, geminiText);
                 }

@@ -36,6 +36,9 @@ export const config = {
     // Gemini API for Xorazm transcription
     GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
 
+    // Google Speech-to-Text API
+    GOOGLE_SPEECH_API_KEY: process.env.GOOGLE_SPEECH_API_KEY || '',
+
     // Web UI
     PORT: Number(process.env.PORT) || 3000,
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,

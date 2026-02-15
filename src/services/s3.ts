@@ -4,6 +4,7 @@ import { config } from '../config';
 import { dbService } from './db';
 import { parseBuffer } from 'music-metadata';
 import { geminiService } from './gemini';
+import { speechService } from './speech';
 
 const s3 = new S3Client({
     region: config.WASABI_REGION,
@@ -475,15 +476,35 @@ export const s3Service = {
         }
     },
 
-    // Transcribe Xorazm audio with Gemini
-    async transcribeXorazmWithGemini(audioPath: string): Promise<string | null> {
+    // Transcribe Xorazm audio with Speech-to-Text (Google) or Gemini
+    async transcribeXorazmAudio(audioPath: string): Promise<string | null> {
         const audioBuffer = await this.getXorazmAudioBuffer(audioPath);
         if (!audioBuffer) {
-            console.error(`Could not load audio for Gemini: ${audioPath}`);
+            console.error(`[STT] Could not load audio: ${audioPath}`);
             return null;
         }
+
         const fileName = audioPath.split('/').pop() || 'audio.wav';
-        return await geminiService.transcribeAudio(audioBuffer, fileName);
+
+        // Try Google Speech-to-Text first
+        const speechKey = (config as any).GOOGLE_SPEECH_API_KEY;
+        if (speechKey) {
+            console.log('[STT] Using Google Speech-to-Text...');
+            const result = await speechService.transcribeAudio(audioBuffer, fileName);
+            if (result) {
+                console.log('[STT] Google STT success:', result.substring(0, 50));
+                return result;
+            }
+        }
+
+        // Fallback to Gemini
+        if (config.GEMINI_API_KEY) {
+            console.log('[STT] Falling back to Gemini...');
+            return await geminiService.transcribeAudio(audioBuffer, fileName);
+        }
+
+        console.warn('[STT] No STT API configured');
+        return null;
     },
 
     // Copy accepted file to xorazm_saralangan/ folder with JSON metadata
