@@ -77,10 +77,13 @@ app.use(session({
     rolling: true
 }));
 
-// CSRF Protection - use session-based instead of cookie-based for better compatibility
+// CSRF Protection
 const csrfProtection = csrf({
-    cookie: false,
-    sessionKey: 'csrfToken'
+    cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production'
+    }
 });
 
 // Apply CSRF protection globally to all routes that need it
