@@ -378,20 +378,22 @@ export const s3Service = {
     },
 
     // Upload transcription audio file to S3
-    async uploadTranscriptionAudio(buffer: Buffer, filename: string): Promise<string> {
+    async uploadTranscriptionAudio(buffer: Buffer, filename: string, mimeType: string = 'audio/wav'): Promise<string> {
         const key = `transkripsiya/${filename}`;
+
+        console.log(`[UPLOAD] Uploading transcription audio: ${filename}, type: ${mimeType}, size: ${buffer.length}`);
 
         await s3.send(new PutObjectCommand({
             Bucket: config.WASABI_BUCKET,
             Key: key,
             Body: buffer,
-            ContentType: 'audio/wav'
+            ContentType: mimeType
         }));
 
         // Add to DB
         await dbService.addTranscriptionFile(key);
 
-        console.log(`Uploaded transcription audio: ${key}`);
+        console.log(`[UPLOAD] Uploaded transcription audio: ${key}`);
         return key;
     },
 

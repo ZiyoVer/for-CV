@@ -389,14 +389,15 @@ app.post('/transcription/upload', requireAuth, upload.array('audioFiles', 100), 
             const cleanName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
             const filename = `${timestamp}_${cleanName}`;
 
-            await s3Service.uploadTranscriptionAudio(file.buffer, filename);
+            console.log('[UPLOAD] Processing file:', file.originalname, 'type:', file.mimetype);
+            await s3Service.uploadTranscriptionAudio(file.buffer, filename, file.mimetype);
             uploadedCount++;
         }
 
         console.log(`Uploaded ${uploadedCount} transcription audio files`);
         res.redirect(`/dashboard?success=uploaded_${uploadedCount}`);
-    } catch (err) {
-        console.error('Transcription upload error:', err);
+    } catch (err: any) {
+        console.error('[UPLOAD] Transcription upload error:', err.message, err.stack);
         res.redirect('/dashboard?error=upload_failed');
     }
 });
