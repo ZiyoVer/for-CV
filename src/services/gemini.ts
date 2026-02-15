@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { config } from '../config';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-8b:generateContent';
 
 export const geminiService = {
     async transcribeAudio(audioBuffer: Uint8Array, fileName: string): Promise<string | null> {
