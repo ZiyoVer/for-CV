@@ -940,6 +940,19 @@
                                     <canvas id="xorazmChart"></canvas>
                                 </div>
                             </div>
+
+                            <!-- Xorazm User Activity Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">🌍 Xorazm Foydalanuvchilar</div>
+                                        <div class="chart-subtitle">24 soat va 7 kunlik faollik</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container small">
+                                    <canvas id="xorazmUserChart"></canvas>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Upload Section -->
@@ -1539,6 +1552,55 @@
                 }
             }
         });
+
+        // 9. Xorazm User Activity Chart (Horizontal Bar)
+        var xorazmUserCtx = document.getElementById('xorazmUserChart').getContext('2d');
+        var xorazmUsers = userData.filter(function(u) { return (u.xorazm_24h || 0) > 0 || (u.xorazm_7d || 0) > 0; })
+            .sort(function(a, b) { return (b.xorazm_7d || 0) - (a.xorazm_7d || 0); })
+            .slice(0, 8);
+        
+        const chartXorazmUser = new Chart(xorazmUserCtx, {
+            type: 'bar',
+            data: {
+                labels: xorazmUsers.map(function(u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; }),
+                datasets: [
+                    {
+                        label: '24 soat',
+                        data: xorazmUsers.map(function(u) { return u.xorazm_24h || 0; }),
+                        backgroundColor: chartColors.primary,
+                        borderRadius: 4
+                    },
+                    {
+                        label: '7 kun',
+                        data: xorazmUsers.map(function(u) { return u.xorazm_7d || 0; }),
+                        backgroundColor: chartColors.success,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { 
+                        position: 'top',
+                        labels: { color: textColor, padding: 15, font: { size: 11 } }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false,
+                        grid: { color: gridColor },
+                        ticks: { color: textColor }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: textColor, font: { size: 11 } }
+                    }
+                }
+            }
+        });
         // ========== LIVE AUTO-REFRESH ==========
         async function updateDashboard() {
             try {
@@ -1611,6 +1673,15 @@
                 // Update Chart 8: Xorazm (Doughnut)
                 chartXorazm.data.datasets[0].data = [s.xorazmAccepted || 0, s.xorazmRejected || 0, s.xorazmPending || 0];
                 chartXorazm.update();
+
+                // Update Chart 9: Xorazm User Activity
+                var freshXorazmUsers = (data.users || []).filter(function(u) { return (u.xorazm_24h || 0) > 0 || (u.xorazm_7d || 0) > 0; })
+                    .sort(function(a, b) { return (b.xorazm_7d || 0) - (a.xorazm_7d || 0); })
+                    .slice(0, 8);
+                chartXorazmUser.data.labels = freshXorazmUsers.map(function(u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; });
+                chartXorazmUser.data.datasets[0].data = freshXorazmUsers.map(function(u) { return u.xorazm_24h || 0; });
+                chartXorazmUser.data.datasets[1].data = freshXorazmUsers.map(function(u) { return u.xorazm_7d || 0; });
+                chartXorazmUser.update();
 
             } catch (err) {
                 console.error('Dashboard refresh error:', err);
