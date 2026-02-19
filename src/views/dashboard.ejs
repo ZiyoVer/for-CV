@@ -1014,6 +1014,7 @@
                                                 <th>ID</th>
                                                 <th>Foydalanuvchi</th>
                                                 <th>Bugun</th>
+                                                <th>Xorazm<br><small style="font-weight:400">24s / 7kun</small></th>
                                                 <th>Jami OK</th>
                                                 <th>Jami NO</th>
                                                 <th>Balans</th>
@@ -1041,6 +1042,11 @@
                                                             <% } else { %>
                                                                 <span style="color: var(--text-tertiary);">—</span>
                                                                 <% } %>
+                                                    </td>
+                                                    <td style="font-size: 13px;">
+                                                        <span style="color: var(--text-primary); font-weight: 500;"><%= user.xorazm_24h || 0 %></span>
+                                                        <span style="color: var(--text-tertiary);"> / </span>
+                                                        <span style="color: var(--text-secondary);"><%= user.xorazm_7d || 0 %></span>
                                                     </td>
                                                     <td><span class="stat-badge success">
                                                             <%= user.total_accepted || 0 %>

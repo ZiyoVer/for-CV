@@ -226,7 +226,21 @@ export const dbService = {
                       AND f2.processed_at > NOW() - INTERVAL '24 hours'
                 ) as checks_today,
                 COUNT(f.file_key) FILTER (WHERE f.status = 'ACCEPTED')::int as total_accepted,
-                COUNT(f.file_key) FILTER (WHERE f.status = 'REJECTED')::int as total_rejected
+                COUNT(f.file_key) FILTER (WHERE f.status = 'REJECTED')::int as total_rejected,
+                (
+                    SELECT COUNT(*)::int 
+                    FROM xorazm_files xf
+                    WHERE xf.assigned_to = u.telegram_id 
+                      AND xf.status IN ('ACCEPTED', 'REJECTED')
+                      AND xf.processed_at > NOW() - INTERVAL '24 hours'
+                ) as xorazm_24h,
+                (
+                    SELECT COUNT(*)::int 
+                    FROM xorazm_files xf
+                    WHERE xf.assigned_to = u.telegram_id 
+                      AND xf.status IN ('ACCEPTED', 'REJECTED')
+                      AND xf.processed_at > NOW() - INTERVAL '7 days'
+                ) as xorazm_7d
             FROM users u
             LEFT JOIN files f ON u.telegram_id = f.assigned_to AND f.status IN ('ACCEPTED', 'REJECTED')
             GROUP BY u.telegram_id
