@@ -77,7 +77,11 @@
             --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
@@ -155,8 +159,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
         }
 
         .theme-btn {
@@ -358,7 +369,7 @@
 
         .board-head {
             display: grid;
-            grid-template-columns: 52px 1fr 80px 80px 80px 90px 90px;
+            grid-template-columns: 52px 1fr 80px 80px 80px 90px 90px 100px;
             padding: 12px 20px;
             background: var(--bg-subtle);
             border-bottom: 1px solid var(--border);
@@ -382,7 +393,7 @@
 
         .board-row {
             display: grid;
-            grid-template-columns: 52px 1fr 80px 80px 80px 90px 90px;
+            grid-template-columns: 52px 1fr 80px 80px 80px 90px 90px 100px;
             padding: 14px 20px;
             align-items: center;
             border-bottom: 1px solid var(--border-subtle);
@@ -432,9 +443,17 @@
             font-variant-numeric: tabular-nums;
         }
 
-        .row-stat.ok { color: var(--success); }
-        .row-stat.no { color: var(--error); }
-        .row-stat.total { color: var(--text-secondary); }
+        .row-stat.ok {
+            color: var(--success);
+        }
+
+        .row-stat.no {
+            color: var(--error);
+        }
+
+        .row-stat.total {
+            color: var(--text-secondary);
+        }
 
         /* ─── Empty State ─── */
         .empty {
@@ -485,42 +504,78 @@
 
         /* ─── Responsive ─── */
         @media (max-width: 640px) {
-            .container { padding: 28px 14px 48px; }
+            .container {
+                padding: 28px 14px 48px;
+            }
 
-            .header-title { font-size: 22px; }
+            .header-title {
+                font-size: 22px;
+            }
 
             .podium {
                 grid-template-columns: 1fr;
                 gap: 10px;
             }
 
-            .podium-card { padding: 20px 16px 18px; }
+            .podium-card {
+                padding: 20px 16px 18px;
+            }
 
-            .podium-card.gold { order: 0; }
-            .podium-card.silver { order: 1; }
-            .podium-card.bronze { order: 2; }
+            .podium-card.gold {
+                order: 0;
+            }
 
-            .podium-score { font-size: 20px; }
+            .podium-card.silver {
+                order: 1;
+            }
+
+            .podium-card.bronze {
+                order: 2;
+            }
+
+            .podium-score {
+                font-size: 20px;
+            }
 
             .board-head,
             .board-row {
-                grid-template-columns: 40px 1fr 56px 56px 56px 60px 60px;
+                grid-template-columns: 40px 1fr 56px 56px 56px 60px 60px 70px;
                 padding: 12px 14px;
             }
 
-            .board-head span { font-size: 10px; }
-            .row-name { font-size: 13px; }
-            .row-stat { font-size: 13px; }
+            .board-head span {
+                font-size: 10px;
+            }
+
+            .row-name {
+                font-size: 13px;
+            }
+
+            .row-stat {
+                font-size: 13px;
+            }
         }
 
         /* ─── Animations ─── */
         @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .podium { animation: fadeUp 0.5s ease-out; }
-        .board { animation: fadeUp 0.5s ease-out 0.1s both; }
+        .podium {
+            animation: fadeUp 0.5s ease-out;
+        }
+
+        .board {
+            animation: fadeUp 0.5s ease-out 0.1s both;
+        }
     </style>
 </head>
 
@@ -529,8 +584,10 @@
     <nav class="navbar">
         <div class="nav-left">
             <div class="nav-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polygon
+                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
                 <span>Leaderboard</span>
             </div>
@@ -552,103 +609,148 @@
             <h1 class="header-title">Annotatorlar Reytingi</h1>
             <p class="header-subtitle">Eng ko'p audio tekshirgan jamoa a'zolari</p>
             <div class="update-info" id="updateTime">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
                 </svg>
                 <span>Yuklanmoqda...</span>
             </div>
         </div>
 
-        <% if (leaderboard.length >= 3) { %>
-        <div class="podium">
-            <!-- 1st -->
-            <div class="podium-card gold">
-                <div class="podium-medal">1</div>
-                <div class="podium-name"><%= leaderboard[0].name %></div>
-                <div class="podium-score"><%= leaderboard[0].total.toLocaleString() %></div>
-                <div class="podium-label">jami tekshiruv</div>
-                <div class="podium-detail">
-                    <span class="podium-tag ok"><%= leaderboard[0].accepted %></span>
-                    <span class="podium-tag no"><%= leaderboard[0].rejected %></span>
-                </div>
-            </div>
-            <!-- 2nd -->
-            <div class="podium-card silver">
-                <div class="podium-medal">2</div>
-                <div class="podium-name"><%= leaderboard[1].name %></div>
-                <div class="podium-score"><%= leaderboard[1].total.toLocaleString() %></div>
-                <div class="podium-label">jami tekshiruv</div>
-                <div class="podium-detail">
-                    <span class="podium-tag ok"><%= leaderboard[1].accepted %></span>
-                    <span class="podium-tag no"><%= leaderboard[1].rejected %></span>
-                </div>
-            </div>
-            <!-- 3rd -->
-            <div class="podium-card bronze">
-                <div class="podium-medal">3</div>
-                <div class="podium-name"><%= leaderboard[2].name %></div>
-                <div class="podium-score"><%= leaderboard[2].total.toLocaleString() %></div>
-                <div class="podium-label">jami tekshiruv</div>
-                <div class="podium-detail">
-                    <span class="podium-tag ok"><%= leaderboard[2].accepted %></span>
-                    <span class="podium-tag no"><%= leaderboard[2].rejected %></span>
-                </div>
-            </div>
-        </div>
-        <% } %>
-
-        <div class="board">
-            <div class="board-head">
-                <span>#</span>
-                <span>Ism</span>
-                <span style="text-align:center">Qabul</span>
-                <span style="text-align:center">Rad</span>
-                <span style="text-align:center">Jami</span>
-                <span style="text-align:center">XZ (24s)</span>
-                <span style="text-align:center">XZ (1h)</span>
-            </div>
-            <div class="board-body" id="leaderboardBody">
-                <% if (leaderboard.length === 0) { %>
-                <div class="empty">
-                    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                        <path d="M3 9h18"/>
-                        <path d="M9 21V9"/>
-                    </svg>
-                    <div class="empty-text">Hali hech kim tekshirmagan.</div>
-                </div>
-                <% } else { %>
-                    <% leaderboard.forEach(function(user) { %>
-                    <div class="board-row">
-                        <div class="row-rank"><%= user.rank %></div>
-                        <div class="row-name"><%= user.name %></div>
-                        <div class="row-stat ok"><%= user.accepted %></div>
-                        <div class="row-stat no"><%= user.rejected %></div>
-                        <div class="row-stat total"><%= user.total %></div>
-                        <div class="row-stat ok"><%= user.xorazm_24h %></div>
-                        <div class="row-stat total"><%= user.xorazm_7d %></div>
+        <% if (leaderboard.length>= 3) { %>
+            <div class="podium">
+                <!-- 1st -->
+                <div class="podium-card gold">
+                    <div class="podium-medal">1</div>
+                    <div class="podium-name">
+                        <%= leaderboard[0].name %>
                     </div>
-                    <% }); %>
-                <% } %>
+                    <div class="podium-score">
+                        <%= leaderboard[0].total.toLocaleString() %>
+                    </div>
+                    <div class="podium-label">jami tekshiruv</div>
+                    <div class="podium-detail">
+                        <span class="podium-tag ok">
+                            <%= leaderboard[0].accepted %>
+                        </span>
+                        <span class="podium-tag no">
+                            <%= leaderboard[0].rejected %>
+                        </span>
+                    </div>
+                </div>
+                <!-- 2nd -->
+                <div class="podium-card silver">
+                    <div class="podium-medal">2</div>
+                    <div class="podium-name">
+                        <%= leaderboard[1].name %>
+                    </div>
+                    <div class="podium-score">
+                        <%= leaderboard[1].total.toLocaleString() %>
+                    </div>
+                    <div class="podium-label">jami tekshiruv</div>
+                    <div class="podium-detail">
+                        <span class="podium-tag ok">
+                            <%= leaderboard[1].accepted %>
+                        </span>
+                        <span class="podium-tag no">
+                            <%= leaderboard[1].rejected %>
+                        </span>
+                    </div>
+                </div>
+                <!-- 3rd -->
+                <div class="podium-card bronze">
+                    <div class="podium-medal">3</div>
+                    <div class="podium-name">
+                        <%= leaderboard[2].name %>
+                    </div>
+                    <div class="podium-score">
+                        <%= leaderboard[2].total.toLocaleString() %>
+                    </div>
+                    <div class="podium-label">jami tekshiruv</div>
+                    <div class="podium-detail">
+                        <span class="podium-tag ok">
+                            <%= leaderboard[2].accepted %>
+                        </span>
+                        <span class="podium-tag no">
+                            <%= leaderboard[2].rejected %>
+                        </span>
+                    </div>
+                </div>
             </div>
-        </div>
+            <% } %>
 
-        <div class="footer">
-            <div class="footer-tag">
-                <span class="dot"></span>
-                Har 5 sekundda yangilanadi
-            </div>
-            <div class="footer-tag">
-                <span class="dot"></span>
-                Jonli ma'lumot
-            </div>
-        </div>
+                <div class="board">
+                    <div class="board-head">
+                        <span>#</span>
+                        <span>Ism</span>
+                        <span style="text-align:center">Qabul</span>
+                        <span style="text-align:center">Rad</span>
+                        <span style="text-align:center">Jami</span>
+                        <span style="text-align:center">XZ (24s)</span>
+                        <span style="text-align:center">XZ (1h)</span>
+                        <span style="text-align:center">Balans</span>
+                    </div>
+                    <div class="board-body" id="leaderboardBody">
+                        <% if (leaderboard.length===0) { %>
+                            <div class="empty">
+                                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                                    <path d="M3 9h18" />
+                                    <path d="M9 21V9" />
+                                </svg>
+                                <div class="empty-text">Hali hech kim tekshirmagan.</div>
+                            </div>
+                            <% } else { %>
+                                <% leaderboard.forEach(function(user) { %>
+                                    <div class="board-row">
+                                        <div class="row-rank">
+                                            <%= user.rank %>
+                                        </div>
+                                        <div class="row-name">
+                                            <%= user.name %>
+                                        </div>
+                                        <div class="row-stat ok">
+                                            <%= user.accepted %>
+                                        </div>
+                                        <div class="row-stat no">
+                                            <%= user.rejected %>
+                                        </div>
+                                        <div class="row-stat total">
+                                            <%= user.total %>
+                                        </div>
+                                        <div class="row-stat ok">
+                                            <%= user.xorazm_24h %>
+                                        </div>
+                                        <div class="row-stat total">
+                                            <%= user.xorazm_7d %>
+                                        </div>
+                                        <div class="row-stat total" style="color:var(--text); font-weight:600">
+                                            <%= user.balance.toLocaleString() %>
+                                        </div>
+                                    </div>
+                                    <% }); %>
+                                        <% } %>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <div class="footer-tag">
+                        <span class="dot"></span>
+                        Har 5 sekundda yangilanadi
+                    </div>
+                    <div class="footer-tag">
+                        <span class="dot"></span>
+                        Jonli ma'lumot
+                    </div>
+                </div>
 
     </div>
 
     <script>
         // ─── Theme Toggle ───
-        (function() {
+        (function () {
             var saved = localStorage.getItem('theme');
             if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.setAttribute('data-theme', 'dark');
@@ -671,7 +773,7 @@
         }
 
         // ─── Live Leaderboard ───
-        var escapeHtml = function(text) {
+        var escapeHtml = function (text) {
             var d = document.createElement('div');
             d.textContent = text;
             return d.innerHTML;
@@ -679,8 +781,8 @@
 
         function updateLeaderboard() {
             fetch('/api/leaderboard')
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (!data.success) return;
 
                     var body = document.getElementById('leaderboardBody');
@@ -688,7 +790,7 @@
                     if (data.leaderboard.length === 0) {
                         body.innerHTML = '<div class="empty"><svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg><div class="empty-text">Hali hech kim tekshirmagan.</div></div>';
                     } else {
-                        body.innerHTML = data.leaderboard.map(function(u) {
+                        body.innerHTML = data.leaderboard.map(function (u) {
                             return '<div class="board-row">'
                                 + '<div class="row-rank">' + u.rank + '</div>'
                                 + '<div class="row-name">' + escapeHtml(u.name) + '</div>'
@@ -697,6 +799,7 @@
                                 + '<div class="row-stat total">' + u.total + '</div>'
                                 + '<div class="row-stat ok">' + u.xorazm_24h + '</div>'
                                 + '<div class="row-stat total">' + u.xorazm_7d + '</div>'
+                                + '<div class="row-stat total" style="color:var(--text); font-weight:600">' + (u.balance || 0).toLocaleString() + '</div>'
                                 + '</div>';
                         }).join('');
                     }
@@ -705,7 +808,7 @@
                     var t = new Date(data.updatedAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                     document.getElementById('updateTime').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>' + t + '</span>';
                 })
-                .catch(function(err) { console.error('Update error:', err); });
+                .catch(function (err) { console.error('Update error:', err); });
         }
 
         // Refresh every 5 seconds

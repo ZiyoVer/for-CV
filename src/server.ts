@@ -434,8 +434,8 @@ app.get('/leaderboard', async (req, res) => {
                 rejected: s.rejected_count || 0,
                 total: (s.accepted_count || 0) + (s.rejected_count || 0),
                 xorazm_24h: s.xorazm_24h || 0,
-                xorazm_7d: s.xorazm_7d || 0
-                // balance removed from public leaderboard for privacy
+                xorazm_7d: s.xorazm_7d || 0,
+                balance: s.balance || 0
             }));
 
         res.render('leaderboard', { leaderboard });
@@ -521,8 +521,8 @@ app.get('/api/leaderboard', apiLimiter, async (req, res) => {
                 rejected: s.rejected_count || 0,
                 total: (s.accepted_count || 0) + (s.rejected_count || 0),
                 xorazm_24h: s.xorazm_24h || 0,
-                xorazm_7d: s.xorazm_7d || 0
-                // balance removed from public API for privacy
+                xorazm_7d: s.xorazm_7d || 0,
+                balance: s.balance || 0
             }));
 
         res.json({
