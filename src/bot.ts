@@ -6,6 +6,11 @@ import { statsService } from './services/stats';
 import { parseBuffer } from 'music-metadata';
 import { Logger } from './utils/logger';
 import path from 'path';
+import ffmpeg from 'fluent-ffmpeg';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import { Readable, PassThrough } from 'stream';
+
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
@@ -476,6 +481,8 @@ bot.on("message:text", async (ctx) => {
                 .text("👩 Ayol", "trans_gender_female")
                 .row()
                 .text("✏️ Matnni tahrirlash", "trans_edit_text")
+                .row()
+                .text("🐢 Sekinlashtirish", `slow_audio_${fileKey}`)
         });
 
         return;
@@ -503,7 +510,8 @@ bot.on("message:text", async (ctx) => {
 
                 await ctx.replyWithAudio(new InputFile(audioBuffer), {
                     caption: caption,
-                    parse_mode: "HTML"
+                    parse_mode: "HTML",
+                    reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_${fileKey}`)
                 });
 
                 await ctx.reply("Fayl tahrirlandi. Tekshiring:", { reply_markup: fileCheckKeyboard });
@@ -972,6 +980,66 @@ bot.callbackQuery("admin_clear_xorazm", async (ctx) => {
     }
 });
 
+// Slow down audio
+bot.callbackQuery(/^slow_audio_/, async (ctx) => {
+    if (!ctx.callbackQuery.data) return;
+
+    const fileKey = ctx.callbackQuery.data.replace('slow_audio_', '');
+
+    // Check state (only check if user is in 'checking' state - avoid multiple triggers if possible, or just allow it if needed)
+    // Actually, user might just want to listen again.
+
+    await ctx.answerCallbackQuery("Audio sekinlashtirilmoqda, kuting...");
+    const msgInfo = await ctx.reply("⏳ Audioni qayta ishlash...");
+
+    try {
+        const audioBuffer = await s3Service.getFileBuffer(fileKey);
+        if (!audioBuffer) {
+            await ctx.api.deleteMessage(ctx.chat!.id, msgInfo.message_id);
+            await ctx.reply("Faylni topib bo'lmadi.");
+            return;
+        }
+
+        const inputStream = Readable.from(audioBuffer);
+        const outputStream = new PassThrough();
+        const chunks: Buffer[] = [];
+
+        outputStream.on('data', chunk => chunks.push(Buffer.from(chunk)));
+        outputStream.on('end', async () => {
+            const slowedBuffer = Buffer.concat(chunks);
+
+            try {
+                await ctx.replyWithAudio(new InputFile(slowedBuffer, "slow.mp3"), {
+                    reply_to_message_id: ctx.callbackQuery.message?.message_id,
+                    caption: `🐢 <b>Sekinlashtirilgan audio</b>`,
+                    parse_mode: 'HTML'
+                });
+            } catch (err: any) {
+                console.error("Yuborishda xatolik:", err);
+                await ctx.reply("Audio yuborishda xatolik yuz berdi.");
+            } finally {
+                // Remove the processing message
+                await ctx.api.deleteMessage(ctx.chat!.id, msgInfo.message_id).catch(() => { });
+            }
+        });
+
+        ffmpeg(inputStream)
+            .audioFilter('atempo=0.75') // Make it 25% slower
+            .format('mp3')
+            .on('error', async (err) => {
+                console.error("FFmpeg xatolik:", err);
+                await ctx.api.deleteMessage(ctx.chat!.id, msgInfo.message_id).catch(() => { });
+                await ctx.reply("Audioni sekinlashtirishda xatolik yuz berdi.");
+            })
+            .pipe(outputStream);
+
+    } catch (e: any) {
+        console.error("Slow audio error:", e);
+        await ctx.api.deleteMessage(ctx.chat!.id, msgInfo.message_id).catch(() => { });
+        await ctx.reply("Xatolik yuz berdi.");
+    }
+});
+
 // --- HELPER FUNCTIONS ---
 
 async function sendNextFile(ctx: any) {
@@ -1024,7 +1092,8 @@ async function sendNextFile(ctx: any) {
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
-            parse_mode: "HTML"
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_${fileKey}`)
         });
 
         await ctx.reply("Faylni tekshiring:", { reply_markup: fileCheckKeyboard });
@@ -1081,7 +1150,8 @@ async function sendNextTranscriptionFile(ctx: any) {
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
-            parse_mode: "HTML"
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_${fileKey}`)
         });
 
         await ctx.reply("Matnni yozib yuboring:", { reply_markup: transcriptionKeyboard });
@@ -1172,7 +1242,8 @@ async function sendNextXorazmFile(ctx: any) {
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
-            parse_mode: "HTML"
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_${xorazmFile.audio_path}`)
         });
 
         // Show InlineKeyboard for actions
