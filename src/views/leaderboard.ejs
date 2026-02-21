@@ -358,7 +358,7 @@
 
         .board-head {
             display: grid;
-            grid-template-columns: 52px 1fr 80px 80px 80px;
+            grid-template-columns: 52px 1fr 80px 80px 80px 90px 90px;
             padding: 12px 20px;
             background: var(--bg-subtle);
             border-bottom: 1px solid var(--border);
@@ -382,7 +382,7 @@
 
         .board-row {
             display: grid;
-            grid-template-columns: 52px 1fr 80px 80px 80px;
+            grid-template-columns: 52px 1fr 80px 80px 80px 90px 90px;
             padding: 14px 20px;
             align-items: center;
             border-bottom: 1px solid var(--border-subtle);
@@ -504,7 +504,7 @@
 
             .board-head,
             .board-row {
-                grid-template-columns: 40px 1fr 56px 56px 56px;
+                grid-template-columns: 40px 1fr 56px 56px 56px 60px 60px;
                 padding: 12px 14px;
             }
 
@@ -604,6 +604,8 @@
                 <span style="text-align:center">Qabul</span>
                 <span style="text-align:center">Rad</span>
                 <span style="text-align:center">Jami</span>
+                <span style="text-align:center">XZ (24s)</span>
+                <span style="text-align:center">XZ (1h)</span>
             </div>
             <div class="board-body" id="leaderboardBody">
                 <% if (leaderboard.length === 0) { %>
@@ -623,6 +625,8 @@
                         <div class="row-stat ok"><%= user.accepted %></div>
                         <div class="row-stat no"><%= user.rejected %></div>
                         <div class="row-stat total"><%= user.total %></div>
+                        <div class="row-stat ok"><%= user.xorazm_24h %></div>
+                        <div class="row-stat total"><%= user.xorazm_7d %></div>
                     </div>
                     <% }); %>
                 <% } %>
@@ -691,6 +695,8 @@
                                 + '<div class="row-stat ok">' + u.accepted + '</div>'
                                 + '<div class="row-stat no">' + u.rejected + '</div>'
                                 + '<div class="row-stat total">' + u.total + '</div>'
+                                + '<div class="row-stat ok">' + u.xorazm_24h + '</div>'
+                                + '<div class="row-stat total">' + u.xorazm_7d + '</div>'
                                 + '</div>';
                         }).join('');
                     }

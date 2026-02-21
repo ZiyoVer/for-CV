@@ -455,7 +455,21 @@ export const dbService = {
                 u.balance,
                 COUNT(f.file_key)::int as total_processed,
                 COALESCE(SUM(CASE WHEN f.status = 'ACCEPTED' THEN 1 ELSE 0 END), 0)::int as accepted_count,
-                COALESCE(SUM(CASE WHEN f.status = 'REJECTED' THEN 1 ELSE 0 END), 0)::int as rejected_count
+                COALESCE(SUM(CASE WHEN f.status = 'REJECTED' THEN 1 ELSE 0 END), 0)::int as rejected_count,
+                (
+                    SELECT COUNT(*)::int 
+                    FROM xorazm_files xf
+                    WHERE xf.assigned_to = u.telegram_id 
+                      AND xf.status = 'ACCEPTED'
+                      AND xf.processed_at > NOW() - INTERVAL '24 hours'
+                ) as xorazm_24h,
+                (
+                    SELECT COUNT(*)::int 
+                    FROM xorazm_files xf
+                    WHERE xf.assigned_to = u.telegram_id 
+                      AND xf.status = 'ACCEPTED'
+                      AND xf.processed_at > NOW() - INTERVAL '7 days'
+                ) as xorazm_7d
              FROM users u
              LEFT JOIN files f ON u.telegram_id = f.assigned_to AND f.status IN ('ACCEPTED', 'REJECTED')
              GROUP BY u.telegram_id, u.full_name, u.balance
@@ -732,6 +746,18 @@ export const dbService = {
             [user_id]
         );
         return rows[0] || { accepted: 0, rejected: 0 };
+    },
+
+    get24hXorazmCount: async (user_id: number) => {
+        const { rows } = await pool.query(
+            `SELECT COUNT(*)::int as count 
+             FROM xorazm_files 
+             WHERE assigned_to = $1 
+               AND status IN ('ACCEPTED', 'REJECTED')
+               AND processed_at > NOW() - INTERVAL '24 hours'`,
+            [user_id]
+        );
+        return rows[0]?.count || 0;
     },
 
     getAllXorazmStats: async () => {

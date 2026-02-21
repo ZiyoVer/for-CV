@@ -425,14 +425,16 @@ app.get('/leaderboard', async (req, res) => {
 
         // Sort by accepted count (highest first)
         const leaderboard = allStats
-            .filter((s: any) => s.accepted_count > 0 || s.rejected_count > 0)
+            .filter((s: any) => s.accepted_count > 0 || s.rejected_count > 0 || s.xorazm_24h > 0 || s.xorazm_7d > 0)
             .sort((a: any, b: any) => (b.accepted_count || 0) - (a.accepted_count || 0))
             .map((s: any, index: number) => ({
                 rank: index + 1,
                 name: s.full_name || 'Noma\'lum',
                 accepted: s.accepted_count || 0,
                 rejected: s.rejected_count || 0,
-                total: (s.accepted_count || 0) + (s.rejected_count || 0)
+                total: (s.accepted_count || 0) + (s.rejected_count || 0),
+                xorazm_24h: s.xorazm_24h || 0,
+                xorazm_7d: s.xorazm_7d || 0
                 // balance removed from public leaderboard for privacy
             }));
 
@@ -510,14 +512,16 @@ app.get('/api/leaderboard', apiLimiter, async (req, res) => {
         const allStats = await dbService.getAllUserStats();
 
         const leaderboard = allStats
-            .filter((s: any) => s.accepted_count > 0 || s.rejected_count > 0)
+            .filter((s: any) => s.accepted_count > 0 || s.rejected_count > 0 || s.xorazm_24h > 0 || s.xorazm_7d > 0)
             .sort((a: any, b: any) => (b.accepted_count || 0) - (a.accepted_count || 0))
             .map((s: any, index: number) => ({
                 rank: index + 1,
                 name: s.full_name || 'Noma\'lum',
                 accepted: s.accepted_count || 0,
                 rejected: s.rejected_count || 0,
-                total: (s.accepted_count || 0) + (s.rejected_count || 0)
+                total: (s.accepted_count || 0) + (s.rejected_count || 0),
+                xorazm_24h: s.xorazm_24h || 0,
+                xorazm_7d: s.xorazm_7d || 0
                 // balance removed from public API for privacy
             }));
 

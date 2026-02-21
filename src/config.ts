@@ -24,6 +24,7 @@ export const config = {
     // Payment settings
     FREE_CHECKS_LIMIT: Number(process.env.FREE_CHECKS_LIMIT || '20'),
     CHECK_PRICE: Number(process.env.CHECK_PRICE || '30'), // so'm
+    XORAZM_CHECK_PRICE: Number(process.env.XORAZM_CHECK_PRICE || '300'), // so'm
 
     // Timeouts and intervals
     LOCK_TIMEOUT_MS: Number(process.env.LOCK_TIMEOUT_MS || String(5 * 60 * 1000)), // 5 minutes

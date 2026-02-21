@@ -109,25 +109,30 @@ async function showMainMenu(ctx: any) {
     const user = await dbService.getUser(ctx.from.id);
     const stats = await dbService.getUserStats(ctx.from.id);
     const transStats = await dbService.getUserTranscriptionStats(ctx.from.id);
+    const xorazmStats = await dbService.getUserXorazmStats(ctx.from.id);
     const checksToday = await dbService.get24hCheckCount(ctx.from.id);
     const transToday = await dbService.get24hTranscriptionCount(ctx.from.id);
+    const xorazmToday = await dbService.get24hXorazmCount(ctx.from.id);
     const freeLeft = Math.max(0, config.FREE_CHECKS_LIMIT - checksToday);
 
     let text = `🏠 <b>Asosiy Menyu</b>\n\n`;
     text += `Salom, <b>${ctx.from?.first_name}</b>! 👋\n\n`;
 
     // STT Stats
-    text += `<b>🎧 STT Tekshiruv:</b>\n`;
+    text += `<b>🎧 STT Tekshiruv (Adabiy):</b>\n`;
     text += `<code>┌─────────────────────────┐</code>\n`;
     text += `<code>│</code> ✅ Qabul:    <code>${String(stats.accepted).padStart(6)}</code>  <code>│</code>\n`;
     text += `<code>│</code> ❌ Rad:      <code>${String(stats.rejected).padStart(6)}</code>  <code>│</code>\n`;
     text += `<code>│</code> 📅 Bugun:    <code>${String(checksToday).padStart(6)}</code>  <code>│</code>\n`;
-    if (user?.balance) {
-        text += `<code>├─────────────────────────┤</code>\n`;
-        text += `<code>│</code> 💰 Balans: <code>${String(user.balance).padStart(6)}</code> so'm<code>│</code>\n`;
-    }
     text += `<code>└─────────────────────────┘</code>\n`;
-    text += `🎁 Bepul qoldi: <b>${freeLeft}</b>/${config.FREE_CHECKS_LIMIT}\n\n`;
+
+    // Xorazm Stats
+    text += `<b>🌍 Xorazm shevasi:</b>\n`;
+    text += `<code>┌─────────────────────────┐</code>\n`;
+    text += `<code>│</code> ✅ Qabul:    <code>${String(xorazmStats.accepted).padStart(6)}</code>  <code>│</code>\n`;
+    text += `<code>│</code> ❌ Rad:      <code>${String(xorazmStats.rejected).padStart(6)}</code>  <code>│</code>\n`;
+    text += `<code>│</code> 📅 Bugun:    <code>${String(xorazmToday).padStart(6)}</code>  <code>│</code>\n`;
+    text += `<code>└─────────────────────────┘</code>\n`;
 
     // Transcription Stats
     text += `<b>📝 Transkripsiya:</b>\n`;
@@ -135,6 +140,11 @@ async function showMainMenu(ctx: any) {
     text += `<code>│</code> ✅ Bajarildi: <code>${String(transStats.accepted).padStart(5)}</code>  <code>│</code>\n`;
     text += `<code>│</code> 📅 Bugun:     <code>${String(transToday).padStart(5)}</code>  <code>│</code>\n`;
     text += `<code>└─────────────────────────┘</code>\n`;
+
+    if (user?.balance) {
+        text += `\n💰 <b>Balans:</b> <code>${String(user.balance).padStart(6)}</code> so'm\n`;
+    }
+    text += `🎁 Bepul qoldi: <b>${freeLeft}</b>/${config.FREE_CHECKS_LIMIT}\n\n`;
 
     await ctx.reply(text, {
         parse_mode: "HTML",
@@ -404,12 +414,12 @@ bot.on("message:text", async (ctx) => {
 
         // Save edited text to DB and state
         await dbService.updateXorazmText(xorazmId, newText);
-        await dbService.saveState(userId, 'xorazm', { 
-            xorazmId, 
-            audioPath, 
-            originalText, 
+        await dbService.saveState(userId, 'xorazm', {
+            xorazmId,
+            audioPath,
+            originalText,
             geminiText,
-            editedText: newText 
+            editedText: newText
         });
 
         let msg = `✅ <b>Matn tahrirlandi!</b>\n\n`;
@@ -729,10 +739,14 @@ bot.callbackQuery("xrz_accept", async (ctx) => {
         await dbService.updateXorazmFileStatus(userId, xorazmId, 'ACCEPTED', editedText);
         await dbService.deleteState(userId);
 
+        // PAYMENT LOGIC
+        await dbService.incrementBalance(userId, config.XORAZM_CHECK_PRICE);
+
         await ctx.reply(
             `✅ <b>Qabul qilindi!</b>\n\n` +
             `🆔 <code>${xorazmId}</code>\n` +
             `📝 <code>${finalText.substring(0, 100)}${finalText.length > 100 ? '...' : ''}</code>\n\n` +
+            `💰 <b>${config.XORAZM_CHECK_PRICE} so'm qo'shildi!</b>\n\n` +
             `Davom etamizmi?`,
             {
                 parse_mode: "HTML",
@@ -949,7 +963,7 @@ bot.callbackQuery("admin_clear_xorazm", async (ctx) => {
 
         await ctx.reply("🔄 Xorazm metadata S3 dan yuklanmoqda...");
         const added = await s3Service.loadXorazmMetadata();
-        
+
         await ctx.reply(`✅ Xorazm yangilandi!\n📁 Yangi fayllar: ${added}`);
     } catch (err: any) {
         console.error("Clear xorazm error:", err);
