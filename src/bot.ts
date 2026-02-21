@@ -482,7 +482,7 @@ bot.on("message:text", async (ctx) => {
                 .row()
                 .text("✏️ Matnni tahrirlash", "trans_edit_text")
                 .row()
-                .text("🐢 Sekinlashtirish", `slow_audio_${fileKey}`)
+                .text("🐢 Sekinlashtirish", `slow_audio_stt_${fileKey}`)
         });
 
         return;
@@ -511,7 +511,7 @@ bot.on("message:text", async (ctx) => {
                 await ctx.replyWithAudio(new InputFile(audioBuffer), {
                     caption: caption,
                     parse_mode: "HTML",
-                    reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_${fileKey}`)
+                    reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_stt_${fileKey}`)
                 });
 
                 await ctx.reply("Fayl tahrirlandi. Tekshiring:", { reply_markup: fileCheckKeyboard });
@@ -984,16 +984,38 @@ bot.callbackQuery("admin_clear_xorazm", async (ctx) => {
 bot.callbackQuery(/^slow_audio_/, async (ctx) => {
     if (!ctx.callbackQuery.data) return;
 
-    const fileKey = ctx.callbackQuery.data.replace('slow_audio_', '');
+    // Pattern: slow_audio_type_fileKey
+    const data = ctx.callbackQuery.data.replace('slow_audio_', '');
 
-    // Check state (only check if user is in 'checking' state - avoid multiple triggers if possible, or just allow it if needed)
-    // Actually, user might just want to listen again.
+    // Determine the type: stt, trans, or xorazm
+    let type = 'stt';
+    let fileKey = data;
+
+    if (data.startsWith('stt_')) {
+        type = 'stt';
+        fileKey = data.substring(4);
+    } else if (data.startsWith('trans_')) {
+        type = 'trans';
+        fileKey = data.substring(6);
+    } else if (data.startsWith('xorazm_')) {
+        type = 'xorazm';
+        fileKey = data.substring(7);
+    }
 
     await ctx.answerCallbackQuery("Audio sekinlashtirilmoqda, kuting...");
     const msgInfo = await ctx.reply("⏳ Audioni qayta ishlash...");
 
     try {
-        const audioBuffer = await s3Service.getFileBuffer(fileKey);
+        let audioBuffer: Uint8Array | undefined;
+
+        if (type === 'trans') {
+            audioBuffer = await s3Service.getTranscriptionAudioBuffer(fileKey);
+        } else if (type === 'xorazm') {
+            audioBuffer = await s3Service.getXorazmAudioBuffer(fileKey);
+        } else {
+            audioBuffer = await s3Service.getFileBuffer(fileKey);
+        }
+
         if (!audioBuffer) {
             await ctx.api.deleteMessage(ctx.chat!.id, msgInfo.message_id);
             await ctx.reply("Faylni topib bo'lmadi.");
@@ -1151,7 +1173,7 @@ async function sendNextTranscriptionFile(ctx: any) {
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_${fileKey}`)
+            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_trans_${fileKey}`)
         });
 
         await ctx.reply("Matnni yozib yuboring:", { reply_markup: transcriptionKeyboard });
@@ -1243,7 +1265,7 @@ async function sendNextXorazmFile(ctx: any) {
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_${xorazmFile.audio_path}`)
+            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", `slow_audio_xorazm_${xorazmFile.audio_path}`)
         });
 
         // Show InlineKeyboard for actions
