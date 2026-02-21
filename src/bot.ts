@@ -119,31 +119,32 @@ async function showMainMenu(ctx: any) {
     text += `Salom, <b>${ctx.from?.first_name}</b>! 👋\n\n`;
 
     // STT Stats
-    text += `<b>🎧 STT Tekshiruv (Adabiy):</b>\n`;
+    text += `🎧 <b>STT Tekshiruv (Adabiy):</b>\n`;
     text += `<code>┌─────────────────────────┐</code>\n`;
-    text += `<code>│</code> ✅ Qabul:    <code>${String(stats.accepted).padStart(6)}</code>  <code>│</code>\n`;
-    text += `<code>│</code> ❌ Rad:      <code>${String(stats.rejected).padStart(6)}</code>  <code>│</code>\n`;
-    text += `<code>│</code> 📅 Bugun:    <code>${String(checksToday).padStart(6)}</code>  <code>│</code>\n`;
+    text += `<code>│</code> ✅ Qabul:    <code>${String(stats.accepted).padStart(5)}</code> <code>│</code>\n`;
+    text += `<code>│</code> ❌ Rad:      <code>${String(stats.rejected).padStart(5)}</code> <code>│</code>\n`;
+    text += `<code>│</code> 📅 Bugun:    <code>${String(checksToday).padStart(5)}</code> <code>│</code>\n`;
     text += `<code>└─────────────────────────┘</code>\n`;
 
     // Xorazm Stats
-    text += `<b>🌍 Xorazm shevasi:</b>\n`;
+    text += `🌍 <b>Xorazm shevasi:</b>\n`;
     text += `<code>┌─────────────────────────┐</code>\n`;
-    text += `<code>│</code> ✅ Qabul:    <code>${String(xorazmStats.accepted).padStart(6)}</code>  <code>│</code>\n`;
-    text += `<code>│</code> ❌ Rad:      <code>${String(xorazmStats.rejected).padStart(6)}</code>  <code>│</code>\n`;
-    text += `<code>│</code> 📅 Bugun:    <code>${String(xorazmToday).padStart(6)}</code>  <code>│</code>\n`;
+    text += `<code>│</code> ✅ Qabul:    <code>${String(xorazmStats.accepted).padStart(5)}</code> <code>│</code>\n`;
+    text += `<code>│</code> ❌ Rad:      <code>${String(xorazmStats.rejected).padStart(5)}</code> <code>│</code>\n`;
+    text += `<code>│</code> 📅 Bugun:    <code>${String(xorazmToday).padStart(5)}</code> <code>│</code>\n`;
+    if (user?.balance) {
+        text += `<code>├─────────────────────────┤</code>\n`;
+        text += `<code>│</code> 💰 Balans: <code>${String(user.balance).padStart(6)}</code> <code>│</code>\n`;
+    }
     text += `<code>└─────────────────────────┘</code>\n`;
 
     // Transcription Stats
-    text += `<b>📝 Transkripsiya:</b>\n`;
+    text += `📝 <b>Transkripsiya:</b>\n`;
     text += `<code>┌─────────────────────────┐</code>\n`;
-    text += `<code>│</code> ✅ Bajarildi: <code>${String(transStats.accepted).padStart(5)}</code>  <code>│</code>\n`;
-    text += `<code>│</code> 📅 Bugun:     <code>${String(transToday).padStart(5)}</code>  <code>│</code>\n`;
+    text += `<code>│</code> ✅ Bajarildi: <code>${String(transStats.accepted).padStart(4)}</code> <code>│</code>\n`;
+    text += `<code>│</code> 📅 Bugun:     <code>${String(transToday).padStart(4)}</code> <code>│</code>\n`;
     text += `<code>└─────────────────────────┘</code>\n`;
 
-    if (user?.balance) {
-        text += `\n💰 <b>Balans:</b> <code>${String(user.balance).padStart(6)}</code> so'm\n`;
-    }
     text += `🎁 Bepul qoldi: <b>${freeLeft}</b>/${config.FREE_CHECKS_LIMIT}\n\n`;
 
     await ctx.reply(text, {
