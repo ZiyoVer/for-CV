@@ -8,38 +8,74 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-primary: #fafafa;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #f5f5f5;
-            --text-primary: #1a1a1a;
-            --text-secondary: #666666;
-            --text-tertiary: #888888;
-            --border-color: #e5e5e5;
-            --accent-primary: #d97757;
-            --accent-secondary: #e07a5f;
-            --success: #10b981;
-            --error: #ef4444;
-            --warning: #f59e0b;
-            --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
-            --radius: 8px;
+            --bg-page: #FAF9F6;
+            --bg-card: #FFFFFF;
+            --bg-hover: #F5F3EF;
+            --bg-subtle: #F0EDE6;
+            --bg-input: #F7F5F0;
+            --text-primary: #1A1714;
+            --text-secondary: #6B6560;
+            --text-tertiary: #9C9590;
+            --border: #E8E4DD;
+            --border-subtle: #F0EDE6;
+            --accent: #C96442;
+            --accent-hover: #B85A3B;
+            --accent-light: rgba(201, 100, 66, 0.08);
+            --accent-medium: rgba(201, 100, 66, 0.15);
+            --success: #2D8A56;
+            --success-light: rgba(45, 138, 86, 0.08);
+            --error: #C4442A;
+            --error-light: rgba(196, 68, 42, 0.08);
+            --gold: #B8860B;
+            --gold-bg: linear-gradient(135deg, #FDF6E3 0%, #FAF0D4 100%);
+            --gold-border: #E8D5A0;
+            --silver: #71717A;
+            --silver-bg: linear-gradient(135deg, #F7F7F8 0%, #EDEDF0 100%);
+            --silver-border: #D4D4D8;
+            --bronze: #A0522D;
+            --bronze-bg: linear-gradient(135deg, #FBF3ED 0%, #F5E8DC 100%);
+            --bronze-border: #DFC4A8;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --shadow-sm: 0 1px 2px rgba(26, 23, 20, 0.04);
+            --shadow-md: 0 2px 8px rgba(26, 23, 20, 0.06), 0 1px 2px rgba(26, 23, 20, 0.04);
+            --shadow-lg: 0 8px 24px rgba(26, 23, 20, 0.08), 0 2px 8px rgba(26, 23, 20, 0.04);
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         [data-theme="dark"] {
-            --bg-primary: #0f0f0f;
-            --bg-secondary: #1a1a1a;
-            --bg-tertiary: #252525;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0a0;
-            --text-tertiary: #666666;
-            --border-color: #2a2a2a;
-            --accent-primary: #d97757;
-            --accent-secondary: #e07a5f;
-            --success: #22c55e;
-            --error: #ef4444;
-            --warning: #f59e0b;
-            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --bg-page: #161412;
+            --bg-card: #1E1C19;
+            --bg-hover: #262420;
+            --bg-subtle: #222019;
+            --bg-input: #1A1816;
+            --text-primary: #F0EDE6;
+            --text-secondary: #9C9590;
+            --text-tertiary: #6B6560;
+            --border: #2E2B26;
+            --border-subtle: #262420;
+            --accent: #D97757;
+            --accent-hover: #E08868;
+            --accent-light: rgba(217, 119, 87, 0.1);
+            --accent-medium: rgba(217, 119, 87, 0.18);
+            --success: #4ADE80;
+            --success-light: rgba(74, 222, 128, 0.1);
+            --error: #F87171;
+            --error-light: rgba(248, 113, 113, 0.1);
+            --gold: #FACC15;
+            --gold-bg: linear-gradient(135deg, #292518 0%, #2E2810 100%);
+            --gold-border: #4A3F1A;
+            --silver: #A1A1AA;
+            --silver-bg: linear-gradient(135deg, #222222 0%, #262626 100%);
+            --silver-border: #3F3F46;
+            --bronze: #D97757;
+            --bronze-bg: linear-gradient(135deg, #261C16 0%, #2A1E14 100%);
+            --bronze-border: #4A3020;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         * {
@@ -49,242 +85,544 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', sans-serif;
-            background: var(--bg-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: var(--bg-page);
             color: var(--text-primary);
-            line-height: 1.6;
             min-height: 100vh;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Header */
-        .header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 32px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-content {
-            max-width: 1600px;
-            margin: 0 auto;
-            height: 64px;
+        /* ─── Navbar ─── */
+        .navbar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
 
-        .header-left {
+        .nav-left {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
-        .logo {
-            font-size: 20px;
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
             font-weight: 600;
             color: var(--text-primary);
-            letter-spacing: -0.5px;
+            letter-spacing: -0.3px;
         }
 
-        .logo span {
-            color: var(--accent-primary);
+        .nav-logo svg {
+            width: 22px;
+            height: 22px;
+            color: var(--accent);
         }
 
-        .header-nav {
-            display: flex;
-            gap: 4px;
-            margin-left: 32px;
-        }
-
-        .nav-item {
-            padding: 8px 16px;
-            border-radius: var(--radius);
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .nav-item:hover {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-
-        .nav-item.active {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-
-        .header-right {
+        .nav-right {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
-        /* Theme Toggle */
-        .theme-toggle {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: all 0.2s ease;
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--success);
+            background: var(--success-light);
+            padding: 5px 10px;
+            border-radius: 100px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        .theme-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
             color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all var(--transition);
         }
 
-        .theme-toggle:hover {
-            background: var(--border-color);
+        .theme-btn:hover {
+            background: var(--bg-hover);
             color: var(--text-primary);
         }
 
-        .btn {
+        /* ─── Container ─── */
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 48px 20px 64px;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header-title {
+            font-size: 26px;
+            font-weight: 650;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .update-info {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            border-radius: var(--radius);
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            font-family: inherit;
+            gap: 5px;
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            background: var(--bg-subtle);
+            padding: 5px 12px;
+            border-radius: 100px;
         }
 
-        .btn-primary {
-            background: var(--accent-primary);
-            color: white;
+        .update-info svg {
+            width: 12px;
+            height: 12px;
+            opacity: 0.7;
         }
 
-        .btn-primary:hover {
-            background: var(--accent-secondary);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-outline:hover {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 32px;
-        }
-
-        /* Page Header */
-        .page-header {
-            margin-bottom: 32px;
-        }
-
-        .page-title {
-            font-size: 28px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        .page-subtitle {
-            font-size: 15px;
-            color: var(--text-secondary);
-        }
-
-        /* Stats Grid */
-        .stats-grid {
+        /* ─── Podium ─── */
+        .podium {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 24px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
             margin-bottom: 32px;
         }
 
-        .stat-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            transition: all 0.2s ease;
+        .podium-card {
             position: relative;
+            border-radius: var(--radius-lg);
+            padding: 28px 16px 24px;
+            text-align: center;
+            transition: transform var(--transition), box-shadow var(--transition);
+            border: 1px solid var(--border);
             overflow: hidden;
         }
 
+        .podium-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .podium-card.gold {
+            background: var(--gold-bg);
+            border-color: var(--gold-border);
+            order: 2;
+        }
+
+        .podium-card.silver {
+            background: var(--silver-bg);
+            border-color: var(--silver-border);
+            order: 1;
+        }
+
+        .podium-card.bronze {
+            background: var(--bronze-bg);
+            border-color: var(--bronze-border);
+            order: 3;
+        }
+
+        .podium-medal {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .podium-card.gold .podium-medal {
+            background: linear-gradient(135deg, #F5D76E, #D4A017);
+            color: #5C3D0A;
+            box-shadow: 0 2px 12px rgba(212, 160, 23, 0.3);
+        }
+
+        .podium-card.silver .podium-medal {
+            background: linear-gradient(135deg, #D4D4D8, #A1A1AA);
+            color: #FFF;
+            box-shadow: 0 2px 12px rgba(161, 161, 170, 0.3);
+        }
+
+        .podium-card.bronze .podium-medal {
+            background: linear-gradient(135deg, #D97757, #A0522D);
+            color: #FFF;
+            box-shadow: 0 2px 12px rgba(160, 82, 45, 0.3);
+        }
+
+        .podium-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .podium-score {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .podium-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .podium-detail {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .podium-tag {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+        }
+
+        .podium-tag.ok {
+            color: var(--success);
+            background: var(--success-light);
+        }
+
+        .podium-tag.no {
+            color: var(--error);
+            background: var(--error-light);
+        }
+
+        /* ─── Leaderboard Table ─── */
+        .board {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .board-head {
+            display: grid;
+            grid-template-columns: 52px 1fr 80px 80px 80px 90px 90px 100px;
+            padding: 12px 20px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .board-head span {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .board-head span:nth-child(n+3) {
+            text-align: center;
+        }
+
+        .board-body {
+            /* container for rows */
+        }
+
+        .board-row {
+            display: grid;
+            grid-template-columns: 52px 1fr 80px 80px 80px 90px 90px 100px;
+            padding: 14px 20px;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            transition: background var(--transition);
+        }
+
+        .board-row:last-child {
+            border-bottom: none;
+        }
+
+        .board-row:hover {
+            background: var(--bg-hover);
+        }
+
+        .row-rank {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            background: var(--bg-subtle);
+            border-radius: var(--radius-sm);
+        }
+
+        .board-row:nth-child(1) .row-rank,
+        .board-row:nth-child(2) .row-rank,
+        .board-row:nth-child(3) .row-rank {
+            color: var(--accent);
+            background: var(--accent-light);
+            font-weight: 700;
+        }
+
+        .row-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            padding-left: 4px;
+        }
+
+        .row-stat {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .row-stat.ok {
+            color: var(--success);
+        }
+
+        .row-stat.no {
+            color: var(--error);
+        }
+
+        .row-stat.total {
+            color: var(--text-secondary);
+        }
+
+        /* ─── Empty State ─── */
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--text-tertiary);
+            opacity: 0.4;
+            margin-bottom: 16px;
+        }
+
+        .empty-text {
+            font-size: 14px;
+            color: var(--text-tertiary);
+        }
+
+        /* ─── Footer ─── */
+        .footer {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 28px;
+            flex-wrap: wrap;
+        }
+
+        .footer-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 100px;
+        }
+
+        .footer-tag .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 640px) {
+            .container {
+                padding: 28px 14px 48px;
+            }
+
+            .header-title {
+                font-size: 22px;
+            }
+
+            .podium {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .podium-card {
+                padding: 20px 16px 18px;
+            }
+
+            .podium-card.gold {
+                order: 0;
+            }
+
+            .podium-card.silver {
+                order: 1;
+            }
+
+            .podium-card.bronze {
+                order: 2;
+            }
+
+            .podium-score {
+                font-size: 20px;
+            }
+
+            .board-head,
+            .board-row {
+                grid-template-columns: 40px 1fr 56px 56px 56px 60px 60px 70px;
+                padding: 12px 14px;
+            }
+
+            .board-head span {
+                font-size: 10px;
+            }
+
+            .row-name {
+                font-size: 13px;
+            }
+
+            .row-stat {
+                font-size: 13px;
+            }
+        }
+
+        /* ─── Animations ─── */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .podium {
+            animation: fadeUp 0.5s ease-out;
+        }
+
+        .board {
+            animation: fadeUp 0.5s ease-out 0.1s both;
+        }
+
+
+        /* --- Dashboard Specific Forms & Charts --- */
+        .page-header {
+            margin-bottom: 24px;
+            padding: 0 24px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 0 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: transform var(--transition);
+        }
+
         .stat-card:hover {
-            box-shadow: var(--shadow-hover);
             transform: translateY(-2px);
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--accent-primary);
-        }
-
-        .stat-card.success::before {
-            background: var(--success);
-        }
-
-        .stat-card.error::before {
-            background: var(--error);
-        }
-
-        .stat-card.warning::before {
-            background: var(--warning);
+            box-shadow: var(--shadow-sm);
         }
 
         .stat-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-        }
-
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--bg-tertiary);
-            border-radius: 10px;
-            display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .stat-card.success .stat-icon {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-        }
-
-        .stat-card.error .stat-icon {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error);
-        }
-
-        .stat-card.warning .stat-icon {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning);
+            margin-bottom: 12px;
         }
 
         .stat-label {
@@ -295,32 +633,61 @@
             letter-spacing: 0.5px;
         }
 
-        .stat-value {
-            font-size: 32px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-            letter-spacing: -1px;
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 18px;
         }
 
-        .stat-subtext {
-            font-size: 13px;
+        .stat-card .stat-icon {
+            background: var(--bg-subtle);
             color: var(--text-tertiary);
         }
 
-        /* Charts Section */
+        .stat-card.success .stat-icon {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .stat-card.error .stat-icon {
+            background: var(--error-light);
+            color: var(--error);
+        }
+
+        .stat-card.warning .stat-icon {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-subtext {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
         .charts-section {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
+            gap: 16px;
             margin-bottom: 32px;
+            padding: 0 24px;
         }
 
         .chart-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border);
         }
 
         .chart-card.full-width {
@@ -328,97 +695,94 @@
         }
 
         .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
 
         .chart-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             color: var(--text-primary);
         }
 
         .chart-subtitle {
             font-size: 13px;
-            color: var(--text-secondary);
+            color: var(--text-tertiary);
             margin-top: 2px;
         }
 
         .chart-container {
             position: relative;
-            height: 300px;
+            height: 260px;
         }
 
         .chart-container.small {
-            height: 250px;
+            height: 220px;
         }
 
-        /* Section Cards */
         .section-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
             margin-bottom: 24px;
+            border: 1px solid var(--border);
             overflow: hidden;
+            margin-left: 24px;
+            margin-right: 24px;
         }
 
         .section-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border-color);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .section-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             color: var(--text-primary);
         }
 
         .section-body {
-            padding: 24px;
+            padding: 20px;
         }
 
-        /* Upload Form */
         .upload-area {
-            border: 2px dashed var(--border-color);
-            border-radius: 12px;
-            padding: 48px;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-md);
+            padding: 40px;
             text-align: center;
-            transition: all 0.2s ease;
-            background: var(--bg-tertiary);
+            background: var(--bg-subtle);
             cursor: pointer;
+            transition: all 0.2s;
         }
 
         .upload-area:hover {
-            border-color: var(--accent-primary);
-            background: rgba(217, 119, 87, 0.05);
+            border-color: var(--accent);
+            background: var(--accent-light);
         }
 
         .upload-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            color: var(--text-tertiary);
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
         }
 
         .upload-text {
-            font-size: 15px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
         }
 
         .upload-hint {
-            font-size: 13px;
-            color: var(--text-tertiary);
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
         }
 
-        /* Forms - Updated inline layout */
         .form-grid {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             align-items: flex-end;
             flex-wrap: wrap;
         }
@@ -429,47 +793,33 @@
             gap: 6px;
         }
 
-        .form-group.input-id {
-            flex: 0 0 180px;
-        }
-
         .form-group.input-name {
             flex: 1;
             min-width: 200px;
-            max-width: 300px;
-        }
-
-        .form-group.input-admin {
-            flex: 0 0 auto;
-            padding-bottom: 8px;
-        }
-
-        .form-group.input-submit {
-            flex: 0 0 auto;
         }
 
         .form-label {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
             color: var(--text-secondary);
         }
 
         .form-input {
-            padding: 10px 14px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
             font-size: 14px;
-            background: var(--bg-secondary);
+            background: var(--bg-input);
             color: var(--text-primary);
-            font-family: inherit;
-            transition: all 0.2s ease;
             width: 100%;
+            transition: border-color 0.2s;
+            font-family: inherit;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.1);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
         }
 
         .form-checkbox {
@@ -479,120 +829,82 @@
             font-size: 14px;
             color: var(--text-primary);
             cursor: pointer;
-            white-space: nowrap;
         }
 
         .form-checkbox input {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
             cursor: pointer;
-            accent-color: var(--accent-primary);
         }
 
-        /* Table */
-        .table-container {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background: var(--bg-tertiary);
-        }
-
-        th {
-            padding: 14px 16px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
-
-        td {
-            padding: 16px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
-            color: var(--text-primary);
-        }
-
-        tbody tr:hover {
-            background: var(--bg-tertiary);
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .user-name {
-            font-weight: 500;
+        .header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
+            height: 56px;
+            margin-bottom: 24px;
         }
 
-        .admin-badge {
-            display: inline-flex;
+        .header-left {
+            display: flex;
             align-items: center;
-            padding: 2px 8px;
-            background: rgba(217, 119, 87, 0.1);
-            color: var(--accent-primary);
-            font-size: 11px;
-            font-weight: 600;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            gap: 24px;
         }
 
-        .user-id {
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        .stat-badge {
-            display: inline-flex;
-            align-items: center;
+        .header-nav {
+            display: flex;
             gap: 4px;
-            padding: 4px 10px;
-            border-radius: 20px;
+        }
+
+        .nav-item {
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
             font-size: 13px;
             font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: 0.2s;
         }
 
-        .stat-badge.success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
+        .nav-item:hover,
+        .nav-item.active {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
         }
 
-        .stat-badge.error {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error);
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
         }
 
-        .balance {
+        .empty-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 16px;
             font-weight: 600;
             color: var(--text-primary);
         }
 
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+        .empty-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
         }
 
-        /* Expandable Forms */
         .expandable-form {
             display: none;
-            margin-top: 16px;
-            padding: 16px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-sm);
         }
 
         .expandable-form.show {
@@ -601,161 +913,43 @@
 
         .form-inline {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
-            flex-wrap: wrap;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 64px 24px;
-        }
-
-        .empty-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .empty-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-
-        .empty-text {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        /* Alert Messages */
-        .alert {
-            padding: 12px 16px;
-            border-radius: var(--radius);
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .alert-success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-
-        .alert-error {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .charts-section {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                padding: 0 16px;
-            }
-
-            .header-nav {
-                display: none;
-            }
-
-            .container {
-                padding: 16px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .form-grid {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .form-group.input-id,
-            .form-group.input-name {
-                flex: 1 1 100%;
-                max-width: none;
-            }
-
-            .chart-container {
-                height: 250px;
-            }
-
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-
-            .actions {
-                width: 100%;
-            }
-
-            .actions .btn {
-                flex: 1;
-                justify-content: center;
-            }
-
-            th,
-            td {
-                padding: 12px 8px;
-                font-size: 13px;
-            }
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .stat-card,
-        .chart-card,
-        .section-card {
-            animation: fadeIn 0.4s ease-out;
         }
     </style>
 </head>
 
 <body>
 
-    <header class="header">
-        <div class="header-content">
-            <div class="header-left">
-                <div class="logo">STT <span>Dashboard</span></div>
-                <nav class="header-nav">
-                    <a href="#" class="nav-item active">Overview</a>
-                    <a href="#users" class="nav-item">Users</a>
-                    <a href="#analytics" class="nav-item">Analytics</a>
-                    <a href="#upload" class="nav-item">Upload</a>
-                </nav>
-            </div>
-            <div class="header-right">
-                <a href="/logout" class="btn btn-outline btn-small">Chiqish</a>
-            </div>
+    <nav class="navbar">
+        <div class="logo">
+            <!-- You can add an SVG logo here if you have one -->
+            <div class="logo-text">STT <span>Dashboard</span></div>
         </div>
-    </header>
+        <div class="nav-links">
+            <a href="#" class="nav-link active">Overview</a>
+            <a href="#users" class="nav-link">Users</a>
+            <a href="#analytics" class="nav-link">Analytics</a>
+            <a href="#upload" class="nav-link">Upload</a>
+            <button class="theme-toggle" id="themeToggle" aria-label="Temani o'zgartirish">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+            </button>
+            <a href="/logout" class="nav-link" style="color:var(--error)">Chiqish</a>
+        </div>
+    </nav>
 
-    <div class="container">
+    <div class="container" style="max-width: 1400px;">
         <!-- Alert Messages -->
         <% if (typeof query !=='undefined' && query.success) { %>
             <div class="alert alert-success">✅ <%= query.success %>
@@ -766,7 +960,10 @@
                     <% } %>
 
                         <!-- Page Header -->
-                        <div class="page-header">
+                        <div class="page-header" style="text-align: center; margin-bottom: 40px; margin-top: 20px;">
+                            <div class="tags" style="justify-content: center;">
+                                <span class="tag">Asosiy Panel</span>
+                            </div>
                             <h1 class="page-title">Dashboard Overview</h1>
                             <p class="page-subtitle">Platforma statistikasi va foydalanuvchilar boshqaruvi</p>
                         </div>
@@ -903,7 +1100,8 @@
                                 <div class="chart-header">
                                     <div>
                                         <div class="chart-title">📝 Transkripsiya</div>
-                                        <div class="chart-subtitle" id="trans-subtitle">Qabul qilingan: <%= stats.transAccepted %> |
+                                        <div class="chart-subtitle" id="trans-subtitle">Qabul qilingan: <%=
+                                                stats.transAccepted %> |
                                                 Kutilmoqda: <%= stats.transcriptionPending %>
                                         </div>
                                     </div>
@@ -931,7 +1129,8 @@
                                 <div class="chart-header">
                                     <div>
                                         <div class="chart-title">🌍 Xorazm sheva</div>
-                                        <div class="chart-subtitle" id="xorazm-subtitle">Qabul qilingan: <%= stats.xorazmAccepted %> |
+                                        <div class="chart-subtitle" id="xorazm-subtitle">Qabul qilingan: <%=
+                                                stats.xorazmAccepted %> |
                                                 Kutilmoqda: <%= stats.xorazmPending %>
                                         </div>
                                     </div>
@@ -1020,121 +1219,173 @@
                                 </span>
                             </div>
                             <div class="table-container">
+                                <style>
+                                    .dashboard-board .board-head,
+                                    .dashboard-board .board-row {
+                                        grid-template-columns: 90px 1.5fr 60px 100px 70px 70px 110px 1fr;
+                                        align-items: center;
+                                        padding: 12px 24px;
+                                    }
+
+                                    .dashboard-board .actions {
+                                        display: flex;
+                                        flex-wrap: wrap;
+                                        gap: 6px;
+                                        justify-content: flex-end;
+                                    }
+
+                                    .dashboard-board .btn-small {
+                                        padding: 6px 10px;
+                                        font-size: 12px;
+                                    }
+
+                                    .dashboard-board .expandable-form {
+                                        grid-column: 1 / -1;
+                                        display: none;
+                                        margin-top: 12px;
+                                        padding: 16px;
+                                        background: var(--bg-subtle);
+                                        border-radius: var(--radius-sm);
+                                    }
+
+                                    .dashboard-board .expandable-form.show {
+                                        display: block;
+                                    }
+
+                                    .dashboard-board .admin-badge {
+                                        display: inline-flex;
+                                        align-items: center;
+                                        padding: 2px 6px;
+                                        background: var(--accent-light);
+                                        color: var(--accent);
+                                        font-size: 10px;
+                                        font-weight: 600;
+                                        border-radius: 4px;
+                                        text-transform: uppercase;
+                                    }
+                                </style>
                                 <% if (users && users.length> 0) { %>
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Foydalanuvchi</th>
-                                                <th>Bugun</th>
-                                                <th>Xorazm<br><small style="font-weight:400">24s / 7kun</small></th>
-                                                <th>Jami OK</th>
-                                                <th>Jami NO</th>
-                                                <th>Balans</th>
-                                                <th>Amallar</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+                                    <div class="board dashboard-board">
+                                        <div class="board-head">
+                                            <div class="head-cell">ID</div>
+                                            <div class="head-cell">Foydalanuvchi</div>
+                                            <div class="head-cell">Bugun</div>
+                                            <div class="head-cell">Xorazm<br><span
+                                                    style="font-size: 10px; font-weight: 400; color:var(--text-tertiary);">24s
+                                                    / 7kun</span></div>
+                                            <div class="head-cell text-right">Jami OK</div>
+                                            <div class="head-cell text-right">Jami NO</div>
+                                            <div class="head-cell text-right">Balans</div>
+                                            <div class="head-cell" style="text-align:right">Amallar</div>
+                                        </div>
+                                        <div class="board-body">
                                             <% users.forEach(user=> { %>
-                                                <tr>
-                                                    <td class="user-id">
+                                                <div class="board-row" style="flex-wrap: wrap;">
+                                                    <div class="row-rank"
+                                                        style="font-family: monospace; font-size: 13px; color: var(--text-secondary);">
                                                         <%= user.telegram_id %>
-                                                    </td>
-                                                    <td>
-                                                        <div class="user-name">
-                                                            <%= user.full_name %>
-                                                                <% if(user.is_admin) { %>
-                                                                    <span class="admin-badge">Admin</span>
-                                                                    <% } %>
-                                                        </div>
-                                                    </td>
-                                                    <td>
+                                                    </div>
+                                                    <div class="row-name"
+                                                        style="display:flex; align-items:center; gap:8px;">
+                                                        <%= user.full_name %>
+                                                            <% if(user.is_admin) { %>
+                                                                <span class="admin-badge">Admin</span>
+                                                                <% } %>
+                                                    </div>
+                                                    <div class="row-stat">
                                                         <% if(user.checks_today> 0) { %>
-                                                            <span class="stat-badge success">+<%= user.checks_today %>
-                                                            </span>
+                                                            <span
+                                                                style="color:var(--success); font-weight:600; font-size:13px;">+
+                                                                <%= user.checks_today %></span>
                                                             <% } else { %>
                                                                 <span style="color: var(--text-tertiary);">—</span>
                                                                 <% } %>
-                                                    </td>
-                                                    <td style="font-size: 13px;">
-                                                        <span style="color: var(--text-primary); font-weight: 500;"><%= user.xorazm_24h || 0 %></span>
+                                                    </div>
+                                                    <div class="row-stat" style="font-size:13px;">
+                                                        <span style="color: var(--text-primary); font-weight: 500;">
+                                                            <%= user.xorazm_24h || 0 %>
+                                                        </span>
                                                         <span style="color: var(--text-tertiary);"> / </span>
-                                                        <span style="color: var(--text-secondary);"><%= user.xorazm_7d || 0 %></span>
-                                                    </td>
-                                                    <td><span class="stat-badge success">
-                                                            <%= user.total_accepted || 0 %>
-                                                        </span></td>
-                                                    <td><span class="stat-badge error">
-                                                            <%= user.total_rejected || 0 %>
-                                                        </span></td>
-                                                    <td class="balance">
+                                                        <span style="color: var(--text-secondary);">
+                                                            <%= user.xorazm_7d || 0 %>
+                                                        </span>
+                                                    </div>
+                                                    <div class="row-stat ok text-right">
+                                                        <%= user.total_accepted || 0 %>
+                                                    </div>
+                                                    <div class="row-stat no text-right">
+                                                        <%= user.total_rejected || 0 %>
+                                                    </div>
+                                                    <div class="row-stat total text-right" style="font-size:13px;">
                                                         <%= user.balance.toLocaleString() %> so'm
-                                                    </td>
-                                                    <td>
+                                                    </div>
+                                                    <div>
                                                         <div class="actions">
                                                             <a href="/review/<%= user.telegram_id %>"
                                                                 class="btn btn-outline btn-small">Review</a>
                                                             <button type="button" class="btn btn-outline btn-small"
                                                                 onclick="toggle('balance-<%= user.telegram_id %>')">Balans</button>
                                                             <form action="/users/payout/<%= user.telegram_id %>"
-                                                                method="POST" style="display: inline; margin: 0;"
-                                                                onsubmit="return confirm('To\'lov tasdiqlaysizmi?')">
-                                                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                                method="POST" style="margin: 0;"
+                                                                onsubmit="return confirm('To\'lovni tasdiqlaysizmi?')">
+                                                                <input type="hidden" name="_csrf"
+                                                                    value="<%= csrfToken %>">
                                                                 <button type="submit"
                                                                     class="btn btn-outline btn-small">To'lov</button>
                                                             </form>
                                                             <button type="button" class="btn btn-outline btn-small"
                                                                 onclick="toggle('edit-<%= user.telegram_id %>')">Edit</button>
                                                             <form action="/users/delete/<%= user.telegram_id %>"
-                                                                method="POST" style="display: inline; margin: 0;"
+                                                                method="POST" style="margin: 0;"
                                                                 onsubmit="return confirm('O\'chirish?')">
-                                                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                                <input type="hidden" name="_csrf"
+                                                                    value="<%= csrfToken %>">
                                                                 <button type="submit" class="btn btn-small"
-                                                                    style="background: var(--error); color: white;">Delete</button>
+                                                                    style="background: var(--error); color: white; border: none;">Delete</button>
                                                             </form>
                                                         </div>
+                                                    </div>
 
-                                                        <!-- Balance Form -->
-                                                        <div id="balance-<%= user.telegram_id %>"
-                                                            class="expandable-form">
-                                                            <form action="/users/add-balance/<%= user.telegram_id %>"
-                                                                method="POST" class="form-inline">
-                                                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                                                <input type="number" name="amount" class="form-input"
-                                                                    placeholder="Summa (so'm)" required
-                                                                    style="flex: 1;">
-                                                                <button type="submit"
-                                                                    class="btn btn-primary btn-small">Qo'shish</button>
-                                                                <button type="button" class="btn btn-outline btn-small"
-                                                                    onclick="toggle('balance-<%= user.telegram_id %>')">Bekor</button>
-                                                            </form>
-                                                        </div>
+                                                    <!-- Expandable form rows need to span full width -->
+                                                    <div id="balance-<%= user.telegram_id %>" class="expandable-form"
+                                                        style="width: 100%;">
+                                                        <form action="/users/add-balance/<%= user.telegram_id %>"
+                                                            method="POST" class="form-inline">
+                                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                            <input type="number" name="amount" class="form-input"
+                                                                placeholder="Summa (so'm)" required style="flex: 1;">
+                                                            <button type="submit"
+                                                                class="btn btn-primary btn-small">Qo'shish</button>
+                                                            <button type="button" class="btn btn-outline btn-small"
+                                                                onclick="toggle('balance-<%= user.telegram_id %>')">Bekor</button>
+                                                        </form>
+                                                    </div>
 
-                                                        <!-- Edit Form -->
-                                                        <div id="edit-<%= user.telegram_id %>" class="expandable-form">
-                                                            <form action="/users/update/<%= user.telegram_id %>"
-                                                                method="POST" class="form-inline">
-                                                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                                                <input type="hidden" name="telegram_id" value="<%= user.telegram_id %>">
-                                                                <input type="text" name="full_name"
-                                                                    value="<%= user.full_name %>" class="form-input"
-                                                                    required style="flex: 1;">
-                                                                <label class="form-checkbox">
-                                                                    <input type="checkbox" name="is_admin"
-                                                                        <%=user.is_admin ? 'checked' : '' %>>
-                                                                    <span>Admin</span>
-                                                                </label>
-                                                                <button type="submit"
-                                                                    class="btn btn-primary btn-small">Saqlash</button>
-                                                                <button type="button" class="btn btn-outline btn-small"
-                                                                    onclick="toggle('edit-<%= user.telegram_id %>')">Bekor</button>
-                                                            </form>
-                                                        </div>
-                                                    </td>
-                                                </tr>
+                                                    <div id="edit-<%= user.telegram_id %>" class="expandable-form"
+                                                        style="width: 100%;">
+                                                        <form action="/users/update/<%= user.telegram_id %>"
+                                                            method="POST" class="form-inline">
+                                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                            <input type="hidden" name="telegram_id"
+                                                                value="<%= user.telegram_id %>">
+                                                            <input type="text" name="full_name"
+                                                                value="<%= user.full_name %>" class="form-input"
+                                                                required style="flex: 1;">
+                                                            <label class="form-checkbox">
+                                                                <input type="checkbox" name="is_admin" <%=user.is_admin
+                                                                    ? 'checked' : '' %>>
+                                                                <span>Admin</span>
+                                                            </label>
+                                                            <button type="submit"
+                                                                class="btn btn-primary btn-small">Saqlash</button>
+                                                            <button type="button" class="btn btn-outline btn-small"
+                                                                onclick="toggle('edit-<%= user.telegram_id %>')">Bekor</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
                                                 <% }) %>
-                                        </tbody>
-                                    </table>
+                                        </div>
+                                    </div>
                                     <% } else { %>
                                         <div class="empty-state">
                                             <div class="empty-icon">👥</div>
@@ -1282,7 +1533,7 @@
 
         // 2. User Activity Chart (Horizontal Bar Chart)
         const userActivityCtx = document.getElementById('userActivityChart').getContext('2d');
-        const userData = <%- JSON.stringify(users || []).replace(/</g, '\\u003c') %>;
+        const userData = <% - JSON.stringify(users || []).replace(/</g, '\\u003c') %>;
         const topUsers = userData.slice(0, 8).sort((a, b) => (b.total_accepted + b.total_rejected) - (a.total_accepted + a.total_rejected));
 
         const chartUserActivity = new Chart(userActivityCtx, {
@@ -1328,7 +1579,7 @@
 
         // 3. Timeline Chart (Line Chart with REAL data from database)
         const timelineCtx = document.getElementById('timelineChart').getContext('2d');
-        const lifetimeData = <%- JSON.stringify(lifetimeStats || []).replace(/</g, '\\u003c') %>;
+        const lifetimeData = <% - JSON.stringify(lifetimeStats || []).replace(/</g, '\\u003c') %>;
 
         // Format dates and prepare data
         const timelineLabels = lifetimeData.map(d => {
@@ -1495,7 +1746,7 @@
 
         // 7. Transcription Contributors (Bar Chart)
         var transContributorsCtx = document.getElementById('transContributorsChart').getContext('2d');
-        var transStatsData = <%- JSON.stringify(transStats || []).replace(/</g, '\\u003c') %>;
+        var transStatsData = <% - JSON.stringify(transStats || []).replace(/</g, '\\u003c') %>;
         var transUsers = transStatsData.filter(function (u) { return u.accepted_count > 0; }).slice(0, 10);
         const chartTransContributors = new Chart(transContributorsCtx, {
             type: 'bar',
@@ -1555,24 +1806,24 @@
 
         // 9. Xorazm User Activity Chart (Horizontal Bar)
         var xorazmUserCtx = document.getElementById('xorazmUserChart').getContext('2d');
-        var xorazmUsers = userData.filter(function(u) { return (u.xorazm_24h || 0) > 0 || (u.xorazm_7d || 0) > 0; })
-            .sort(function(a, b) { return (b.xorazm_7d || 0) - (a.xorazm_7d || 0); })
+        var xorazmUsers = userData.filter(function (u) { return (u.xorazm_24h || 0) > 0 || (u.xorazm_7d || 0) > 0; })
+            .sort(function (a, b) { return (b.xorazm_7d || 0) - (a.xorazm_7d || 0); })
             .slice(0, 8);
-        
+
         const chartXorazmUser = new Chart(xorazmUserCtx, {
             type: 'bar',
             data: {
-                labels: xorazmUsers.map(function(u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; }),
+                labels: xorazmUsers.map(function (u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; }),
                 datasets: [
                     {
                         label: '24 soat',
-                        data: xorazmUsers.map(function(u) { return u.xorazm_24h || 0; }),
+                        data: xorazmUsers.map(function (u) { return u.xorazm_24h || 0; }),
                         backgroundColor: chartColors.primary,
                         borderRadius: 4
                     },
                     {
                         label: '7 kun',
-                        data: xorazmUsers.map(function(u) { return u.xorazm_7d || 0; }),
+                        data: xorazmUsers.map(function (u) { return u.xorazm_7d || 0; }),
                         backgroundColor: chartColors.success,
                         borderRadius: 4
                     }
@@ -1583,7 +1834,7 @@
                 maintainAspectRatio: false,
                 indexAxis: 'y',
                 plugins: {
-                    legend: { 
+                    legend: {
                         position: 'top',
                         labels: { color: textColor, padding: 15, font: { size: 11 } }
                     }
@@ -1634,20 +1885,20 @@
 
                 // Update Chart 2: User Activity (Horizontal Bar)
                 var freshUsers = (data.users || []).slice(0, 8)
-                    .sort(function(a, b) { return (b.total_accepted + b.total_rejected) - (a.total_accepted + a.total_rejected); });
-                chartUserActivity.data.labels = freshUsers.map(function(u) { return u.full_name.split(' ')[0]; });
-                chartUserActivity.data.datasets[0].data = freshUsers.map(function(u) { return u.total_accepted || 0; });
-                chartUserActivity.data.datasets[1].data = freshUsers.map(function(u) { return u.total_rejected || 0; });
+                    .sort(function (a, b) { return (b.total_accepted + b.total_rejected) - (a.total_accepted + a.total_rejected); });
+                chartUserActivity.data.labels = freshUsers.map(function (u) { return u.full_name.split(' ')[0]; });
+                chartUserActivity.data.datasets[0].data = freshUsers.map(function (u) { return u.total_accepted || 0; });
+                chartUserActivity.data.datasets[1].data = freshUsers.map(function (u) { return u.total_rejected || 0; });
                 chartUserActivity.update();
 
                 // Update Chart 3: Timeline (Line)
                 var freshTimeline = data.lifetimeStats || [];
-                chartTimeline.data.labels = freshTimeline.map(function(d) {
+                chartTimeline.data.labels = freshTimeline.map(function (d) {
                     var dt = new Date(d.date || d.day);
                     return dt.toLocaleDateString('uz-UZ', { weekday: 'short', day: 'numeric' });
                 });
-                chartTimeline.data.datasets[0].data = freshTimeline.map(function(d) { return d.accepted || 0; });
-                chartTimeline.data.datasets[1].data = freshTimeline.map(function(d) { return d.rejected || 0; });
+                chartTimeline.data.datasets[0].data = freshTimeline.map(function (d) { return d.accepted || 0; });
+                chartTimeline.data.datasets[1].data = freshTimeline.map(function (d) { return d.rejected || 0; });
                 chartTimeline.update();
 
                 // Update Chart 4: Accept/Reject Ratio (Doughnut)
@@ -1656,8 +1907,8 @@
 
                 // Update Chart 5: Top Contributors (Pie)
                 var freshContributors = freshUsers.slice(0, 5);
-                chartContributors.data.labels = freshContributors.map(function(u) { return u.full_name.split(' ')[0]; });
-                chartContributors.data.datasets[0].data = freshContributors.map(function(u) { return (u.total_accepted || 0) + (u.total_rejected || 0); });
+                chartContributors.data.labels = freshContributors.map(function (u) { return u.full_name.split(' ')[0]; });
+                chartContributors.data.datasets[0].data = freshContributors.map(function (u) { return (u.total_accepted || 0) + (u.total_rejected || 0); });
                 chartContributors.update();
 
                 // Update Chart 6: Transcription (Doughnut)
@@ -1665,9 +1916,9 @@
                 chartTrans.update();
 
                 // Update Chart 7: Trans Contributors (Bar)
-                var freshTransUsers = (data.transStats || []).filter(function(u) { return u.accepted_count > 0; }).slice(0, 10);
-                chartTransContributors.data.labels = freshTransUsers.map(function(u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; });
-                chartTransContributors.data.datasets[0].data = freshTransUsers.map(function(u) { return u.accepted_count || 0; });
+                var freshTransUsers = (data.transStats || []).filter(function (u) { return u.accepted_count > 0; }).slice(0, 10);
+                chartTransContributors.data.labels = freshTransUsers.map(function (u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; });
+                chartTransContributors.data.datasets[0].data = freshTransUsers.map(function (u) { return u.accepted_count || 0; });
                 chartTransContributors.update();
 
                 // Update Chart 8: Xorazm (Doughnut)
@@ -1675,12 +1926,12 @@
                 chartXorazm.update();
 
                 // Update Chart 9: Xorazm User Activity
-                var freshXorazmUsers = (data.users || []).filter(function(u) { return (u.xorazm_24h || 0) > 0 || (u.xorazm_7d || 0) > 0; })
-                    .sort(function(a, b) { return (b.xorazm_7d || 0) - (a.xorazm_7d || 0); })
+                var freshXorazmUsers = (data.users || []).filter(function (u) { return (u.xorazm_24h || 0) > 0 || (u.xorazm_7d || 0) > 0; })
+                    .sort(function (a, b) { return (b.xorazm_7d || 0) - (a.xorazm_7d || 0); })
                     .slice(0, 8);
-                chartXorazmUser.data.labels = freshXorazmUsers.map(function(u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; });
-                chartXorazmUser.data.datasets[0].data = freshXorazmUsers.map(function(u) { return u.xorazm_24h || 0; });
-                chartXorazmUser.data.datasets[1].data = freshXorazmUsers.map(function(u) { return u.xorazm_7d || 0; });
+                chartXorazmUser.data.labels = freshXorazmUsers.map(function (u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; });
+                chartXorazmUser.data.datasets[0].data = freshXorazmUsers.map(function (u) { return u.xorazm_24h || 0; });
+                chartXorazmUser.data.datasets[1].data = freshXorazmUsers.map(function (u) { return u.xorazm_7d || 0; });
                 chartXorazmUser.update();
 
             } catch (err) {
