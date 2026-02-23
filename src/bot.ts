@@ -6,6 +6,30 @@ import { statsService } from './services/stats';
 import { parseBuffer } from 'music-metadata';
 import { Logger } from './utils/logger';
 import path from 'path';
+import { exec } from 'child_process';
+import * as fs from 'fs';
+import * as os from 'os';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+async function slowDownAudio(audioBuffer: Buffer | Uint8Array): Promise<Buffer | null> {
+    const rand = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const inputFile = path.join(os.tmpdir(), `stt_in_${rand}.wav`);
+    const outputFile = path.join(os.tmpdir(), `stt_out_${rand}.wav`);
+    try {
+        fs.writeFileSync(inputFile, audioBuffer);
+        await execAsync(`ffmpeg -i "${inputFile}" -filter:a "atempo=0.75" -f wav "${outputFile}" -y`);
+        const result = fs.readFileSync(outputFile);
+        return Buffer.from(result);
+    } catch (e) {
+        Logger.error('FFmpeg slowdown failed', e);
+        return null;
+    } finally {
+        try { fs.unlinkSync(inputFile); } catch {}
+        try { fs.unlinkSync(outputFile); } catch {}
+    }
+}
 
 export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
@@ -503,7 +527,8 @@ bot.on("message:text", async (ctx) => {
 
                 await ctx.replyWithAudio(new InputFile(audioBuffer), {
                     caption: caption,
-                    parse_mode: "HTML"
+                    parse_mode: "HTML",
+                    reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_stt")
                 });
 
                 await ctx.reply("Fayl tahrirlandi. Tekshiring:", { reply_markup: fileCheckKeyboard });
@@ -841,6 +866,82 @@ bot.callbackQuery("xrz_skip", async (ctx) => {
     }
 });
 
+// --- AUDIO SLOWDOWN CALLBACKS ---
+
+bot.callbackQuery("slow_stt", async (ctx) => {
+    await ctx.answerCallbackQuery("🐢 Audio sekinlashtirilmoqda...");
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || !isValidState(stateRow.data) || !stateRow.data.fileKey) {
+        await ctx.reply("❌ Faol fayl topilmadi.");
+        return;
+    }
+
+    const { fileKey } = stateRow.data;
+
+    try {
+        const audioBuffer = await s3Service.getFileBuffer(fileKey);
+        if (!audioBuffer) {
+            await ctx.reply("❌ Audio fayl topilmadi.");
+            return;
+        }
+
+        const slowedBuffer = await slowDownAudio(audioBuffer);
+        if (!slowedBuffer) {
+            await ctx.reply("❌ Audio sekinlashtirishda xatolik. Serverdagi ffmpeg ni tekshiring.");
+            return;
+        }
+
+        await ctx.replyWithAudio(new InputFile(slowedBuffer, 'slowed.wav'), {
+            caption: "🐢 <b>Sekinlashtirilgan audio (0.75x)</b>",
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_stt")
+        });
+    } catch (e) {
+        Logger.error('Error slowing down STT audio', e, { userId });
+        await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
+bot.callbackQuery("slow_xorazm", async (ctx) => {
+    await ctx.answerCallbackQuery("🐢 Audio sekinlashtirilmoqda...");
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || !stateRow.data?.audioPath) {
+        await ctx.reply("❌ Faol fayl topilmadi.");
+        return;
+    }
+
+    const { audioPath } = stateRow.data;
+
+    try {
+        const audioBuffer = await s3Service.getXorazmAudioBuffer(audioPath);
+        if (!audioBuffer) {
+            await ctx.reply("❌ Audio fayl topilmadi.");
+            return;
+        }
+
+        const slowedBuffer = await slowDownAudio(audioBuffer);
+        if (!slowedBuffer) {
+            await ctx.reply("❌ Audio sekinlashtirishda xatolik. Serverdagi ffmpeg ni tekshiring.");
+            return;
+        }
+
+        await ctx.replyWithAudio(new InputFile(slowedBuffer, 'slowed.wav'), {
+            caption: "🐢 <b>Sekinlashtirilgan audio (0.75x)</b>",
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_xorazm")
+        });
+    } catch (e) {
+        Logger.error('Error slowing down Xorazm audio', e, { userId });
+        await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
 // --- INLINE KEYBOARD HANDLERS (For Admin Only) ---
 
 // Admin Stats
@@ -1024,7 +1125,8 @@ async function sendNextFile(ctx: any) {
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
-            parse_mode: "HTML"
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_stt")
         });
 
         await ctx.reply("Faylni tekshiring:", { reply_markup: fileCheckKeyboard });
@@ -1172,7 +1274,8 @@ async function sendNextXorazmFile(ctx: any) {
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
-            parse_mode: "HTML"
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_xorazm")
         });
 
         // Show InlineKeyboard for actions
