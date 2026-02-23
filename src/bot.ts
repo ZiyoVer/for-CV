@@ -10,6 +10,8 @@ import { exec } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import { promisify } from 'util';
+// ffmpeg-static bundles ffmpeg binary inside node_modules — no system install needed
+const ffmpegBin: string = require('ffmpeg-static');
 
 const execAsync = promisify(exec);
 
@@ -19,7 +21,7 @@ async function slowDownAudio(audioBuffer: Buffer | Uint8Array): Promise<Buffer |
     const outputFile = path.join(os.tmpdir(), `stt_out_${rand}.wav`);
     try {
         fs.writeFileSync(inputFile, audioBuffer);
-        await execAsync(`ffmpeg -i "${inputFile}" -filter:a "atempo=0.75" -f wav "${outputFile}" -y`);
+        await execAsync(`"${ffmpegBin}" -i "${inputFile}" -filter:a "atempo=0.75" -f wav "${outputFile}" -y`);
         const result = fs.readFileSync(outputFile);
         return Buffer.from(result);
     } catch (e) {
