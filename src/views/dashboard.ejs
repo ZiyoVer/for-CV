@@ -916,36 +916,178 @@
             gap: 8px;
             align-items: center;
         }
+
+        /* ─── Buttons ─── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: 1px solid transparent;
+            text-decoration: none;
+            font-family: inherit;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-secondary);
+            border-color: var(--border);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        /* ─── Alerts ─── */
+        .alert {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid rgba(45, 138, 86, 0.2);
+        }
+
+        .alert-error {
+            background: var(--error-light);
+            color: var(--error);
+            border: 1px solid rgba(196, 68, 42, 0.2);
+        }
+
+        /* ─── Tags ─── */
+        .tags {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: center;
+        }
+
+        .tag {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: 100px;
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        /* ─── Table Utilities ─── */
+        .head-cell {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        /* ─── Dashboard Board ─── */
+        .dashboard-board .board-head,
+        .dashboard-board .board-row {
+            grid-template-columns: 90px 1.5fr 60px 100px 70px 70px 110px 1fr;
+            align-items: center;
+            padding: 12px 24px;
+        }
+
+        .dashboard-board .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .dashboard-board .btn-small {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .dashboard-board .expandable-form {
+            grid-column: 1 / -1;
+            display: none;
+            margin-top: 12px;
+            padding: 16px;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-sm);
+        }
+
+        .dashboard-board .expandable-form.show {
+            display: block;
+        }
+
+        .dashboard-board .admin-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            background: var(--accent-light);
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 
 <body>
 
     <nav class="navbar">
-        <div class="logo">
-            <!-- You can add an SVG logo here if you have one -->
-            <div class="logo-text">STT <span>Dashboard</span></div>
-        </div>
-        <div class="nav-links">
-            <a href="#" class="nav-link active">Overview</a>
-            <a href="#users" class="nav-link">Users</a>
-            <a href="#analytics" class="nav-link">Analytics</a>
-            <a href="#upload" class="nav-link">Upload</a>
-            <button class="theme-toggle" id="themeToggle" aria-label="Temani o'zgartirish">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="5" />
-                    <line x1="12" y1="1" x2="12" y2="3" />
-                    <line x1="12" y1="21" x2="12" y2="23" />
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                    <line x1="1" y1="12" x2="3" y2="12" />
-                    <line x1="21" y1="12" x2="23" y2="12" />
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        <div class="nav-left">
+            <div class="nav-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
                 </svg>
+                <span>STT Dashboard</span>
+            </div>
+            <div class="header-nav">
+                <a href="#" class="nav-item active">Overview</a>
+                <a href="#users" class="nav-item">Users</a>
+                <a href="#analytics" class="nav-item">Analytics</a>
+                <a href="#upload" class="nav-item">Upload</a>
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Temani o'zgartirish">
+                <span id="themeIcon">&#9789;</span>
             </button>
-            <a href="/logout" class="nav-link" style="color:var(--error)">Chiqish</a>
+            <a href="/logout" class="btn btn-small btn-outline"
+                style="color:var(--error); border-color:var(--error-light);">Chiqish</a>
         </div>
     </nav>
 
@@ -1219,51 +1361,6 @@
                                 </span>
                             </div>
                             <div class="table-container">
-                                <style>
-                                    .dashboard-board .board-head,
-                                    .dashboard-board .board-row {
-                                        grid-template-columns: 90px 1.5fr 60px 100px 70px 70px 110px 1fr;
-                                        align-items: center;
-                                        padding: 12px 24px;
-                                    }
-
-                                    .dashboard-board .actions {
-                                        display: flex;
-                                        flex-wrap: wrap;
-                                        gap: 6px;
-                                        justify-content: flex-end;
-                                    }
-
-                                    .dashboard-board .btn-small {
-                                        padding: 6px 10px;
-                                        font-size: 12px;
-                                    }
-
-                                    .dashboard-board .expandable-form {
-                                        grid-column: 1 / -1;
-                                        display: none;
-                                        margin-top: 12px;
-                                        padding: 16px;
-                                        background: var(--bg-subtle);
-                                        border-radius: var(--radius-sm);
-                                    }
-
-                                    .dashboard-board .expandable-form.show {
-                                        display: block;
-                                    }
-
-                                    .dashboard-board .admin-badge {
-                                        display: inline-flex;
-                                        align-items: center;
-                                        padding: 2px 6px;
-                                        background: var(--accent-light);
-                                        color: var(--accent);
-                                        font-size: 10px;
-                                        font-weight: 600;
-                                        border-radius: 4px;
-                                        text-transform: uppercase;
-                                    }
-                                </style>
                                 <% if (users && users.length> 0) { %>
                                     <div class="board dashboard-board">
                                         <div class="board-head">
@@ -1399,6 +1496,29 @@
     </div>
 
     <script>
+        // ─── Theme Toggle ───
+        (function () {
+            var saved = localStorage.getItem('theme');
+            if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+            updateThemeIcon();
+        })();
+
+        function toggleTheme() {
+            var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            localStorage.setItem('theme', isDark ? 'light' : 'dark');
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            var icon = document.getElementById('themeIcon');
+            if (!icon) return;
+            var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            icon.textContent = isDark ? '\u2600' : '\u263D';
+        }
+
         // Toggle expandable forms
         function toggle(id) {
             console.log('Toggle called for:', id);
