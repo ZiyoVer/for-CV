@@ -33,6 +33,24 @@ async function slowDownAudio(audioBuffer: Buffer | Uint8Array): Promise<Buffer |
     }
 }
 
+async function trimAudio(audioBuffer: Buffer | Uint8Array, endSeconds: number): Promise<Buffer | null> {
+    const rand = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const inputFile = path.join(os.tmpdir(), `stt_trim_in_${rand}.wav`);
+    const outputFile = path.join(os.tmpdir(), `stt_trim_out_${rand}.wav`);
+    try {
+        fs.writeFileSync(inputFile, audioBuffer);
+        await execAsync(`"${ffmpegBin}" -i "${inputFile}" -t ${endSeconds} -c copy "${outputFile}" -y`);
+        const result = fs.readFileSync(outputFile);
+        return Buffer.from(result);
+    } catch (e) {
+        Logger.error('FFmpeg trim failed', e);
+        return null;
+    } finally {
+        try { fs.unlinkSync(inputFile); } catch {}
+        try { fs.unlinkSync(outputFile); } catch {}
+    }
+}
+
 export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
 // Track intervals for cleanup
@@ -435,6 +453,92 @@ bot.on("message:text", async (ctx) => {
     const { state_type: type, data } = stateRow;
     const newText = messageText;
 
+    // Handle TRIM STT input
+    if (type === 'trim_stt') {
+        const { fileKey } = data;
+        const endSeconds = parseFloat(messageText);
+        if (isNaN(endSeconds) || endSeconds <= 0) {
+            await ctx.reply("❌ Noto'g'ri qiymat. Musbat soniya yuboring (masalan: <code>12</code> yoki <code>12.5</code>)", { parse_mode: "HTML" });
+            return;
+        }
+
+        const audioBuffer = await s3Service.getFileBuffer(fileKey);
+        if (!audioBuffer) {
+            await ctx.reply("❌ Audio fayl topilmadi.");
+            await dbService.saveState(userId, 'checking', data);
+            return;
+        }
+
+        await ctx.reply(`✂️ ${endSeconds} sekundgacha kessilmoqda...`);
+        const trimmedBuffer = await trimAudio(audioBuffer, endSeconds);
+        if (!trimmedBuffer) {
+            await ctx.reply("❌ Kesishda xatolik yuz berdi.");
+            await dbService.saveState(userId, 'checking', data);
+            return;
+        }
+
+        await dbService.saveState(userId, 'checking', { fileKey, editedText: data.editedText });
+
+        const json = await s3Service.getJsonContent(fileKey);
+        const text = data.editedText || json?.text || 'Noma\'lum';
+        const caption = `✂️ <b>Kessilgan audio (0 — ${endSeconds} sek)</b>\n\n🆔 <code>${json?.utt_id || fileKey}</code>\n\n📝 ${text}`;
+
+        await ctx.replyWithAudio(new InputFile(trimmedBuffer, 'trimmed.wav'), {
+            caption,
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard()
+                .text("🐢 Sekinlashtirish", "slow_stt")
+                .text("✂️ Kesish", "trim_stt")
+        });
+        await ctx.reply("Faylni tekshiring:", { reply_markup: fileCheckKeyboard });
+        return;
+    }
+
+    // Handle TRIM XORAZM input
+    if (type === 'trim_xorazm') {
+        const { xorazmId, audioPath, originalText, geminiText, editedText } = data;
+        const endSeconds = parseFloat(messageText);
+        if (isNaN(endSeconds) || endSeconds <= 0) {
+            await ctx.reply("❌ Noto'g'ri qiymat. Musbat soniya yuboring (masalan: <code>12</code> yoki <code>12.5</code>)", { parse_mode: "HTML" });
+            return;
+        }
+
+        const audioBuffer = await s3Service.getXorazmAudioBuffer(audioPath);
+        if (!audioBuffer) {
+            await ctx.reply("❌ Audio fayl topilmadi.");
+            await dbService.saveState(userId, 'xorazm', data);
+            return;
+        }
+
+        await ctx.reply(`✂️ ${endSeconds} sekundgacha kessilmoqda...`);
+        const trimmedBuffer = await trimAudio(audioBuffer, endSeconds);
+        if (!trimmedBuffer) {
+            await ctx.reply("❌ Kesishda xatolik yuz berdi.");
+            await dbService.saveState(userId, 'xorazm', data);
+            return;
+        }
+
+        await dbService.saveState(userId, 'xorazm', data);
+
+        const caption = `✂️ <b>Kessilgan audio (0 — ${endSeconds} sek)</b>\n\n🆔 <code>${xorazmId}</code>`;
+        await ctx.replyWithAudio(new InputFile(trimmedBuffer, 'trimmed.wav'), {
+            caption,
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard()
+                .text("🐢 Sekinlashtirish", "slow_xorazm")
+                .text("✂️ Kesish", "trim_xorazm")
+        });
+        await ctx.reply("Faylni tekshiring:", {
+            reply_markup: new InlineKeyboard()
+                .text("✅ To'g'ri", "xrz_accept")
+                .text("❌ Xato", "xrz_deny")
+                .row()
+                .text("✏️ Tahrirlash", "xrz_edit")
+                .text("⏭️ O'tkazish", "xrz_skip")
+        });
+        return;
+    }
+
     // Handle XORAZM EDIT text input
     if (type === 'xorazm_edit') {
         const { xorazmId, audioPath, originalText, geminiText } = data;
@@ -530,7 +634,9 @@ bot.on("message:text", async (ctx) => {
                 await ctx.replyWithAudio(new InputFile(audioBuffer), {
                     caption: caption,
                     parse_mode: "HTML",
-                    reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_stt")
+                    reply_markup: new InlineKeyboard()
+                        .text("🐢 Sekinlashtirish", "slow_stt")
+                        .text("✂️ Kesish", "trim_stt")
                 });
 
                 await ctx.reply("Fayl tahrirlandi. Tekshiring:", { reply_markup: fileCheckKeyboard });
@@ -899,7 +1005,9 @@ bot.callbackQuery("slow_stt", async (ctx) => {
         await ctx.replyWithAudio(new InputFile(slowedBuffer, 'slowed.wav'), {
             caption: "🐢 <b>Sekinlashtirilgan audio (0.75x)</b>",
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_stt")
+            reply_markup: new InlineKeyboard()
+                .text("🐢 Sekinlashtirish", "slow_stt")
+                .text("✂️ Kesish", "trim_stt")
         });
     } catch (e) {
         Logger.error('Error slowing down STT audio', e, { userId });
@@ -936,12 +1044,50 @@ bot.callbackQuery("slow_xorazm", async (ctx) => {
         await ctx.replyWithAudio(new InputFile(slowedBuffer, 'slowed.wav'), {
             caption: "🐢 <b>Sekinlashtirilgan audio (0.75x)</b>",
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_xorazm")
+            reply_markup: new InlineKeyboard()
+                .text("🐢 Sekinlashtirish", "slow_xorazm")
+                .text("✂️ Kesish", "trim_xorazm")
         });
     } catch (e) {
         Logger.error('Error slowing down Xorazm audio', e, { userId });
         await ctx.reply("❌ Xatolik yuz berdi.");
     }
+});
+
+// --- AUDIO TRIM CALLBACKS ---
+
+bot.callbackQuery("trim_stt", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || !isValidState(stateRow.data) || !stateRow.data.fileKey) {
+        await ctx.reply("❌ Faol fayl topilmadi.");
+        return;
+    }
+
+    await dbService.saveState(userId, 'trim_stt', stateRow.data);
+    await ctx.reply(
+        "✂️ <b>Audio kesish</b>\n\nNecha sekundgacha qoldirish kerak?\n<i>Soniyani yuboring (masalan: <code>12</code> yoki <code>12.5</code>)</i>",
+        { parse_mode: "HTML" }
+    );
+});
+
+bot.callbackQuery("trim_xorazm", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || !stateRow.data?.xorazmId) {
+        await ctx.reply("❌ Faol fayl topilmadi.");
+        return;
+    }
+
+    await dbService.saveState(userId, 'trim_xorazm', stateRow.data);
+    await ctx.reply(
+        "✂️ <b>Audio kesish</b>\n\nNecha sekundgacha qoldirish kerak?\n<i>Soniyani yuboring (masalan: <code>12</code> yoki <code>12.5</code>)</i>",
+        { parse_mode: "HTML" }
+    );
 });
 
 // --- INLINE KEYBOARD HANDLERS (For Admin Only) ---
@@ -1128,7 +1274,9 @@ async function sendNextFile(ctx: any) {
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_stt")
+            reply_markup: new InlineKeyboard()
+                .text("🐢 Sekinlashtirish", "slow_stt")
+                .text("✂️ Kesish", "trim_stt")
         });
 
         await ctx.reply("Faylni tekshiring:", { reply_markup: fileCheckKeyboard });
@@ -1277,7 +1425,9 @@ async function sendNextXorazmFile(ctx: any) {
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard().text("🐢 Sekinlashtirish", "slow_xorazm")
+            reply_markup: new InlineKeyboard()
+                .text("🐢 Sekinlashtirish", "slow_xorazm")
+                .text("✂️ Kesish", "trim_xorazm")
         });
 
         // Show InlineKeyboard for actions
