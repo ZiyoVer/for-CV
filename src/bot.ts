@@ -58,7 +58,7 @@ function sttActionKeyboard() {
         .row()
         .text("✏️ Tahrirlash", "stt_edit").text("⏭️ O'tkazish", "stt_skip")
         .row()
-        .text("🐢 Sekinlashtirish", "slow_stt").text("✂️ Kesish", "trim_stt");
+        .text("🐢 Sekinlashtirish", "slow_stt");
 }
 
 function xorazmActionKeyboard() {
@@ -296,20 +296,10 @@ bot.callbackQuery("stt_accept", async (ctx) => {
         return;
     }
 
-    const { fileKey, editedText, trimEndSeconds } = stateRow.data;
+    const { fileKey, editedText } = stateRow.data;
 
     try {
-        if (trimEndSeconds) {
-            // Fetch original, trim, upload trimmed version
-            const audioBuffer = await s3Service.getFileBuffer(fileKey);
-            if (!audioBuffer) throw new Error("Audio topilmadi");
-            const trimmedBuffer = await trimAudio(audioBuffer, trimEndSeconds);
-            if (!trimmedBuffer) throw new Error("Kesish xatolik");
-            await s3Service.uploadTrimmedToSorted(fileKey, trimmedBuffer, editedText);
-        } else {
-            await s3Service.copyToSorted(fileKey, editedText);
-        }
-
+        await s3Service.copyToSorted(fileKey, editedText);
         await dbService.updateFileStatus(userId, fileKey, 'ACCEPTED', editedText);
         await dbService.deleteState(userId);
 
@@ -484,45 +474,6 @@ bot.on("message:text", async (ctx) => {
     const { state_type: type, data } = stateRow;
     const newText = messageText;
 
-    // Handle TRIM STT input
-    if (type === 'trim_stt') {
-        const { fileKey } = data;
-        const endSeconds = parseFloat(messageText);
-        if (isNaN(endSeconds) || endSeconds <= 0) {
-            await ctx.reply("❌ Noto'g'ri qiymat. Musbat soniya yuboring (masalan: <code>12</code> yoki <code>12.5</code>)", { parse_mode: "HTML" });
-            return;
-        }
-
-        const audioBuffer = await s3Service.getFileBuffer(fileKey);
-        if (!audioBuffer) {
-            await ctx.reply("❌ Audio fayl topilmadi.");
-            await dbService.saveState(userId, 'checking', data);
-            return;
-        }
-
-        await ctx.reply(`✂️ ${endSeconds} sekundgacha kessilmoqda...`);
-        const trimmedBuffer = await trimAudio(audioBuffer, endSeconds);
-        if (!trimmedBuffer) {
-            await ctx.reply("❌ Kesishda xatolik yuz berdi.");
-            await dbService.saveState(userId, 'checking', data);
-            return;
-        }
-
-        // Save trimEndSeconds so accept will upload the trimmed version
-        await dbService.saveState(userId, 'checking', { fileKey, editedText: data.editedText, trimEndSeconds: endSeconds });
-
-        const json = await s3Service.getJsonContent(fileKey);
-        const text = data.editedText || json?.text || 'Noma\'lum';
-        const caption = `✂️ <b>Kessilgan audio (0 — ${endSeconds} sek)</b>\n\n🆔 <code>${json?.utt_id || fileKey}</code>\n\n📝 ${text}`;
-
-        await ctx.replyWithAudio(new InputFile(trimmedBuffer, 'trimmed.wav'), {
-            caption,
-            parse_mode: "HTML",
-            reply_markup: sttActionKeyboard()
-        });
-        return;
-    }
-
     // Handle TRIM XORAZM input
     if (type === 'trim_xorazm') {
         const { xorazmId, audioPath, originalText } = data;
@@ -561,15 +512,12 @@ bot.on("message:text", async (ctx) => {
 
     // Handle XORAZM EDIT text input
     if (type === 'xorazm_edit') {
-        const { xorazmId, audioPath, originalText, geminiText } = data;
+        const { xorazmId, originalText, geminiText } = data;
 
-        // Save edited text to DB and state
+        // Save edited text to DB and state — spread `data` to preserve trimEndSeconds and other fields
         await dbService.updateXorazmText(xorazmId, newText);
         await dbService.saveState(userId, 'xorazm', {
-            xorazmId,
-            audioPath,
-            originalText,
-            geminiText,
+            ...data,
             editedText: newText
         });
 
@@ -1073,23 +1021,6 @@ bot.callbackQuery("slow_xorazm", async (ctx) => {
 });
 
 // --- AUDIO TRIM CALLBACKS ---
-
-bot.callbackQuery("trim_stt", async (ctx) => {
-    await ctx.answerCallbackQuery();
-    const userId = ctx.from.id;
-    const stateRow = await dbService.getState(userId);
-
-    if (!stateRow || !isValidState(stateRow.data) || !stateRow.data.fileKey) {
-        await ctx.reply("❌ Faol fayl topilmadi.");
-        return;
-    }
-
-    await dbService.saveState(userId, 'trim_stt', stateRow.data);
-    await ctx.reply(
-        "✂️ <b>Audio kesish</b>\n\nNecha sekundgacha qoldirish kerak?\n<i>Soniyani yuboring (masalan: <code>12</code> yoki <code>12.5</code>)</i>",
-        { parse_mode: "HTML" }
-    );
-});
 
 bot.callbackQuery("trim_xorazm", async (ctx) => {
     await ctx.answerCallbackQuery();
