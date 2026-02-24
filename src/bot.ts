@@ -51,6 +51,25 @@ async function trimAudio(audioBuffer: Buffer | Uint8Array, endSeconds: number): 
     }
 }
 
+// ─── Merged action keyboards ───
+function sttActionKeyboard() {
+    return new InlineKeyboard()
+        .text("✅ To'g'ri", "stt_accept").text("❌ Xato", "stt_reject")
+        .row()
+        .text("✏️ Tahrirlash", "stt_edit").text("⏭️ O'tkazish", "stt_skip")
+        .row()
+        .text("🐢 Sekinlashtirish", "slow_stt").text("✂️ Kesish", "trim_stt");
+}
+
+function xorazmActionKeyboard() {
+    return new InlineKeyboard()
+        .text("✅ To'g'ri", "xrz_accept").text("❌ Xato", "xrz_deny")
+        .row()
+        .text("✏️ Tahrirlash", "xrz_edit").text("⏭️ O'tkazish", "xrz_skip")
+        .row()
+        .text("🐢 Sekinlashtirish", "slow_xorazm").text("✂️ Kesish", "trim_xorazm");
+}
+
 export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
 // Track intervals for cleanup
@@ -230,7 +249,7 @@ bot.hears("🎧 STT Tekshirish", async (ctx) => {
 
 bot.hears("📚 Adabiy gaplar", async (ctx) => {
     if (!ctx.from) return;
-    await ctx.reply("Fayl yuklanmoqda...", { reply_markup: fileCheckKeyboard });
+    await ctx.reply("Fayl yuklanmoqda...");
     await sendNextFile(ctx);
 });
 
@@ -265,10 +284,10 @@ bot.hears("⬅️ Asosiy menyu", async (ctx) => {
     await showMainMenu(ctx);
 });
 
-// --- FILE CHECK ACTION HANDLERS (Text-based) ---
+// --- STT FILE CHECK CALLBACKS (InlineKeyboard) ---
 
-bot.hears("✅ To'g'ri", async (ctx) => {
-    if (!ctx.from) return;
+bot.callbackQuery("stt_accept", async (ctx) => {
+    await ctx.answerCallbackQuery("Saqlanmoqda...");
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
@@ -277,40 +296,40 @@ bot.hears("✅ To'g'ri", async (ctx) => {
         return;
     }
 
-    const key = stateRow.data.fileKey;
-    const editedText = stateRow.data.editedText; // Get edited text if available
+    const { fileKey, editedText, trimEndSeconds } = stateRow.data;
 
     try {
-        // 1. Copy S3 with edited text
-        await s3Service.copyToSorted(key, editedText);
-        // 2. DB Update with transcribed text
-        await dbService.updateFileStatus(userId, key, 'ACCEPTED', editedText);
-        // 3. Clear state
+        if (trimEndSeconds) {
+            // Fetch original, trim, upload trimmed version
+            const audioBuffer = await s3Service.getFileBuffer(fileKey);
+            if (!audioBuffer) throw new Error("Audio topilmadi");
+            const trimmedBuffer = await trimAudio(audioBuffer, trimEndSeconds);
+            if (!trimmedBuffer) throw new Error("Kesish xatolik");
+            await s3Service.uploadTrimmedToSorted(fileKey, trimmedBuffer, editedText);
+        } else {
+            await s3Service.copyToSorted(fileKey, editedText);
+        }
+
+        await dbService.updateFileStatus(userId, fileKey, 'ACCEPTED', editedText);
         await dbService.deleteState(userId);
 
-        // PAYMENT LOGIC - Reward for work done beyond free limit
         const checksToday = await dbService.get24hCheckCount(userId);
         if (checksToday > config.FREE_CHECKS_LIMIT) {
             await dbService.incrementBalance(userId, config.CHECK_PRICE);
             await ctx.reply(`💰 ${config.CHECK_PRICE} so'm hisobingizga qo'shildi! (Bepul limit: ${config.FREE_CHECKS_LIMIT})`);
         }
 
-        // 4. Ask to continue
         await ctx.reply("✅ Qabul qilindi! Davom etamizmi?", {
-            reply_markup: new Keyboard()
-                .text("📚 Adabiy gaplar")
-                .text("⬅️ Asosiy menyu")
-                .resized()
+            reply_markup: new Keyboard().text("📚 Adabiy gaplar").text("⬅️ Asosiy menyu").resized()
         });
-
     } catch (e) {
-        Logger.error('Bot command error', e, { userId });
+        Logger.error('stt_accept error', e, { userId });
         await ctx.reply("❌ Xatolik yuz berdi.");
     }
 });
 
-bot.hears("❌ Xato", async (ctx) => {
-    if (!ctx.from) return;
+bot.callbackQuery("stt_reject", async (ctx) => {
+    await ctx.answerCallbackQuery("Rad etildi");
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
@@ -319,26 +338,21 @@ bot.hears("❌ Xato", async (ctx) => {
         return;
     }
 
-    const key = stateRow.data.fileKey;
-
     try {
-        await dbService.updateFileStatus(userId, key, 'REJECTED');
+        await dbService.updateFileStatus(userId, stateRow.data.fileKey, 'REJECTED');
         await dbService.deleteState(userId);
 
         await ctx.reply("❌ Rad etildi! Davom etamizmi?", {
-            reply_markup: new Keyboard()
-                .text("📚 Adabiy gaplar")
-                .text("⬅️ Asosiy menyu")
-                .resized()
+            reply_markup: new Keyboard().text("📚 Adabiy gaplar").text("⬅️ Asosiy menyu").resized()
         });
     } catch (e) {
-        Logger.error('Error rejecting file', e, { userId });
+        Logger.error('stt_reject error', e, { userId });
         await ctx.reply("❌ Xatolik yuz berdi.");
     }
 });
 
-bot.hears("✏️ Tahrirlash", async (ctx) => {
-    if (!ctx.from) return;
+bot.callbackQuery("stt_edit", async (ctx) => {
+    await ctx.answerCallbackQuery();
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
@@ -348,55 +362,57 @@ bot.hears("✏️ Tahrirlash", async (ctx) => {
     }
 
     const key = stateRow.data.fileKey;
-
     try {
         const json = await s3Service.getJsonContent(key);
         const originalText = json.text || '';
 
-        // Store the edit state
-        await dbService.saveState(userId, 'edit', { fileKey: key, originalText });
+        await dbService.saveState(userId, 'edit', { ...stateRow.data, fileKey: key, originalText });
 
         await ctx.reply(
             `✏️ <b>Matnni tahrirlash</b>\n\n` +
             `<b>Hozirgi matn:</b>\n<code>${originalText}</code>\n\n` +
-            `<i>To'g'ri matnni yozib yuboring:</i>\n\n` +
-            `Yoki "❌ Bekor qilish" tugmasini bosing.`,
+            `<i>To'g'ri matnni yozib yuboring:</i>`,
             {
                 parse_mode: "HTML",
-                reply_markup: new Keyboard()
-                    .text("❌ Bekor qilish")
-                    .text("⬅️ Asosiy menyu")
-                    .resized()
+                reply_markup: new InlineKeyboard().text("❌ Bekor qilish", "stt_cancel_edit")
             }
         );
     } catch (e) {
-        Logger.error('Bot command error', e, { userId });
+        Logger.error('stt_edit error', e, { userId });
         await ctx.reply("❌ Xatolik yuz berdi.");
     }
 });
 
-bot.hears("❌ Bekor qilish", async (ctx) => {
-    if (!ctx.from) return;
+bot.callbackQuery("stt_cancel_edit", async (ctx) => {
+    await ctx.answerCallbackQuery();
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
-    if (stateRow && stateRow.state_type === 'edit') {
-        await dbService.deleteState(userId);
-
-        // Restore the file check state if we have the fileKey
-        if (isValidState(stateRow.data) && stateRow.data.fileKey) {
-            await dbService.saveState(userId, 'checking', { fileKey: stateRow.data.fileKey });
-            await ctx.reply("Tahrirlash bekor qilindi.", { reply_markup: fileCheckKeyboard });
-        } else {
-            await ctx.reply("Tahrirlash bekor qilindi.", { reply_markup: sttSubmenuKeyboard });
-        }
-    } else {
+    if (!stateRow || !isValidState(stateRow.data) || !stateRow.data.fileKey) {
         await showMainMenu(ctx);
+        return;
+    }
+
+    const { fileKey, editedText, trimEndSeconds } = stateRow.data;
+    await dbService.saveState(userId, 'checking', { fileKey, editedText, trimEndSeconds });
+
+    try {
+        const json = await s3Service.getJsonContent(fileKey);
+        const audioBuffer = await s3Service.getFileBuffer(fileKey);
+        if (!audioBuffer) { await ctx.reply("Bekor qilindi."); return; }
+
+        const text = editedText || json?.text || 'Noma\'lum';
+        const caption = `🆔 <code>${json?.utt_id || fileKey}</code>\n\n📝 ${text}`;
+        await ctx.replyWithAudio(new InputFile(audioBuffer), {
+            caption, parse_mode: "HTML", reply_markup: sttActionKeyboard()
+        });
+    } catch (e) {
+        await ctx.reply("Tahrirlash bekor qilindi.", { reply_markup: sttActionKeyboard() });
     }
 });
 
-bot.hears("⏭️ O'tkazish", async (ctx) => {
-    if (!ctx.from) return;
+bot.callbackQuery("stt_skip", async (ctx) => {
+    await ctx.answerCallbackQuery("O'tkazildi");
     const userId = ctx.from.id;
     const stateRow = await dbService.getState(userId);
 
@@ -405,22 +421,37 @@ bot.hears("⏭️ O'tkazish", async (ctx) => {
         return;
     }
 
-    const key = stateRow.data.fileKey;
-
     try {
-        // Release the file back to pending
-        await dbService.releaseFile(userId, key);
+        await dbService.releaseFile(userId, stateRow.data.fileKey);
         await dbService.deleteState(userId);
 
         await ctx.reply("⏭️ Fayl o'tkazildi. Davom etamizmi?", {
-            reply_markup: new Keyboard()
-                .text("📚 Adabiy gaplar")
-                .text("⬅️ Asosiy menyu")
-                .resized()
+            reply_markup: new Keyboard().text("📚 Adabiy gaplar").text("⬅️ Asosiy menyu").resized()
         });
     } catch (e) {
-        Logger.error('Bot command error', e, { userId });
+        Logger.error('stt_skip error', e, { userId });
         await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
+// Keep hears handler only for transcription ⏭️ skip (Reply Keyboard)
+bot.hears("⏭️ O'tkazish", async (ctx) => {
+    if (!ctx.from) return;
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+    if (!stateRow) return;
+
+    // Only handle transcription state here (STT uses stt_skip callback now)
+    if (stateRow.state_type === 'transcription' || stateRow.state_type === 'transcription_confirm') {
+        const { fileKey } = stateRow.data;
+        if (!fileKey) return;
+        try {
+            await dbService.releaseTranscriptionFile(userId, fileKey);
+            await dbService.deleteState(userId);
+            await ctx.reply("⏭️ O'tkazildi.", { reply_markup: mainMenuKeyboard });
+        } catch (e) {
+            await ctx.reply("❌ Xatolik yuz berdi.");
+        }
     }
 });
 
@@ -477,7 +508,8 @@ bot.on("message:text", async (ctx) => {
             return;
         }
 
-        await dbService.saveState(userId, 'checking', { fileKey, editedText: data.editedText });
+        // Save trimEndSeconds so accept will upload the trimmed version
+        await dbService.saveState(userId, 'checking', { fileKey, editedText: data.editedText, trimEndSeconds: endSeconds });
 
         const json = await s3Service.getJsonContent(fileKey);
         const text = data.editedText || json?.text || 'Noma\'lum';
@@ -486,17 +518,14 @@ bot.on("message:text", async (ctx) => {
         await ctx.replyWithAudio(new InputFile(trimmedBuffer, 'trimmed.wav'), {
             caption,
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard()
-                .text("🐢 Sekinlashtirish", "slow_stt")
-                .text("✂️ Kesish", "trim_stt")
+            reply_markup: sttActionKeyboard()
         });
-        await ctx.reply("Faylni tekshiring:", { reply_markup: fileCheckKeyboard });
         return;
     }
 
     // Handle TRIM XORAZM input
     if (type === 'trim_xorazm') {
-        const { xorazmId, audioPath, originalText, geminiText, editedText } = data;
+        const { xorazmId, audioPath, originalText } = data;
         const endSeconds = parseFloat(messageText);
         if (isNaN(endSeconds) || endSeconds <= 0) {
             await ctx.reply("❌ Noto'g'ri qiymat. Musbat soniya yuboring (masalan: <code>12</code> yoki <code>12.5</code>)", { parse_mode: "HTML" });
@@ -518,23 +547,14 @@ bot.on("message:text", async (ctx) => {
             return;
         }
 
-        await dbService.saveState(userId, 'xorazm', data);
+        // Save trimEndSeconds so xrz_accept will upload the trimmed version
+        await dbService.saveState(userId, 'xorazm', { ...data, trimEndSeconds: endSeconds });
 
         const caption = `✂️ <b>Kessilgan audio (0 — ${endSeconds} sek)</b>\n\n🆔 <code>${xorazmId}</code>`;
         await ctx.replyWithAudio(new InputFile(trimmedBuffer, 'trimmed.wav'), {
             caption,
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard()
-                .text("🐢 Sekinlashtirish", "slow_xorazm")
-                .text("✂️ Kesish", "trim_xorazm")
-        });
-        await ctx.reply("Faylni tekshiring:", {
-            reply_markup: new InlineKeyboard()
-                .text("✅ To'g'ri", "xrz_accept")
-                .text("❌ Xato", "xrz_deny")
-                .row()
-                .text("✏️ Tahrirlash", "xrz_edit")
-                .text("⏭️ O'tkazish", "xrz_skip")
+            reply_markup: xorazmActionKeyboard()
         });
         return;
     }
@@ -613,16 +633,14 @@ bot.on("message:text", async (ctx) => {
 
     // Handle EDIT (STT) text input
     if (type === 'edit') {
-        const { fileKey } = data;
+        const { fileKey, trimEndSeconds } = data;
         try {
-            // Update JSON in S3
             const success = await s3Service.updateJsonText(fileKey, newText);
 
             if (success) {
-                // Done editing, switch to checking state WITH the edited text
-                await dbService.saveState(userId, 'checking', { fileKey, editedText: newText });
+                // Preserve trimEndSeconds if it was set before editing
+                await dbService.saveState(userId, 'checking', { fileKey, editedText: newText, trimEndSeconds });
 
-                // Fetch audio again
                 const audioBuffer = await s3Service.getFileBuffer(fileKey);
                 if (!audioBuffer) {
                     await ctx.reply("Matn saqlandi, lekin audio faylni qayta yuklab bo'lmadi.");
@@ -632,14 +650,10 @@ bot.on("message:text", async (ctx) => {
                 const caption = `🆔 <code>${fileKey.split('/').pop()?.replace('.json', '') || fileKey}</code>\n\n📝 ${newText}\n\n<i>(Tahrirlangan)</i>`;
 
                 await ctx.replyWithAudio(new InputFile(audioBuffer), {
-                    caption: caption,
+                    caption,
                     parse_mode: "HTML",
-                    reply_markup: new InlineKeyboard()
-                        .text("🐢 Sekinlashtirish", "slow_stt")
-                        .text("✂️ Kesish", "trim_stt")
+                    reply_markup: sttActionKeyboard()
                 });
-
-                await ctx.reply("Fayl tahrirlandi. Tekshiring:", { reply_markup: fileCheckKeyboard });
             } else {
                 await ctx.reply("❌ Matnni saqlashda xatolik. Qaytadan urinib ko'ring.");
             }
@@ -865,11 +879,19 @@ bot.callbackQuery("xrz_accept", async (ctx) => {
         return;
     }
 
-    const { xorazmId, audioPath, originalText, editedText } = stateRow.data;
+    const { xorazmId, audioPath, originalText, editedText, trimEndSeconds } = stateRow.data;
     const finalText = editedText || originalText;
 
     try {
-        await s3Service.copyXorazmToAccepted(xorazmId, audioPath, finalText);
+        if (trimEndSeconds) {
+            const audioBuffer = await s3Service.getXorazmAudioBuffer(audioPath);
+            if (!audioBuffer) throw new Error("Audio topilmadi");
+            const trimmedBuffer = await trimAudio(audioBuffer, trimEndSeconds);
+            if (!trimmedBuffer) throw new Error("Kesish xatolik");
+            await s3Service.uploadTrimmedXorazmToAccepted(xorazmId, audioPath, trimmedBuffer, finalText);
+        } else {
+            await s3Service.copyXorazmToAccepted(xorazmId, audioPath, finalText);
+        }
         await dbService.updateXorazmFileStatus(userId, xorazmId, 'ACCEPTED', editedText);
         await dbService.deleteState(userId);
 
@@ -1005,9 +1027,7 @@ bot.callbackQuery("slow_stt", async (ctx) => {
         await ctx.replyWithAudio(new InputFile(slowedBuffer, 'slowed.wav'), {
             caption: "🐢 <b>Sekinlashtirilgan audio (0.75x)</b>",
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard()
-                .text("🐢 Sekinlashtirish", "slow_stt")
-                .text("✂️ Kesish", "trim_stt")
+            reply_markup: sttActionKeyboard()
         });
     } catch (e) {
         Logger.error('Error slowing down STT audio', e, { userId });
@@ -1044,9 +1064,7 @@ bot.callbackQuery("slow_xorazm", async (ctx) => {
         await ctx.replyWithAudio(new InputFile(slowedBuffer, 'slowed.wav'), {
             caption: "🐢 <b>Sekinlashtirilgan audio (0.75x)</b>",
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard()
-                .text("🐢 Sekinlashtirish", "slow_xorazm")
-                .text("✂️ Kesish", "trim_xorazm")
+            reply_markup: xorazmActionKeyboard()
         });
     } catch (e) {
         Logger.error('Error slowing down Xorazm audio', e, { userId });
@@ -1274,12 +1292,8 @@ async function sendNextFile(ctx: any) {
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard()
-                .text("🐢 Sekinlashtirish", "slow_stt")
-                .text("✂️ Kesish", "trim_stt")
+            reply_markup: sttActionKeyboard()
         });
-
-        await ctx.reply("Faylni tekshiring:", { reply_markup: fileCheckKeyboard });
 
     } catch (e: any) {
         console.error("Error in sendNextFile:", e);
@@ -1425,19 +1439,7 @@ async function sendNextXorazmFile(ctx: any) {
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
             caption: caption,
             parse_mode: "HTML",
-            reply_markup: new InlineKeyboard()
-                .text("🐢 Sekinlashtirish", "slow_xorazm")
-                .text("✂️ Kesish", "trim_xorazm")
-        });
-
-        // Show InlineKeyboard for actions
-        await ctx.reply("Faylni tekshiring:", {
-            reply_markup: new InlineKeyboard()
-                .text("✅ To'g'ri", "xrz_accept")
-                .text("❌ Xato", "xrz_deny")
-                .row()
-                .text("✏️ Tahrirlash", "xrz_edit")
-                .text("⏭️ O'tkazish", "xrz_skip")
+            reply_markup: xorazmActionKeyboard()
         });
 
     } catch (e: any) {

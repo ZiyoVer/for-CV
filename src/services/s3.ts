@@ -535,6 +535,84 @@ export const s3Service = {
         return null;
     },
 
+    // Upload a trimmed audio buffer to saralangan/ (instead of copying from S3)
+    async uploadTrimmedToSorted(key: string, trimmedBuffer: Buffer, transcribedText?: string) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const fileName = key.split('/').pop() || key;
+        const destinationKey = `saralangan/${year}/${month}/${day}/${fileName}`;
+        const jsonKey = key.replace('.wav', '.json');
+        const jsonDest = destinationKey.replace('.wav', '.json');
+
+        await s3.send(new PutObjectCommand({
+            Bucket: config.WASABI_BUCKET,
+            Key: destinationKey,
+            Body: trimmedBuffer,
+            ContentType: 'audio/wav'
+        }));
+
+        try {
+            if (transcribedText) {
+                const existingJson = await this.getJsonContent(key);
+                existingJson.text = transcribedText;
+                existingJson.transcribed_at = now.toISOString();
+                await s3.send(new PutObjectCommand({
+                    Bucket: config.WASABI_BUCKET,
+                    Key: jsonDest,
+                    Body: JSON.stringify(existingJson, null, 2),
+                    ContentType: 'application/json'
+                }));
+            } else {
+                await s3.send(new CopyObjectCommand({
+                    Bucket: config.WASABI_BUCKET,
+                    CopySource: `${config.WASABI_BUCKET}/${jsonKey}`,
+                    Key: jsonDest
+                }));
+            }
+        } catch (e) {
+            console.warn(`Could not save JSON for trimmed ${key}`, e);
+        }
+
+        await dbService.updateFileCopyInfo(key, destinationKey, transcribedText);
+
+        try {
+            await s3.send(new DeleteObjectCommand({ Bucket: config.WASABI_BUCKET, Key: key }));
+            await s3.send(new DeleteObjectCommand({ Bucket: config.WASABI_BUCKET, Key: jsonKey }));
+        } catch (e) {
+            console.warn(`Could not delete originals for ${key}`, e);
+        }
+
+        return destinationKey;
+    },
+
+    // Upload a trimmed Xorazm audio buffer to xorazm_saralangan/
+    async uploadTrimmedXorazmToAccepted(id: string, audioPath: string, trimmedBuffer: Buffer, text: string) {
+        const audioFileName = audioPath.split('/').pop() || `${id}.wav`;
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+        const destAudioKey = `xorazm_saralangan/${dateStr}/${audioFileName}`;
+
+        await s3.send(new PutObjectCommand({
+            Bucket: config.WASABI_BUCKET,
+            Key: destAudioKey,
+            Body: trimmedBuffer,
+            ContentType: 'audio/wav'
+        }));
+
+        const jsonKey = destAudioKey.replace('.wav', '.json');
+        await s3.send(new PutObjectCommand({
+            Bucket: config.WASABI_BUCKET,
+            Key: jsonKey,
+            Body: JSON.stringify({ id, audio: audioFileName, text, checked_at: now.toISOString() }, null, 2),
+            ContentType: 'application/json'
+        }));
+
+        console.log(`Xorazm trimmed file ${id} uploaded to ${destAudioKey}`);
+        return destAudioKey;
+    },
+
     // Copy accepted file to xorazm_saralangan/ folder with JSON metadata
     async copyXorazmToAccepted(id: string, audioPath: string, text: string) {
         try {
