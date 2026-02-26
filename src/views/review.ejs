@@ -245,48 +245,95 @@
             </div>
         </div>
 
-        <h3 class="section-title">5 ta Tasodifiy Tekshirilgan Audio</h3>
+        <!-- STT Section -->
+        <h3 class="section-title">🎧 Adabiy gaplar — 5 ta tasodifiy tekshirilgan audio</h3>
 
         <% if (files.length===0) { %>
             <div class="empty-state">
-                <p>Bu foydalanuvchi hali hech narsa tekshirmagan.</p>
+                <p>Bu foydalanuvchi hali Adabiy gaplar tekshirmagan.</p>
             </div>
-            <% } else { %>
-                <% files.forEach((file, index)=> { %>
-                    <div class="file-card">
-                        <div class="file-header">
-                            <span class="file-key">
-                                <%= file.file_key %>
-                            </span>
-                            <span class="file-status">✓ ACCEPTED</span>
-                        </div>
-                        <% if (file.audioUrl) { %>
-                            <div class="audio-player">
-                                <audio controls preload="none">
-                                    <source src="<%= file.audioUrl %>" type="audio/wav">
-                                    Brauzeringiz audio'ni qo'llab-quvvatlamaydi.
-                                </audio>
-                            </div>
-                            <% } %>
-                                <div class="file-text">
-                                    <%= file.text %>
-                                </div>
+        <% } else { %>
+            <% files.forEach((file)=> { %>
+                <div class="file-card">
+                    <div class="file-header">
+                        <span class="file-key"><%= file.label %></span>
+                        <span class="file-status">✓ ACCEPTED</span>
                     </div>
-                    <% }); %>
-
-                        <div class="penalty-section">
-                            <h3>Xato topdingizmi?</h3>
-                            <p>Agar yuqoridagi tekshiruvlarda xatolar bo'lsa, foydalanuvchi balansini 50% ga
-                                kamaytiring.</p>
-                            <form method="POST" action="/review/penalty/<%= user.telegram_id %>">
-                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                <button type="submit" class="btn btn-danger"
-                                    onclick="return confirm('Balansni 50% ga kamaytirishni tasdiqlaysizmi?')">
-                                    50% Jarima Qo'llash
-                                </button>
-                            </form>
+                    <% if (file.audioUrl) { %>
+                        <div class="audio-player">
+                            <audio controls preload="none">
+                                <source src="<%= file.audioUrl %>" type="audio/wav">
+                            </audio>
                         </div>
-                        <% } %>
+                    <% } %>
+                    <div class="file-text"><%= file.text %></div>
+                </div>
+            <% }); %>
+        <% } %>
+
+        <!-- Xorazm Section -->
+        <h3 class="section-title" style="margin-top: 40px;">🌍 Xorazm sheva — 5 ta tasodifiy tekshirilgan audio</h3>
+
+        <% if (xorazmFiles.length===0) { %>
+            <div class="empty-state">
+                <p>Bu foydalanuvchi hali Xorazm sheva tekshirmagan.</p>
+            </div>
+        <% } else { %>
+            <% xorazmFiles.forEach((file)=> { %>
+                <div class="file-card">
+                    <div class="file-header">
+                        <span class="file-key"><%= file.label %></span>
+                        <span class="file-status">✓ ACCEPTED</span>
+                    </div>
+                    <% if (file.audioUrl) { %>
+                        <div class="audio-player">
+                            <audio controls preload="none">
+                                <source src="<%= file.audioUrl %>" type="audio/wav">
+                            </audio>
+                        </div>
+                    <% } %>
+                    <div class="file-text"><%= file.text %></div>
+                </div>
+            <% }); %>
+        <% } %>
+
+        <!-- Podcast Section -->
+        <h3 class="section-title" style="margin-top: 40px;">🎙 Podcast — 5 ta tasodifiy tekshirilgan audio</h3>
+
+        <% if (podcastFiles.length===0) { %>
+            <div class="empty-state">
+                <p>Bu foydalanuvchi hali Podcast tekshirmagan.</p>
+            </div>
+        <% } else { %>
+            <% podcastFiles.forEach((file)=> { %>
+                <div class="file-card">
+                    <div class="file-header">
+                        <span class="file-key"><%= file.label %></span>
+                        <span class="file-status">✓ ACCEPTED</span>
+                    </div>
+                    <% if (file.audioUrl) { %>
+                        <div class="audio-player">
+                            <audio controls preload="none">
+                                <source src="<%= file.audioUrl %>" type="audio/wav">
+                            </audio>
+                        </div>
+                    <% } %>
+                    <div class="file-text"><%= file.text %></div>
+                </div>
+            <% }); %>
+        <% } %>
+
+        <div class="penalty-section">
+            <h3>Xato topdingizmi?</h3>
+            <p>Agar yuqoridagi tekshiruvlarda xatolar bo'lsa, foydalanuvchi balansini 50% ga kamaytiring.</p>
+            <form method="POST" action="/review/penalty/<%= user.telegram_id %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-danger"
+                    onclick="return confirm('Balansni 50% ga kamaytirishni tasdiqlaysizmi?')">
+                    50% Jarima Qo'llash
+                </button>
+            </form>
+        </div>
     </div>
 </body>
 

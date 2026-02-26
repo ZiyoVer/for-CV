@@ -361,11 +361,31 @@ export const dbService = {
 
     getRandomReviewFiles: async (user_id: number, limit = 5) => {
         const { rows } = await pool.query(
-            `SELECT * FROM files 
-             WHERE assigned_to = $1 
-               AND status = 'ACCEPTED' 
-             ORDER BY RANDOM() 
+            `SELECT * FROM files
+             WHERE assigned_to = $1
+               AND status = 'ACCEPTED'
+             ORDER BY RANDOM()
              LIMIT $2`,
+            [user_id, limit]
+        );
+        return rows;
+    },
+
+    getRandomXorazmReviewFiles: async (user_id: number, limit = 5) => {
+        const { rows } = await pool.query(
+            `SELECT * FROM xorazm_files
+             WHERE assigned_to = $1 AND status = 'ACCEPTED'
+             ORDER BY RANDOM() LIMIT $2`,
+            [user_id, limit]
+        );
+        return rows;
+    },
+
+    getRandomPodcastReviewFiles: async (user_id: number, limit = 5) => {
+        const { rows } = await pool.query(
+            `SELECT * FROM podcast_files
+             WHERE assigned_to = $1 AND status = 'ACCEPTED'
+             ORDER BY RANDOM() LIMIT $2`,
             [user_id, limit]
         );
         return rows;

@@ -344,24 +344,50 @@ app.get('/review/:id', requireAuth, async (req, res) => {
     const userId = Number(req.params.id);
     try {
         const user = await dbService.getUser(userId);
-        const files = await dbService.getRandomReviewFiles(userId, 5);
 
-        // Get JSON content and audio URL for each file
-        // Use original_file_key (destination after copy) if available, otherwise use file_key
+        // --- STT files ---
+        const files = await dbService.getRandomReviewFiles(userId, 5);
         const filesWithContent = await Promise.all(files.map(async (file: any) => {
             try {
-                // After acceptance, files are copied to saralangan/ and originals are deleted
-                // original_file_key stores the destination path
                 const audioKey = file.original_file_key || file.file_key;
                 const json = await s3Service.getJsonContent(audioKey);
                 const audioUrl = await s3Service.getAudioUrl(audioKey);
-                return { ...file, text: json.text || 'Noma\'lum', audioUrl };
+                return { ...file, label: file.file_key, text: json.text || 'Noma\'lum', audioUrl };
             } catch {
-                return { ...file, text: 'Yuklab bo\'lmadi', audioUrl: null };
+                return { ...file, label: file.file_key, text: 'Yuklab bo\'lmadi', audioUrl: null };
             }
         }));
 
-        res.render('review', { user, files: filesWithContent });
+        // --- Xorazm files ---
+        const xorazmFiles = await dbService.getRandomXorazmReviewFiles(userId, 5);
+        const xorazmWithContent = await Promise.all(xorazmFiles.map(async (file: any) => {
+            try {
+                const d = new Date(file.processed_at);
+                const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+                const audioFileName = file.audio_path.split('/').pop() || file.id;
+                const audioKey = `xorazm_saralangan/${dateStr}/${audioFileName}`;
+                const audioUrl = await s3Service.getAudioUrl(audioKey);
+                return { ...file, label: file.id, text: file.edited_text || file.original_text, audioUrl };
+            } catch {
+                return { ...file, label: file.id, text: file.edited_text || file.original_text, audioUrl: null };
+            }
+        }));
+
+        // --- Podcast files ---
+        const podcastFiles = await dbService.getRandomPodcastReviewFiles(userId, 5);
+        const podcastWithContent = await Promise.all(podcastFiles.map(async (file: any) => {
+            try {
+                const d = new Date(file.processed_at);
+                const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+                const audioKey = `external_review_saralangan/${dateStr}/${file.id}.wav`;
+                const audioUrl = await s3Service.getAudioUrl(audioKey);
+                return { ...file, label: file.id, text: file.edited_text || file.original_text, audioUrl };
+            } catch {
+                return { ...file, label: file.id, text: file.edited_text || file.original_text, audioUrl: null };
+            }
+        }));
+
+        res.render('review', { user, files: filesWithContent, xorazmFiles: xorazmWithContent, podcastFiles: podcastWithContent });
     } catch (err) {
         console.error('Review error:', err);
         res.status(500).send('Server xatosi');
