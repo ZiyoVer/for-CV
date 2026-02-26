@@ -813,16 +813,25 @@ export const dbService = {
     // --- PODCAST FUNCTIONS ---
 
     initPodcastFiles: async (entries: Array<{ id: string, audio_path: string, text: string, duration_s?: number }>) => {
+        if (entries.length === 0) return 0;
         let added = 0;
-        for (const entry of entries) {
+        const BATCH = 500;
+        for (let i = 0; i < entries.length; i += BATCH) {
+            const batch = entries.slice(i, i + BATCH);
+            const values: any[] = [];
+            const placeholders = batch.map((e, j) => {
+                const base = j * 4;
+                values.push(e.id, e.audio_path, e.text, e.duration_s || null);
+                return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`;
+            }).join(', ');
             try {
                 const result = await pool.query(
-                    `INSERT INTO podcast_files (id, audio_path, original_text, duration_s) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-                    [entry.id, entry.audio_path, entry.text, entry.duration_s || null]
+                    `INSERT INTO podcast_files (id, audio_path, original_text, duration_s) VALUES ${placeholders} ON CONFLICT (id) DO NOTHING`,
+                    values
                 );
-                if (result.rowCount && result.rowCount > 0) added++;
+                added += result.rowCount || 0;
             } catch (e) {
-                // skip duplicates
+                // skip batch errors
             }
         }
         return added;

@@ -52,13 +52,9 @@ export const s3Service = {
                 await Promise.all(batch.map(async (file) => {
                     if (!file.Key) return;
 
-                    // Detailed logging for debugging
-                    console.log(`Processing file: ${file.Key} (LastModified: ${file.LastModified?.toISOString()})`);
-
                     // Filter by date: only sync files from SYNC_START_DATE onwards
                     if (file.LastModified && file.LastModified < startDate) {
                         tooOld++;
-                        // console.log(`Skipping old file: ${file.Key}`);
                         return; // Skip old files
                     }
 
@@ -66,7 +62,6 @@ export const s3Service = {
                     const existingFile = await dbService.checkFileExists(file.Key);
                     if (existingFile) {
                         skipped++;
-                        console.log(`Skipping existing file: ${file.Key}`);
                         return; // Skip if already in DB
                     }
 
@@ -78,10 +73,9 @@ export const s3Service = {
                             duration = Math.round(json.duration / 1000); // ms to sec
                         }
                     } catch (e) {
-                        console.warn(`Failed to get duration for ${file.Key}`, e);
+                        // ignore
                     }
 
-                    console.log(`Adding new file to DB: ${file.Key}, Duration: ${duration}s`);
                     await dbService.addFile(file.Key, duration);
                     count++;
                 }));
