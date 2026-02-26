@@ -636,10 +636,11 @@ export const s3Service = {
             for (const line of lines) {
                 try {
                     const entry = JSON.parse(line);
-                    if (entry.id && entry.audio_path && entry.text) {
+                    const audioPath = entry.audio_path || entry.audio_file || entry.audio;
+                    if (entry.id && audioPath && entry.text) {
                         entries.push({
                             id: entry.id,
-                            audio_path: entry.audio_path,
+                            audio_path: audioPath,
                             text: entry.text,
                             duration_s: entry.duration_s || undefined
                         });
