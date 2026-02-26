@@ -252,12 +252,26 @@ export const dbService = {
                       AND xf.processed_at > NOW() - INTERVAL '24 hours'
                 ) as xorazm_24h,
                 (
-                    SELECT COUNT(*)::int 
+                    SELECT COUNT(*)::int
                     FROM xorazm_files xf
-                    WHERE xf.assigned_to = u.telegram_id 
+                    WHERE xf.assigned_to = u.telegram_id
                       AND xf.status IN ('ACCEPTED', 'REJECTED')
                       AND xf.processed_at > NOW() - INTERVAL '7 days'
-                ) as xorazm_7d
+                ) as xorazm_7d,
+                (
+                    SELECT COUNT(*)::int
+                    FROM podcast_files pf
+                    WHERE pf.assigned_to = u.telegram_id
+                      AND pf.status IN ('ACCEPTED', 'REJECTED')
+                      AND pf.processed_at > NOW() - INTERVAL '24 hours'
+                ) as podcast_24h,
+                (
+                    SELECT COUNT(*)::int
+                    FROM podcast_files pf
+                    WHERE pf.assigned_to = u.telegram_id
+                      AND pf.status IN ('ACCEPTED', 'REJECTED')
+                      AND pf.processed_at > NOW() - INTERVAL '7 days'
+                ) as podcast_7d
             FROM users u
             LEFT JOIN files f ON u.telegram_id = f.assigned_to AND f.status IN ('ACCEPTED', 'REJECTED')
             GROUP BY u.telegram_id
@@ -474,19 +488,33 @@ export const dbService = {
                 COALESCE(SUM(CASE WHEN f.status = 'ACCEPTED' THEN 1 ELSE 0 END), 0)::int as accepted_count,
                 COALESCE(SUM(CASE WHEN f.status = 'REJECTED' THEN 1 ELSE 0 END), 0)::int as rejected_count,
                 (
-                    SELECT COUNT(*)::int 
+                    SELECT COUNT(*)::int
                     FROM xorazm_files xf
-                    WHERE xf.assigned_to = u.telegram_id 
+                    WHERE xf.assigned_to = u.telegram_id
                       AND xf.status = 'ACCEPTED'
                       AND xf.processed_at > NOW() - INTERVAL '24 hours'
                 ) as xorazm_24h,
                 (
-                    SELECT COUNT(*)::int 
+                    SELECT COUNT(*)::int
                     FROM xorazm_files xf
-                    WHERE xf.assigned_to = u.telegram_id 
+                    WHERE xf.assigned_to = u.telegram_id
                       AND xf.status = 'ACCEPTED'
                       AND xf.processed_at > NOW() - INTERVAL '7 days'
-                ) as xorazm_7d
+                ) as xorazm_7d,
+                (
+                    SELECT COUNT(*)::int
+                    FROM podcast_files pf
+                    WHERE pf.assigned_to = u.telegram_id
+                      AND pf.status = 'ACCEPTED'
+                      AND pf.processed_at > NOW() - INTERVAL '24 hours'
+                ) as podcast_24h,
+                (
+                    SELECT COUNT(*)::int
+                    FROM podcast_files pf
+                    WHERE pf.assigned_to = u.telegram_id
+                      AND pf.status = 'ACCEPTED'
+                      AND pf.processed_at > NOW() - INTERVAL '7 days'
+                ) as podcast_7d
              FROM users u
              LEFT JOIN files f ON u.telegram_id = f.assigned_to AND f.status IN ('ACCEPTED', 'REJECTED')
              GROUP BY u.telegram_id, u.full_name, u.balance

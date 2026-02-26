@@ -1294,6 +1294,32 @@
                                     <canvas id="xorazmUserChart"></canvas>
                                 </div>
                             </div>
+
+                            <!-- Podcast Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">🎙 Podcast</div>
+                                        <div class="chart-subtitle" id="podcast-subtitle">Qabul qilingan: <%= stats.podcastAccepted %> | Kutilmoqda: <%= stats.podcastPending %></div>
+                                    </div>
+                                </div>
+                                <div class="chart-container small">
+                                    <canvas id="podcastChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Podcast User Activity Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <div class="chart-title">🎙 Podcast Foydalanuvchilar</div>
+                                        <div class="chart-subtitle">24 soat va 7 kunlik faollik</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container small">
+                                    <canvas id="podcastUserChart"></canvas>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Upload Section -->
@@ -1370,6 +1396,9 @@
                                             <div class="head-cell">Xorazm<br><span
                                                     style="font-size: 10px; font-weight: 400; color:var(--text-tertiary);">24s
                                                     / 7kun</span></div>
+                                            <div class="head-cell">Podcast<br><span
+                                                    style="font-size: 10px; font-weight: 400; color:var(--text-tertiary);">24s
+                                                    / 7kun</span></div>
                                             <div class="head-cell text-right">Jami OK</div>
                                             <div class="head-cell text-right">Jami NO</div>
                                             <div class="head-cell text-right">Balans</div>
@@ -1405,6 +1434,15 @@
                                                         <span style="color: var(--text-tertiary);"> / </span>
                                                         <span style="color: var(--text-secondary);">
                                                             <%= user.xorazm_7d || 0 %>
+                                                        </span>
+                                                    </div>
+                                                    <div class="row-stat" style="font-size:13px;">
+                                                        <span style="color: var(--text-primary); font-weight: 500;">
+                                                            <%= user.podcast_24h || 0 %>
+                                                        </span>
+                                                        <span style="color: var(--text-tertiary);"> / </span>
+                                                        <span style="color: var(--text-secondary);">
+                                                            <%= user.podcast_7d || 0 %>
                                                         </span>
                                                     </div>
                                                     <div class="row-stat ok text-right">
@@ -1924,6 +1962,38 @@
             }
         });
 
+        // 10. Podcast Doughnut Chart
+        var podcastCtx = document.getElementById('podcastChart').getContext('2d');
+        const chartPodcast = new Chart(podcastCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Qabul', 'Rad', 'Kutilmoqda'],
+                datasets: [{
+                    data: [<%= stats.podcastAccepted %>, <%= stats.podcastRejected %>, <%= stats.podcastPending %>],
+                    backgroundColor: ['#22c55e', '#ef4444', '#94a3b8'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // 11. Podcast User Activity Chart (Horizontal Bar)
+        var podcastUserCtx = document.getElementById('podcastUserChart').getContext('2d');
+        var podcastUsers = userData.filter(function (u) { return (u.podcast_24h || 0) > 0 || (u.podcast_7d || 0) > 0; })
+            .sort(function (a, b) { return (b.podcast_7d || 0) - (a.podcast_7d || 0); })
+            .slice(0, 10);
+        const chartPodcastUser = new Chart(podcastUserCtx, {
+            type: 'bar',
+            data: {
+                labels: podcastUsers.map(function (u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; }),
+                datasets: [
+                    { label: '24 soat', data: podcastUsers.map(function (u) { return u.podcast_24h || 0; }), backgroundColor: '#8b5cf6' },
+                    { label: '7 kun', data: podcastUsers.map(function (u) { return u.podcast_7d || 0; }), backgroundColor: '#c4b5fd' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { position: 'bottom' } } }
+        });
+
         // 9. Xorazm User Activity Chart (Horizontal Bar)
         var xorazmUserCtx = document.getElementById('xorazmUserChart').getContext('2d');
         var xorazmUsers = userData.filter(function (u) { return (u.xorazm_24h || 0) > 0 || (u.xorazm_7d || 0) > 0; })
@@ -1996,6 +2066,8 @@
                     'Qabul qilingan: ' + s.transAccepted + ' | Kutilmoqda: ' + s.transcriptionPending;
                 document.getElementById('xorazm-subtitle').textContent =
                     'Qabul qilingan: ' + s.xorazmAccepted + ' | Kutilmoqda: ' + s.xorazmPending;
+                document.getElementById('podcast-subtitle').textContent =
+                    'Qabul qilingan: ' + (s.podcastAccepted || 0) + ' | Kutilmoqda: ' + (s.podcastPending || 0);
 
                 // Update Chart 1: Overall Statistics (Bar)
                 chartStats.data.datasets[0].data = [
@@ -2044,6 +2116,18 @@
                 // Update Chart 8: Xorazm (Doughnut)
                 chartXorazm.data.datasets[0].data = [s.xorazmAccepted || 0, s.xorazmRejected || 0, s.xorazmPending || 0];
                 chartXorazm.update();
+
+                // Update Chart 10: Podcast (Doughnut)
+                chartPodcast.data.datasets[0].data = [s.podcastAccepted || 0, s.podcastRejected || 0, s.podcastPending || 0];
+                chartPodcast.update();
+
+                // Update Chart 11: Podcast User Activity
+                var freshPodcastUsers = (data.users || []).filter(function (u) { return (u.podcast_24h || 0) > 0 || (u.podcast_7d || 0) > 0; })
+                    .sort(function (a, b) { return (b.podcast_7d || 0) - (a.podcast_7d || 0); }).slice(0, 10);
+                chartPodcastUser.data.labels = freshPodcastUsers.map(function (u) { return u.full_name ? u.full_name.split(' ')[0] : 'N/A'; });
+                chartPodcastUser.data.datasets[0].data = freshPodcastUsers.map(function (u) { return u.podcast_24h || 0; });
+                chartPodcastUser.data.datasets[1].data = freshPodcastUsers.map(function (u) { return u.podcast_7d || 0; });
+                chartPodcastUser.update();
 
                 // Update Chart 9: Xorazm User Activity
                 var freshXorazmUsers = (data.users || []).filter(function (u) { return (u.xorazm_24h || 0) > 0 || (u.xorazm_7d || 0) > 0; })

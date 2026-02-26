@@ -213,6 +213,12 @@ app.get('/dashboard', requireAuth, async (req, res) => {
         const xorazmAccepted = xorazmStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
         const xorazmRejected = xorazmStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
 
+        // Podcast stats
+        const podcastPending = await dbService.getPodcastPendingCount();
+        const podcastStats = await dbService.getAllPodcastStats();
+        const podcastAccepted = podcastStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+        const podcastRejected = podcastStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
         // Parse query params for alerts
         const query: any = {};
         if (req.query.success) query.success = req.query.success;
@@ -224,10 +230,12 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             lifetimeStats,
             transStats,
             xorazmStats,
+            podcastStats,
             stats: {
                 pending: pendingCount,
                 transcriptionPending: transcriptionPendingCount,
                 xorazmPending,
+                podcastPending,
                 totalAccepted,
                 totalRejected,
                 totalChecked: totalAccepted + totalRejected,
@@ -239,7 +247,10 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 transTotal: transAccepted + transRejected,
                 xorazmAccepted,
                 xorazmRejected,
-                xorazmTotal: xorazmAccepted + xorazmRejected
+                xorazmTotal: xorazmAccepted + xorazmRejected,
+                podcastAccepted,
+                podcastRejected,
+                podcastTotal: podcastAccepted + podcastRejected
             },
             query
         });
@@ -570,6 +581,11 @@ app.get('/api/dashboard', requireAuth, apiLimiter, async (req, res) => {
         const xorazmAccepted = xorazmStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
         const xorazmRejected = xorazmStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
 
+        const podcastPending = await dbService.getPodcastPendingCount();
+        const podcastStats = await dbService.getAllPodcastStats();
+        const podcastAccepted = podcastStats.reduce((sum: number, s: any) => sum + (s.accepted_count || 0), 0);
+        const podcastRejected = podcastStats.reduce((sum: number, s: any) => sum + (s.rejected_count || 0), 0);
+
         res.json({
             success: true,
             users: usersWithStats,
@@ -579,6 +595,7 @@ app.get('/api/dashboard', requireAuth, apiLimiter, async (req, res) => {
                 pending: pendingCount,
                 transcriptionPending: transcriptionPendingCount,
                 xorazmPending,
+                podcastPending,
                 totalAccepted,
                 totalRejected,
                 totalChecked: totalAccepted + totalRejected,
@@ -588,7 +605,10 @@ app.get('/api/dashboard', requireAuth, apiLimiter, async (req, res) => {
                 transAccepted,
                 transRejected,
                 xorazmAccepted,
-                xorazmRejected
+                xorazmRejected,
+                podcastAccepted,
+                podcastRejected,
+                podcastTotal: podcastAccepted + podcastRejected
             },
             updatedAt: new Date().toISOString()
         });
