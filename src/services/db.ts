@@ -54,6 +54,20 @@ const createXorazmFilesTable = `
     );
 `;
 
+const createPodcastFilesTable = `
+    CREATE TABLE IF NOT EXISTS podcast_files (
+        id TEXT PRIMARY KEY,
+        audio_path TEXT NOT NULL,
+        original_text TEXT NOT NULL,
+        edited_text TEXT,
+        duration_s FLOAT,
+        status TEXT DEFAULT 'PENDING',
+        assigned_to BIGINT,
+        locked_at TIMESTAMPTZ,
+        processed_at TIMESTAMPTZ
+    );
+`;
+
 const createBotStateTable = `
     CREATE TABLE IF NOT EXISTS bot_state (
         user_id BIGINT PRIMARY KEY,
@@ -77,6 +91,8 @@ const createIndexes = `
     CREATE INDEX IF NOT EXISTS idx_transcription_locked_by ON transcription_files(assigned_to) WHERE assigned_to IS NOT NULL AND status = 'LOCKED';
     CREATE INDEX IF NOT EXISTS idx_xorazm_status ON xorazm_files(status);
     CREATE INDEX IF NOT EXISTS idx_xorazm_assigned ON xorazm_files(assigned_to) WHERE assigned_to IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_podcast_status ON podcast_files(status);
+    CREATE INDEX IF NOT EXISTS idx_podcast_assigned ON podcast_files(assigned_to) WHERE assigned_to IS NOT NULL;
 `;
 
 const withTransaction = async <T>(fn: (client: PoolClient) => Promise<T>): Promise<T> => {
@@ -102,6 +118,7 @@ export const dbService = {
             { name: 'files', query: createFilesTable },
             { name: 'transcription_files', query: createTranscriptionFilesTable },
             { name: 'xorazm_files', query: createXorazmFilesTable },
+            { name: 'podcast_files', query: createPodcastFilesTable },
             { name: 'bot_state', query: createBotStateTable }
         ];
 
@@ -791,6 +808,101 @@ export const dbService = {
     clearAllXorazmFiles: async () => {
         const result = await pool.query('DELETE FROM xorazm_files');
         return result.rowCount;
+    },
+
+    // --- PODCAST FUNCTIONS ---
+
+    initPodcastFiles: async (entries: Array<{ id: string, audio_path: string, text: string, duration_s?: number }>) => {
+        let added = 0;
+        for (const entry of entries) {
+            try {
+                const result = await pool.query(
+                    `INSERT INTO podcast_files (id, audio_path, original_text, duration_s) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
+                    [entry.id, entry.audio_path, entry.text, entry.duration_s || null]
+                );
+                if (result.rowCount && result.rowCount > 0) added++;
+            } catch (e) {
+                // skip duplicates
+            }
+        }
+        return added;
+    },
+
+    getPodcastPendingCount: async () => {
+        const { rows } = await pool.query(`SELECT COUNT(*)::int as count FROM podcast_files WHERE status = 'PENDING'`);
+        return rows[0]?.count || 0;
+    },
+
+    lockNextPodcastFile: async (user_id: number) => {
+        return withTransaction(async (client) => {
+            // Release any existing lock for this user first
+            await client.query(
+                `UPDATE podcast_files SET status = 'PENDING', assigned_to = NULL, locked_at = NULL WHERE assigned_to = $1 AND status = 'LOCKED'`,
+                [user_id]
+            );
+
+            const { rows } = await client.query(
+                `UPDATE podcast_files SET status = 'LOCKED', assigned_to = $1, locked_at = NOW()
+                 WHERE id = (
+                     SELECT id FROM podcast_files
+                     WHERE status = 'PENDING'
+                     ORDER BY id ASC
+                     LIMIT 1
+                     FOR UPDATE SKIP LOCKED
+                 )
+                 RETURNING *`,
+                [user_id]
+            );
+            return rows[0] || null;
+        });
+    },
+
+    updatePodcastFileStatus: async (user_id: number, id: string, status: 'ACCEPTED' | 'REJECTED', editedText?: string) => {
+        await pool.query(
+            `UPDATE podcast_files SET status = $3, processed_at = NOW(), edited_text = COALESCE($4, edited_text)
+             WHERE id = $2 AND assigned_to = $1`,
+            [user_id, id, status, editedText || null]
+        );
+    },
+
+    releasePodcastFile: async (user_id: number, id: string) => {
+        await pool.query(
+            `UPDATE podcast_files SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
+             WHERE id = $2 AND assigned_to = $1 AND status = 'LOCKED'`,
+            [user_id, id]
+        );
+    },
+
+    releaseTimedOutPodcastFiles: async (timeoutMs: number) => {
+        const cutoff = new Date(Date.now() - timeoutMs);
+        const result = await pool.query(
+            `UPDATE podcast_files
+             SET status = 'PENDING', assigned_to = NULL, locked_at = NULL
+             WHERE status = 'LOCKED' AND locked_at < $1`,
+            [cutoff]
+        );
+        return result.rowCount;
+    },
+
+    clearAllPodcastFiles: async () => {
+        const result = await pool.query('DELETE FROM podcast_files');
+        return result.rowCount;
+    },
+
+    getAllPodcastStats: async () => {
+        const { rows } = await pool.query(
+            `SELECT
+                u.telegram_id,
+                u.full_name,
+                COUNT(pf.id)::int as total_processed,
+                COALESCE(SUM(CASE WHEN pf.status = 'ACCEPTED' THEN 1 ELSE 0 END), 0)::int as accepted_count,
+                COALESCE(SUM(CASE WHEN pf.status = 'REJECTED' THEN 1 ELSE 0 END), 0)::int as rejected_count
+             FROM users u
+             LEFT JOIN podcast_files pf ON u.telegram_id = pf.assigned_to AND pf.status IN ('ACCEPTED', 'REJECTED')
+             GROUP BY u.telegram_id, u.full_name
+             ORDER BY accepted_count DESC`
+        );
+        return rows;
     },
 
     // --- CLEANUP ---

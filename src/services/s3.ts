@@ -613,6 +613,133 @@ export const s3Service = {
         return destAudioKey;
     },
 
+    // --- PODCAST FUNCTIONS ---
+
+    // Load manifest.jsonl from external_dataset_review/ and insert into DB
+    async loadPodcastManifest() {
+        console.log("[PODCAST] Loading manifest from external_dataset_review/manifest.jsonl...");
+        try {
+            const response = await s3.send(new GetObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: 'external_dataset_review/manifest.jsonl'
+            }));
+
+            const body = await response.Body?.transformToString();
+            if (!body) {
+                console.log("[PODCAST] No manifest.jsonl content found");
+                return 0;
+            }
+
+            const entries: Array<{ id: string, audio_path: string, text: string, duration_s?: number }> = [];
+            const lines = body.split('\n').filter(line => line.trim());
+
+            for (const line of lines) {
+                try {
+                    const entry = JSON.parse(line);
+                    if (entry.id && entry.audio_path && entry.text) {
+                        entries.push({
+                            id: entry.id,
+                            audio_path: entry.audio_path,
+                            text: entry.text,
+                            duration_s: entry.duration_s || undefined
+                        });
+                    }
+                } catch (e) {
+                    // Skip malformed lines
+                }
+            }
+
+            console.log(`[PODCAST] Parsed ${entries.length} entries from manifest.jsonl`);
+            const added = await dbService.initPodcastFiles(entries);
+            console.log(`[PODCAST] Added ${added} new podcast files to DB`);
+            return added;
+        } catch (e: any) {
+            console.error('[PODCAST] Error loading manifest:', e.message);
+            return 0;
+        }
+    },
+
+    // Get audio buffer from external_dataset_review/{audioPath}
+    async getPodcastAudioBuffer(audioPath: string): Promise<Uint8Array | undefined> {
+        try {
+            const key = `external_dataset_review/${audioPath}`;
+            console.log(`[PODCAST] Trying to get audio: ${key}`);
+            const response = await s3.send(new GetObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: key
+            }));
+            return response.Body ? new Uint8Array(await response.Body.transformToByteArray()) : undefined;
+        } catch (e: any) {
+            console.error(`[PODCAST] Error getting audio ${audioPath}:`, e.message);
+            return undefined;
+        }
+    },
+
+    // Copy accepted podcast file to external_review_saralangan/YYYY/MM/DD/
+    async copyPodcastToAccepted(id: string, audioPath: string, originalText: string, finalText: string) {
+        try {
+            const audioFileName = audioPath.split('/').pop() || `${id}.wav`;
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+
+            const destAudioKey = `external_review_saralangan/${dateStr}/${id}.wav`;
+            const srcKey = `external_dataset_review/${audioPath}`;
+
+            await s3.send(new CopyObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                CopySource: `${config.WASABI_BUCKET}/${srcKey}`,
+                Key: destAudioKey
+            }));
+
+            const jsonKey = `external_review_saralangan/${dateStr}/${id}.json`;
+            const metadata = {
+                id,
+                audio: destAudioKey,
+                original_text: originalText,
+                text: finalText,
+                checked_at: now.toISOString()
+            };
+
+            await s3.send(new PutObjectCommand({
+                Bucket: config.WASABI_BUCKET,
+                Key: jsonKey,
+                Body: JSON.stringify(metadata, null, 2),
+                ContentType: 'application/json'
+            }));
+
+            console.log(`[PODCAST] File ${id} copied to ${destAudioKey}`);
+            return destAudioKey;
+        } catch (e: any) {
+            console.error(`[PODCAST] Error copying file ${id}:`, e.message);
+            throw e;
+        }
+    },
+
+    // Upload trimmed podcast audio to external_review_saralangan/YYYY/MM/DD/
+    async uploadTrimmedPodcastToAccepted(id: string, audioPath: string, trimmedBuffer: Buffer, originalText: string, finalText: string) {
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+        const destAudioKey = `external_review_saralangan/${dateStr}/${id}.wav`;
+
+        await s3.send(new PutObjectCommand({
+            Bucket: config.WASABI_BUCKET,
+            Key: destAudioKey,
+            Body: trimmedBuffer,
+            ContentType: 'audio/wav'
+        }));
+
+        const jsonKey = `external_review_saralangan/${dateStr}/${id}.json`;
+        await s3.send(new PutObjectCommand({
+            Bucket: config.WASABI_BUCKET,
+            Key: jsonKey,
+            Body: JSON.stringify({ id, audio: destAudioKey, original_text: originalText, text: finalText, checked_at: now.toISOString() }, null, 2),
+            ContentType: 'application/json'
+        }));
+
+        console.log(`[PODCAST] Trimmed file ${id} uploaded to ${destAudioKey}`);
+        return destAudioKey;
+    },
+
     // Copy accepted file to xorazm_saralangan/ folder with JSON metadata
     async copyXorazmToAccepted(id: string, audioPath: string, text: string) {
         try {

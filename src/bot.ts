@@ -70,6 +70,15 @@ function xorazmActionKeyboard() {
         .text("🐢 Sekinlashtirish", "slow_xorazm").text("✂️ Kesish", "trim_xorazm");
 }
 
+function podcastActionKeyboard() {
+    return new InlineKeyboard()
+        .text("✅ To'g'ri", "pdc_accept").text("❌ Xato", "pdc_deny")
+        .row()
+        .text("✏️ Tahrirlash", "pdc_edit").text("⏭️ O'tkazish", "pdc_skip")
+        .row()
+        .text("🐢 Sekinlashtirish", "slow_podcast").text("✂️ Kesish", "trim_podcast_btn");
+}
+
 export const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
 // Track intervals for cleanup
@@ -102,6 +111,8 @@ const mainMenuKeyboard = new Keyboard()
 const sttSubmenuKeyboard = new Keyboard()
     .text("📚 Adabiy gaplar")
     .text("🌍 Xorazm viloyati")
+    .row()
+    .text("🎙 Podcast")
     .row()
     .text("⬅️ Asosiy menyu")
     .resized();
@@ -230,6 +241,8 @@ bot.command('admin', async (ctx) => {
             .text("🗑 Tozalash + Sync", "admin_clear_and_sync")
             .row()
             .text("🧹 Xorazmni tozalash", "admin_clear_xorazm")
+            .row()
+            .text("🎙 Podcastni tozalash", "admin_clear_podcast")
     });
 });
 
@@ -257,6 +270,12 @@ bot.hears("🌍 Xorazm viloyati", async (ctx) => {
     if (!ctx.from) return;
     await ctx.reply("Fayl yuklanmoqda...", { reply_markup: sttSubmenuKeyboard });
     await sendNextXorazmFile(ctx);
+});
+
+bot.hears("🎙 Podcast", async (ctx) => {
+    if (!ctx.from) return;
+    await ctx.reply("Fayl yuklanmoqda...", { reply_markup: sttSubmenuKeyboard });
+    await sendNextPodcastFile(ctx);
 });
 
 bot.hears("📝 Transkripsiya", async (ctx) => {
@@ -450,7 +469,7 @@ bot.hears("⏭️ O'tkazish", async (ctx) => {
 // List of known button texts to ignore in the text handler (STT and navigation only)
 const BUTTON_TEXTS = [
     "🎧 STT Tekshirish", "📝 Transkripsiya", "📋 Anotatsiya qoidalari", "⬅️ Asosiy menyu",
-    "📚 Adabiy gaplar", "🌍 Xorazm viloyati",
+    "📚 Adabiy gaplar", "🌍 Xorazm viloyati", "🎙 Podcast",
     "✅ To'g'ri", "❌ Xato", "✏️ Tahrirlash", "⏭️ O'tkazish", "❌ Bekor qilish"
     // Note: Transcription buttons now use InlineKeyboard callbacks
 ];
@@ -576,6 +595,65 @@ bot.on("message:text", async (ctx) => {
                 .text("✏️ Matnni tahrirlash", "trans_edit_text")
         });
 
+        return;
+    }
+
+    // Handle TRIM PODCAST input
+    if (type === 'trim_podcast') {
+        const { podcastId, audioPath, originalText } = data;
+        const endSeconds = parseFloat(messageText);
+        if (isNaN(endSeconds) || endSeconds <= 0) {
+            await ctx.reply("❌ Noto'g'ri qiymat. Musbat soniya yuboring (masalan: <code>12</code> yoki <code>12.5</code>)", { parse_mode: "HTML" });
+            return;
+        }
+
+        const audioBuffer = await s3Service.getPodcastAudioBuffer(audioPath);
+        if (!audioBuffer) {
+            await ctx.reply("❌ Audio fayl topilmadi.");
+            await dbService.saveState(userId, 'podcast', data);
+            return;
+        }
+
+        await ctx.reply(`✂️ ${endSeconds} sekundgacha kessilmoqda...`);
+        const trimmedBuffer = await trimAudio(audioBuffer, endSeconds);
+        if (!trimmedBuffer) {
+            await ctx.reply("❌ Kesishda xatolik yuz berdi.");
+            await dbService.saveState(userId, 'podcast', data);
+            return;
+        }
+
+        await dbService.saveState(userId, 'podcast', { ...data, trimEndSeconds: endSeconds });
+
+        const caption = `✂️ <b>Kessilgan audio (0 — ${endSeconds} sek)</b>\n\n🆔 <code>${podcastId}</code>`;
+        await ctx.replyWithAudio(new InputFile(trimmedBuffer, 'trimmed.wav'), {
+            caption,
+            parse_mode: "HTML",
+            reply_markup: podcastActionKeyboard()
+        });
+        return;
+    }
+
+    // Handle PODCAST EDIT text input
+    if (type === 'podcast_edit') {
+        const { podcastId, originalText } = data;
+
+        await dbService.saveState(userId, 'podcast', { ...data, editedText: newText });
+
+        let msg = `✅ <b>Matn tahrirlandi!</b>\n\n`;
+        msg += `🆔 <code>${podcastId}</code>\n\n`;
+        msg += `<b>Original:</b>\n<code>${originalText.substring(0, 200)}</code>\n\n`;
+        msg += `<b>Tahrirlangan:</b>\n<code>${newText.substring(0, 200)}</code>\n\n`;
+        msg += `<i>Tasdiqlaysizmi?</i>`;
+
+        await ctx.reply(msg, {
+            parse_mode: "HTML",
+            reply_markup: new InlineKeyboard()
+                .text("✅ To'g'ri", "pdc_accept")
+                .text("❌ Xato", "pdc_deny")
+                .row()
+                .text("✏️ Qayta tahrirlash", "pdc_edit")
+                .text("⏭️ O'tkazish", "pdc_skip")
+        });
         return;
     }
 
@@ -1039,6 +1117,182 @@ bot.callbackQuery("trim_xorazm", async (ctx) => {
     );
 });
 
+// --- PODCAST CALLBACK HANDLERS ---
+
+bot.callbackQuery("pdc_accept", async (ctx) => {
+    await ctx.answerCallbackQuery("Saqlanmoqda...");
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || stateRow.state_type !== 'podcast' || !stateRow.data?.podcastId) {
+        await ctx.reply("❌ Vazifa topilmadi.");
+        return;
+    }
+
+    const { podcastId, audioPath, originalText, editedText, trimEndSeconds } = stateRow.data;
+    const finalText = editedText || originalText;
+
+    try {
+        if (trimEndSeconds) {
+            const audioBuffer = await s3Service.getPodcastAudioBuffer(audioPath);
+            if (!audioBuffer) throw new Error("Audio topilmadi");
+            const trimmedBuffer = await trimAudio(audioBuffer, trimEndSeconds);
+            if (!trimmedBuffer) throw new Error("Kesish xatolik");
+            await s3Service.uploadTrimmedPodcastToAccepted(podcastId, audioPath, trimmedBuffer, originalText, finalText);
+        } else {
+            await s3Service.copyPodcastToAccepted(podcastId, audioPath, originalText, finalText);
+        }
+        await dbService.updatePodcastFileStatus(userId, podcastId, 'ACCEPTED', editedText);
+        await dbService.deleteState(userId);
+
+        await dbService.incrementBalance(userId, config.XORAZM_CHECK_PRICE);
+
+        await ctx.reply(
+            `✅ <b>Qabul qilindi!</b>\n\n` +
+            `🆔 <code>${podcastId}</code>\n` +
+            `📝 <code>${finalText.substring(0, 100)}${finalText.length > 100 ? '...' : ''}</code>\n\n` +
+            `💰 <b>${config.XORAZM_CHECK_PRICE} so'm qo'shildi!</b>\n\n` +
+            `Davom etamizmi?`,
+            {
+                parse_mode: "HTML",
+                reply_markup: new Keyboard()
+                    .text("🎙 Podcast")
+                    .text("⬅️ Asosiy menyu")
+                    .resized()
+            }
+        );
+    } catch (e) {
+        Logger.error('Error accepting podcast file', e, { userId, podcastId });
+        await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
+bot.callbackQuery("pdc_deny", async (ctx) => {
+    await ctx.answerCallbackQuery("Rad etildi");
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || stateRow.state_type !== 'podcast' || !stateRow.data?.podcastId) {
+        await ctx.reply("❌ Vazifa topilmadi.");
+        return;
+    }
+
+    try {
+        await dbService.updatePodcastFileStatus(userId, stateRow.data.podcastId, 'REJECTED');
+        await dbService.deleteState(userId);
+
+        await ctx.reply("❌ Rad etildi! (Original fayl o'zgartirilmadi)\n\nDavom etamizmi?", {
+            reply_markup: new Keyboard()
+                .text("🎙 Podcast")
+                .text("⬅️ Asosiy menyu")
+                .resized()
+        });
+    } catch (e) {
+        Logger.error('Error denying podcast file', e, { userId });
+        await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
+bot.callbackQuery("pdc_edit", async (ctx) => {
+    await ctx.answerCallbackQuery();
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || stateRow.state_type !== 'podcast' || !stateRow.data?.podcastId) {
+        await ctx.reply("❌ Vazifa topilmadi.");
+        return;
+    }
+
+    const { podcastId, originalText, editedText } = stateRow.data;
+    const currentText = editedText || originalText;
+
+    await dbService.saveState(userId, 'podcast_edit', stateRow.data);
+
+    await ctx.reply(
+        `✏️ <b>Matnni tahrirlash</b>\n\n` +
+        `🆔 <code>${podcastId}</code>\n\n` +
+        `<b>📝 Hozirgi matn:</b>\n<code>${currentText.substring(0, 300)}</code>\n\n` +
+        `<i>Yangi matnni yozib yuboring:</i>`,
+        { parse_mode: "HTML" }
+    );
+});
+
+bot.callbackQuery("pdc_skip", async (ctx) => {
+    await ctx.answerCallbackQuery("O'tkazildi");
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || stateRow.state_type !== 'podcast' || !stateRow.data?.podcastId) {
+        await ctx.reply("❌ Vazifa topilmadi.");
+        return;
+    }
+
+    try {
+        await dbService.releasePodcastFile(userId, stateRow.data.podcastId);
+        await dbService.deleteState(userId);
+        await sendNextPodcastFile(ctx);
+    } catch (e) {
+        Logger.error('Error skipping podcast file', e, { userId });
+        await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
+bot.callbackQuery("slow_podcast", async (ctx) => {
+    await ctx.answerCallbackQuery("🐢 Audio sekinlashtirilmoqda...");
+
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || !stateRow.data?.audioPath) {
+        await ctx.reply("❌ Faol fayl topilmadi.");
+        return;
+    }
+
+    try {
+        const audioBuffer = await s3Service.getPodcastAudioBuffer(stateRow.data.audioPath);
+        if (!audioBuffer) {
+            await ctx.reply("❌ Audio fayl topilmadi.");
+            return;
+        }
+
+        const slowedBuffer = await slowDownAudio(audioBuffer);
+        if (!slowedBuffer) {
+            await ctx.reply("❌ Audio sekinlashtirishda xatolik.");
+            return;
+        }
+
+        await ctx.replyWithAudio(new InputFile(slowedBuffer, 'slowed.wav'), {
+            caption: "🐢 <b>Sekinlashtirilgan audio (0.75x)</b>",
+            parse_mode: "HTML",
+            reply_markup: podcastActionKeyboard()
+        });
+    } catch (e) {
+        Logger.error('Error slowing down podcast audio', e, { userId });
+        await ctx.reply("❌ Xatolik yuz berdi.");
+    }
+});
+
+bot.callbackQuery("trim_podcast_btn", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const userId = ctx.from.id;
+    const stateRow = await dbService.getState(userId);
+
+    if (!stateRow || !stateRow.data?.podcastId) {
+        await ctx.reply("❌ Faol fayl topilmadi.");
+        return;
+    }
+
+    await dbService.saveState(userId, 'trim_podcast', stateRow.data);
+    await ctx.reply(
+        "✂️ <b>Audio kesish</b>\n\nNecha sekundgacha qoldirish kerak?\n<i>Soniyani yuboring (masalan: <code>12</code> yoki <code>12.5</code>)</i>",
+        { parse_mode: "HTML" }
+    );
+});
+
 // --- INLINE KEYBOARD HANDLERS (For Admin Only) ---
 
 // Admin Stats
@@ -1166,6 +1420,27 @@ bot.callbackQuery("admin_clear_xorazm", async (ctx) => {
         await ctx.reply(`✅ Xorazm yangilandi!\n📁 Yangi fayllar: ${added}`);
     } catch (err: any) {
         console.error("Clear xorazm error:", err);
+        await ctx.reply(`⚠️ Xatolik: ${err.message}`);
+    }
+});
+
+// Clear all Podcast files and reload from S3 manifest
+bot.callbackQuery("admin_clear_podcast", async (ctx) => {
+    const user = await dbService.getUser(ctx.from.id);
+    if (!user?.is_admin) return;
+
+    await ctx.answerCallbackQuery("Podcast tozalanmoqda...");
+
+    try {
+        const cleared = await dbService.clearAllPodcastFiles();
+        await ctx.reply(`🗑 Podcast bazasi tozalandi: ${cleared} yozuv o'chirildi`);
+
+        await ctx.reply("🔄 Podcast manifest S3 dan yuklanmoqda...");
+        const added = await s3Service.loadPodcastManifest();
+
+        await ctx.reply(`✅ Podcast yangilandi!\n📁 Yangi fayllar: ${added}`);
+    } catch (err: any) {
+        console.error("Clear podcast error:", err);
         await ctx.reply(`⚠️ Xatolik: ${err.message}`);
     }
 });
@@ -1381,6 +1656,67 @@ async function sendNextXorazmFile(ctx: any) {
     }
 }
 
+async function sendNextPodcastFile(ctx: any) {
+    if (!ctx.from) return;
+    const userId = ctx.from.id;
+
+    try {
+        const pending = await dbService.getPodcastPendingCount();
+        if (pending === 0) {
+            const added = await s3Service.loadPodcastManifest();
+            if (added === 0) {
+                await ctx.reply("Hozircha Podcast vazifalari yo'q.", { reply_markup: sttSubmenuKeyboard });
+                return;
+            }
+        }
+
+        const podcastFile = await dbService.lockNextPodcastFile(userId);
+
+        if (!podcastFile) {
+            await ctx.reply("Hozircha barcha Podcast fayllar band yoki tugagan. Birozdan so'ng urinib ko'ring.", { reply_markup: sttSubmenuKeyboard });
+            return;
+        }
+
+        const audioBuffer = await s3Service.getPodcastAudioBuffer(podcastFile.audio_path);
+
+        if (!audioBuffer) {
+            await ctx.reply("❌ Audio fayl serverda topilmadi (S3 error). U o'tkazib yuborildi.", { reply_markup: sttSubmenuKeyboard });
+            await dbService.updatePodcastFileStatus(userId, podcastFile.id, 'REJECTED');
+            await dbService.deleteState(userId);
+            return;
+        }
+
+        await dbService.saveState(userId, 'podcast', {
+            podcastId: podcastFile.id,
+            audioPath: podcastFile.audio_path,
+            originalText: podcastFile.original_text,
+            editedText: null
+        });
+
+        const origText = podcastFile.original_text;
+        let caption = `🎙 <b>PODCAST</b>\n\n`;
+        caption += `🆔 <code>${podcastFile.id}</code>\n\n`;
+        if (origText.length > 400) {
+            caption += `<b>📝 Matn:</b>\n<code>${origText.substring(0, 400)}...</code>\n\n`;
+        } else {
+            caption += `<b>📝 Matn:</b>\n<code>${origText}</code>\n\n`;
+        }
+        caption += `<i>Pastdagi tugmalardan birini tanlang:</i>`;
+
+        await ctx.replyWithAudio(new InputFile(audioBuffer), {
+            caption,
+            parse_mode: "HTML",
+            reply_markup: podcastActionKeyboard()
+        });
+
+    } catch (e: any) {
+        console.error("Error in sendNextPodcastFile:", e);
+        let msg = "Faylni olishda xatolik.";
+        if (e.message) msg += `\n(${e.message})`;
+        await ctx.reply(msg, { reply_markup: sttSubmenuKeyboard });
+    }
+}
+
 // Start
 bot.catch((err) => console.error(err));
 
@@ -1410,6 +1746,13 @@ export async function launchBot() {
                 if (count > 0) console.log(`Released ${count} timed out xorazm files.`);
             })
             .catch((err) => Logger.error('Error releasing xorazm locks', err));
+
+        dbService.releaseTimedOutPodcastFiles(config.LOCK_TIMEOUT_MS)
+            .then((released) => {
+                const count = released ?? 0;
+                if (count > 0) console.log(`Released ${count} timed out podcast files.`);
+            })
+            .catch((err) => Logger.error('Error releasing podcast locks', err));
     }, config.LOCK_TIMEOUT_MS);
     intervals.push(lockReleaseInterval);
 
