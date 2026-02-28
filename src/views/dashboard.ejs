@@ -1018,16 +1018,21 @@
         /* ─── Dashboard Board ─── */
         .dashboard-board .board-head,
         .dashboard-board .board-row {
-            grid-template-columns: 90px 1.5fr 60px 100px 70px 70px 110px 1fr;
+            grid-template-columns: 90px 1.5fr 60px 100px 100px 70px 70px 110px 1fr;
             align-items: center;
             padding: 12px 24px;
         }
 
         .dashboard-board .actions {
             display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
+            flex-wrap: nowrap;
+            gap: 4px;
             justify-content: flex-end;
+            align-items: center;
+        }
+
+        .dashboard-board .actions form {
+            display: contents;
         }
 
         .dashboard-board .btn-small {
