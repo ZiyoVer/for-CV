@@ -51,6 +51,44 @@ async function trimAudio(audioBuffer: Buffer | Uint8Array, endSeconds: number): 
     }
 }
 
+// ─── Helper: send a <code> block, splitting if text > 3800 chars ───
+async function sendCodeBlock(ctx: any, label: string, text: string): Promise<void> {
+    const MAX = 3800;
+    if (text.length <= MAX) {
+        await ctx.reply(`${label}\n<code>${text}</code>`, { parse_mode: "HTML" });
+        return;
+    }
+    let first = true;
+    for (let i = 0; i < text.length; i += MAX) {
+        const chunk = text.substring(i, i + MAX);
+        const prefix = first ? `${label}\n` : '';
+        await ctx.reply(`${prefix}<code>${chunk}</code>`, { parse_mode: "HTML" });
+        first = false;
+    }
+}
+
+// ─── Helper: send a full message, splitting at 4000 chars if needed ───
+async function replyLong(ctx: any, text: string, options?: any): Promise<void> {
+    const MAX = 4000;
+    if (text.length <= MAX) {
+        await ctx.reply(text, options);
+        return;
+    }
+    const chunks: string[] = [];
+    let remaining = text;
+    while (remaining.length > MAX) {
+        let splitAt = MAX;
+        const nl = remaining.lastIndexOf('\n', MAX);
+        if (nl > MAX * 0.5) splitAt = nl + 1;
+        chunks.push(remaining.substring(0, splitAt));
+        remaining = remaining.substring(splitAt);
+    }
+    if (remaining) chunks.push(remaining);
+    for (let i = 0; i < chunks.length; i++) {
+        await ctx.reply(chunks[i], i === chunks.length - 1 ? options : { parse_mode: (options as any)?.parse_mode });
+    }
+}
+
 // ─── Merged action keyboards ───
 function sttActionKeyboard() {
     return new InlineKeyboard()
@@ -540,24 +578,32 @@ bot.on("message:text", async (ctx) => {
             editedText: newText
         });
 
-        let msg = `✅ <b>Matn tahrirlandi!</b>\n\n`;
-        msg += `🆔 <code>${xorazmId}</code>\n\n`;
-        msg += `<b>Original:</b>\n<code>${originalText.substring(0, 200)}</code>\n\n`;
-        if (geminiText) {
-            msg += `<b>Gemini:</b>\n<code>${geminiText.substring(0, 200)}</code>\n\n`;
-        }
-        msg += `<b>Tahrirlangan:</b>\n<code>${newText.substring(0, 200)}</code>\n\n`;
-        msg += `<i>Tasdiqlaysizmi?</i>`;
+        const xrzConfirmKeyboard = new InlineKeyboard()
+            .text("✅ To'g'ri", "xrz_accept")
+            .text("❌ Xato", "xrz_deny")
+            .row()
+            .text("✏️ Qayta tahrirlash", "xrz_edit")
+            .text("⏭️ O'tkazish", "xrz_skip");
 
-        await ctx.reply(msg, {
-            parse_mode: "HTML",
-            reply_markup: new InlineKeyboard()
-                .text("✅ To'g'ri", "xrz_accept")
-                .text("❌ Xato", "xrz_deny")
-                .row()
-                .text("✏️ Qayta tahrirlash", "xrz_edit")
-                .text("⏭️ O'tkazish", "xrz_skip")
-        });
+        const xrzHeader = `✅ <b>Matn tahrirlandi!</b>\n\n🆔 <code>${xorazmId}</code>\n\n`;
+        const xrzFooter = `<i>Tasdiqlaysizmi?</i>`;
+        const xrzGemini = geminiText ? geminiText.length : 0;
+        const xrzTotalLen = xrzHeader.length + xrzFooter.length + originalText.length + xrzGemini + newText.length + 80;
+
+        if (xrzTotalLen <= 4000) {
+            let msg = xrzHeader;
+            msg += `<b>Original:</b>\n<code>${originalText}</code>\n\n`;
+            if (geminiText) msg += `<b>Gemini:</b>\n<code>${geminiText}</code>\n\n`;
+            msg += `<b>Tahrirlangan:</b>\n<code>${newText}</code>\n\n`;
+            msg += xrzFooter;
+            await ctx.reply(msg, { parse_mode: "HTML", reply_markup: xrzConfirmKeyboard });
+        } else {
+            await ctx.reply(xrzHeader, { parse_mode: "HTML" });
+            await sendCodeBlock(ctx, '<b>Original:</b>', originalText);
+            if (geminiText) await sendCodeBlock(ctx, '<b>Gemini:</b>', geminiText);
+            await sendCodeBlock(ctx, '<b>Tahrirlangan:</b>', newText);
+            await ctx.reply(xrzFooter, { parse_mode: "HTML", reply_markup: xrzConfirmKeyboard });
+        }
         return;
     }
 
@@ -639,21 +685,29 @@ bot.on("message:text", async (ctx) => {
 
         await dbService.saveState(userId, 'podcast', { ...data, editedText: newText });
 
-        let msg = `✅ <b>Matn tahrirlandi!</b>\n\n`;
-        msg += `🆔 <code>${podcastId}</code>\n\n`;
-        msg += `<b>Original:</b>\n<code>${originalText.substring(0, 200)}</code>\n\n`;
-        msg += `<b>Tahrirlangan:</b>\n<code>${newText.substring(0, 200)}</code>\n\n`;
-        msg += `<i>Tasdiqlaysizmi?</i>`;
+        const pdcConfirmKeyboard = new InlineKeyboard()
+            .text("✅ To'g'ri", "pdc_accept")
+            .text("❌ Xato", "pdc_deny")
+            .row()
+            .text("✏️ Qayta tahrirlash", "pdc_edit")
+            .text("⏭️ O'tkazish", "pdc_skip");
 
-        await ctx.reply(msg, {
-            parse_mode: "HTML",
-            reply_markup: new InlineKeyboard()
-                .text("✅ To'g'ri", "pdc_accept")
-                .text("❌ Xato", "pdc_deny")
-                .row()
-                .text("✏️ Qayta tahrirlash", "pdc_edit")
-                .text("⏭️ O'tkazish", "pdc_skip")
-        });
+        const pdcHeader = `✅ <b>Matn tahrirlandi!</b>\n\n🆔 <code>${podcastId}</code>\n\n`;
+        const pdcFooter = `<i>Tasdiqlaysizmi?</i>`;
+        const pdcTotalLen = pdcHeader.length + pdcFooter.length + originalText.length + newText.length + 60;
+
+        if (pdcTotalLen <= 4000) {
+            let msg = pdcHeader;
+            msg += `<b>Original:</b>\n<code>${originalText}</code>\n\n`;
+            msg += `<b>Tahrirlangan:</b>\n<code>${newText}</code>\n\n`;
+            msg += pdcFooter;
+            await ctx.reply(msg, { parse_mode: "HTML", reply_markup: pdcConfirmKeyboard });
+        } else {
+            await ctx.reply(pdcHeader, { parse_mode: "HTML" });
+            await sendCodeBlock(ctx, '<b>Original:</b>', originalText);
+            await sendCodeBlock(ctx, '<b>Tahrirlangan:</b>', newText);
+            await ctx.reply(pdcFooter, { parse_mode: "HTML", reply_markup: pdcConfirmKeyboard });
+        }
         return;
     }
 
@@ -927,7 +981,7 @@ bot.callbackQuery("xrz_accept", async (ctx) => {
         await ctx.reply(
             `✅ <b>Qabul qilindi!</b>\n\n` +
             `🆔 <code>${xorazmId}</code>\n` +
-            `📝 <code>${finalText.substring(0, 100)}${finalText.length > 100 ? '...' : ''}</code>\n\n` +
+            `📝 <code>${finalText}</code>\n\n` +
             `💰 <b>${config.XORAZM_CHECK_PRICE} so'm qo'shildi!</b>\n\n` +
             `Davom etamizmi?`,
             {
@@ -989,15 +1043,22 @@ bot.callbackQuery("xrz_edit", async (ctx) => {
 
     await dbService.saveState(userId, 'xorazm_edit', stateRow.data);
 
-    let prompt = `✏️ <b>Matnni tahrirlash</b>\n\n`;
-    prompt += `🆔 <code>${xorazmId}</code>\n\n`;
-    prompt += `<b>📝 Asl matn (metadata):</b>\n<code>${originalText.substring(0, 300)}</code>\n\n`;
-    if (geminiText) {
-        prompt += `<b>🤖 Gemini transkripsiya:</b>\n<code>${geminiText.substring(0, 300)}</code>\n\n`;
-    }
-    prompt += `<i>Yangi matnni yozib yuboring:</i>`;
+    const xrzEditHeader = `✏️ <b>Matnni tahrirlash</b>\n\n🆔 <code>${xorazmId}</code>\n\n`;
+    const xrzEditFooter = `<i>Yangi matnni yozib yuboring:</i>`;
+    const xrzEditTotal = xrzEditHeader.length + xrzEditFooter.length + originalText.length + (geminiText?.length || 0) + 60;
 
-    await ctx.reply(prompt, { parse_mode: "HTML" });
+    if (xrzEditTotal <= 4000) {
+        let prompt = xrzEditHeader;
+        prompt += `<b>📝 Asl matn (metadata):</b>\n<code>${originalText}</code>\n\n`;
+        if (geminiText) prompt += `<b>🤖 Gemini transkripsiya:</b>\n<code>${geminiText}</code>\n\n`;
+        prompt += xrzEditFooter;
+        await ctx.reply(prompt, { parse_mode: "HTML" });
+    } else {
+        await ctx.reply(xrzEditHeader, { parse_mode: "HTML" });
+        await sendCodeBlock(ctx, '<b>📝 Asl matn (metadata):</b>', originalText);
+        if (geminiText) await sendCodeBlock(ctx, '<b>🤖 Gemini transkripsiya:</b>', geminiText);
+        await ctx.reply(xrzEditFooter, { parse_mode: "HTML" });
+    }
 });
 
 // Skip - release and get next
@@ -1151,7 +1212,7 @@ bot.callbackQuery("pdc_accept", async (ctx) => {
         await ctx.reply(
             `✅ <b>Qabul qilindi!</b>\n\n` +
             `🆔 <code>${podcastId}</code>\n` +
-            `📝 <code>${finalText.substring(0, 100)}${finalText.length > 100 ? '...' : ''}</code>\n\n` +
+            `📝 <code>${finalText}</code>\n\n` +
             `💰 <b>${config.XORAZM_CHECK_PRICE} so'm qo'shildi!</b>\n\n` +
             `Davom etamizmi?`,
             {
@@ -1211,13 +1272,20 @@ bot.callbackQuery("pdc_edit", async (ctx) => {
 
     await dbService.saveState(userId, 'podcast_edit', stateRow.data);
 
-    await ctx.reply(
-        `✏️ <b>Matnni tahrirlash</b>\n\n` +
-        `🆔 <code>${podcastId}</code>\n\n` +
-        `<b>📝 Hozirgi matn:</b>\n<code>${currentText.substring(0, 300)}</code>\n\n` +
-        `<i>Yangi matnni yozib yuboring:</i>`,
-        { parse_mode: "HTML" }
-    );
+    const pdcEditHeader = `✏️ <b>Matnni tahrirlash</b>\n\n🆔 <code>${podcastId}</code>\n\n`;
+    const pdcEditFooter = `<i>Yangi matnni yozib yuboring:</i>`;
+    const pdcEditTotal = pdcEditHeader.length + pdcEditFooter.length + currentText.length + 30;
+
+    if (pdcEditTotal <= 4000) {
+        await ctx.reply(
+            pdcEditHeader + `<b>📝 Hozirgi matn:</b>\n<code>${currentText}</code>\n\n` + pdcEditFooter,
+            { parse_mode: "HTML" }
+        );
+    } else {
+        await ctx.reply(pdcEditHeader, { parse_mode: "HTML" });
+        await sendCodeBlock(ctx, '<b>📝 Hozirgi matn:</b>', currentText);
+        await ctx.reply(pdcEditFooter, { parse_mode: "HTML" });
+    }
 });
 
 bot.callbackQuery("pdc_skip", async (ctx) => {
@@ -1490,16 +1558,17 @@ async function sendNextFile(ctx: any) {
             await ctx.reply('⚠️ Fayl juda katta, yuklanishi biroz vaqt oladi...');
         }
 
-        let text = json.text || 'Noma\'lum';
-        if (text.length > 800) text = text.substring(0, 800) + "...";
-
-        const caption = `🆔 <code>${json.utt_id || fileKey}</code>\n\n📝 ${text}`;
+        const text = json.text || 'Noma\'lum';
+        const sttCaption = `🆔 <code>${json.utt_id || fileKey}</code>\n\n<i>Pastdagi tugmalardan birini tanlang:</i>`;
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
-            caption: caption,
+            caption: sttCaption,
             parse_mode: "HTML",
             reply_markup: sttActionKeyboard()
         });
+
+        // Send full text as separate message
+        await sendCodeBlock(ctx, '📝 <b>Matn:</b>', text);
 
     } catch (e: any) {
         console.error("Error in sendNextFile:", e);
@@ -1619,34 +1688,24 @@ async function sendNextXorazmFile(ctx: any) {
             editedText: null
         });
 
-        // Send audio with text
-        let caption = `🌍 <b>XORAZM SHEVA</b>\n\n`;
-        caption += `🆔 <code>${xorazmFile.id}</code>\n\n`;
-
-        // Show original text
+        // Send audio with short caption (keyboard), then text separately
         const origText = xorazmFile.original_text;
-        if (origText.length > 400) {
-            caption += `<b>📝 Asl matn:</b>\n<code>${origText.substring(0, 400)}...</code>\n\n`;
-        } else {
-            caption += `<b>📝 Asl matn:</b>\n<code>${origText}</code>\n\n`;
-        }
-
-        // Show Gemini text if available
-        if (geminiText) {
-            if (geminiText.length > 400) {
-                caption += `<b>🤖 Gemini:</b>\n<code>${geminiText.substring(0, 400)}...</code>\n\n`;
-            } else {
-                caption += `<b>🤖 Gemini:</b>\n<code>${geminiText}</code>\n\n`;
-            }
-        }
-
-        caption += `<i>Pastdagi tugmalardan birini tanlang:</i>`;
+        const xrzAudioCaption =
+            `🌍 <b>XORAZM SHEVA</b>\n\n` +
+            `🆔 <code>${xorazmFile.id}</code>\n\n` +
+            `<i>Pastdagi tugmalardan birini tanlang:</i>`;
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
-            caption: caption,
+            caption: xrzAudioCaption,
             parse_mode: "HTML",
             reply_markup: xorazmActionKeyboard()
         });
+
+        // Send full text(s) as separate message(s)
+        await sendCodeBlock(ctx, '<b>📝 Asl matn:</b>', origText);
+        if (geminiText) {
+            await sendCodeBlock(ctx, '<b>🤖 Gemini:</b>', geminiText);
+        }
 
     } catch (e: any) {
         console.error("Error in sendNextXorazmFile:", e);
@@ -1693,21 +1752,21 @@ async function sendNextPodcastFile(ctx: any) {
             editedText: null
         });
 
+        // Send audio with short caption (keyboard), then full text separately
         const origText = podcastFile.original_text;
-        let caption = `🎙 <b>PODCAST</b>\n\n`;
-        caption += `🆔 <code>${podcastFile.id}</code>\n\n`;
-        if (origText.length > 400) {
-            caption += `<b>📝 Matn:</b>\n<code>${origText.substring(0, 400)}...</code>\n\n`;
-        } else {
-            caption += `<b>📝 Matn:</b>\n<code>${origText}</code>\n\n`;
-        }
-        caption += `<i>Pastdagi tugmalardan birini tanlang:</i>`;
+        const pdcAudioCaption =
+            `🎙 <b>PODCAST</b>\n\n` +
+            `🆔 <code>${podcastFile.id}</code>\n\n` +
+            `<i>Pastdagi tugmalardan birini tanlang:</i>`;
 
         await ctx.replyWithAudio(new InputFile(audioBuffer), {
-            caption,
+            caption: pdcAudioCaption,
             parse_mode: "HTML",
             reply_markup: podcastActionKeyboard()
         });
+
+        // Send full text as separate message
+        await sendCodeBlock(ctx, '<b>📝 Matn:</b>', origText);
 
     } catch (e: any) {
         console.error("Error in sendNextPodcastFile:", e);
