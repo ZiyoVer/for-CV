@@ -387,6 +387,14 @@ app.get('/review/:id', requireAuth, async (req, res) => {
             }
         }));
 
+        // Mark shown files as reviewed so they won't appear again
+        const reviewEntries = [
+            ...filesWithContent.filter((f: any) => f.audioUrl).map((f: any) => ({ file_id: f.file_key, file_type: 'stt', user_id: userId })),
+            ...xorazmWithContent.filter((f: any) => f.audioUrl).map((f: any) => ({ file_id: f.id, file_type: 'xorazm', user_id: userId })),
+            ...podcastWithContent.filter((f: any) => f.audioUrl).map((f: any) => ({ file_id: f.id, file_type: 'podcast', user_id: userId })),
+        ];
+        await dbService.markFilesAsReviewed(reviewEntries);
+
         res.render('review', { user, files: filesWithContent, xorazmFiles: xorazmWithContent, podcastFiles: podcastWithContent });
     } catch (err) {
         console.error('Review error:', err);

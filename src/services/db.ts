@@ -77,6 +77,17 @@ const createBotStateTable = `
     );
 `;
 
+const createReviewLogTable = `
+    CREATE TABLE IF NOT EXISTS review_log (
+        id SERIAL PRIMARY KEY,
+        file_id TEXT NOT NULL,
+        file_type TEXT NOT NULL,
+        user_id BIGINT NOT NULL,
+        reviewed_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_review_log_file ON review_log(file_id, file_type, user_id);
+`;
+
 const createIndexes = `
     CREATE INDEX IF NOT EXISTS idx_files_status ON files(status);
     CREATE INDEX IF NOT EXISTS idx_files_assigned ON files(assigned_to) WHERE assigned_to IS NOT NULL;
@@ -119,7 +130,8 @@ export const dbService = {
             { name: 'transcription_files', query: createTranscriptionFilesTable },
             { name: 'xorazm_files', query: createXorazmFilesTable },
             { name: 'podcast_files', query: createPodcastFilesTable },
-            { name: 'bot_state', query: createBotStateTable }
+            { name: 'bot_state', query: createBotStateTable },
+            { name: 'review_log', query: createReviewLogTable }
         ];
 
         for (const table of tables) {
@@ -364,6 +376,10 @@ export const dbService = {
             `SELECT * FROM files
              WHERE assigned_to = $1
                AND status = 'ACCEPTED'
+               AND file_key NOT IN (
+                   SELECT file_id FROM review_log
+                   WHERE file_type = 'stt' AND user_id = $1
+               )
              ORDER BY RANDOM()
              LIMIT $2`,
             [user_id, limit]
@@ -375,6 +391,10 @@ export const dbService = {
         const { rows } = await pool.query(
             `SELECT * FROM xorazm_files
              WHERE assigned_to = $1 AND status = 'ACCEPTED'
+               AND id NOT IN (
+                   SELECT file_id FROM review_log
+                   WHERE file_type = 'xorazm' AND user_id = $1
+               )
              ORDER BY RANDOM() LIMIT $2`,
             [user_id, limit]
         );
@@ -385,10 +405,24 @@ export const dbService = {
         const { rows } = await pool.query(
             `SELECT * FROM podcast_files
              WHERE assigned_to = $1 AND status = 'ACCEPTED'
+               AND id NOT IN (
+                   SELECT file_id FROM review_log
+                   WHERE file_type = 'podcast' AND user_id = $1
+               )
              ORDER BY RANDOM() LIMIT $2`,
             [user_id, limit]
         );
         return rows;
+    },
+
+    markFilesAsReviewed: async (entries: { file_id: string; file_type: string; user_id: number }[]) => {
+        if (entries.length === 0) return;
+        const values = entries.map((e, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(', ');
+        const params = entries.flatMap(e => [e.file_id, e.file_type, e.user_id]);
+        await pool.query(
+            `INSERT INTO review_log (file_id, file_type, user_id) VALUES ${values}`,
+            params
+        );
     },
 
     // --- FILE LOCKING LOGIC ---
